@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enquiry Call</title>
+<style>
+  :root {
+    --bg: #f5f7f6; --card: #ffffff; --ink: #14201c; --muted: #5d6b66; --line: #dfe6e3;
+    --brand: #0d7a5f; --brand-ink: #ffffff; --danger: #c0392b; --flash: #d9f4e8; --warn: #fff4d6; --warn-ink: #6b4e00;
+    --user: #e8eeec; --agent: #dcf3ea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1614; --card: #17211e; --ink: #e8f0ed; --muted: #93a39d; --line: #26352f;
+      --brand: #2fbf96; --brand-ink: #06231a; --danger: #ff7b6b; --flash: #1c4a3b; --warn: #3a3012; --warn-ink: #f3d98a;
+      --user: #22302b; --agent: #1b3b30;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 20px 16px 4px; max-width: 1100px; margin: 0 auto; }
+  header h1 { margin: 0; font-size: 1.35rem; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: .95rem; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  h2 { margin: 0 0 12px; font-size: 1.05rem; }
+  #banner { max-width: 1100px; margin: 8px auto 0; padding: 0 16px; }
+  #banner div { background: var(--warn); color: var(--warn-ink); border-radius: 10px; padding: 10px 14px; margin-top: 8px; font-size: .92rem; }
+  .callrow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  button { font: inherit; border: 0; border-radius: 999px; padding: 12px 26px; cursor: pointer; font-weight: 600; }
+  button:disabled { opacity: .55; cursor: not-allowed; }
+  #callBtn { background: var(--brand); color: var(--brand-ink); min-width: 190px; }
+  #callBtn.live { background: var(--danger); color: #fff; }
+  .status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .95rem; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--line); }
+  .dot.listening { background: #2fbf96; box-shadow: 0 0 0 5px rgba(47,191,150,.25); }
+  .dot.speaking { background: #4a8cff; }
+  .dot.thinking { background: #f0b429; }
+  #timer { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted); }
+  #slow { display: none; margin-top: 10px; color: var(--muted); font-size: .88rem; }
+  #log { margin-top: 14px; height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+  .msg { max-width: 88%; padding: 9px 13px; border-radius: 12px; font-size: .96rem; }
+  .msg.user { background: var(--user); align-self: flex-end; }
+  .msg.agent { background: var(--agent); align-self: flex-start; }
+  .msg small { display: block; color: var(--muted); font-size: .72rem; margin-bottom: 2px; }
+  .empty { color: var(--muted); font-size: .92rem; }
+  .progress { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 0 0 14px; }
+  .progress i { display: block; height: 100%; width: 0; background: var(--brand); transition: width .4s; }
+  label { display: block; font-size: .8rem; color: var(--muted); margin: 0 0 3px; }
+  .field { margin-bottom: 12px; }
+  input, select { width: 100%; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  input:focus, select:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+  .field.flash input, .field.flash select { animation: flash 1.8s ease-out; }
+  .field.filled input, .field.filled select { border-color: var(--brand); }
+  .field.bad input, .field.bad select { border-color: var(--danger); }
+  @keyframes flash { 0% { background: var(--flash); } 100% { background: var(--bg); } }
+  .req { color: var(--danger); }
+  #cardsWrap { margin-bottom: 18px; }
+  .acard { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; background: var(--bg); }
+  .acard.fresh { animation: flash 2.2s ease-out; }
+  .ctitle { font-weight: 600; margin-bottom: 6px; }
+  .kvrow { display: flex; justify-content: space-between; gap: 14px; padding: 5px 0; border-bottom: 1px dashed var(--line); font-size: .92rem; }
+  .kvrow:last-child { border-bottom: 0; }
+  .kvrow span { color: var(--muted); }
+  .kvrow strong { text-align: right; }
+  table.data { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: .86rem; }
+  table.data caption { text-align: left; color: var(--muted); font-size: .78rem; padding-bottom: 3px; }
+  table.data th, table.data td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--line); }
+  table.data th { color: var(--muted); font-weight: 600; }
+  :root { --check: #fff4d6; --check-line: #e0a800; --check-ink: #6b4e00; --ok: #0d7a5f; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --check: #3a3012; --check-line: #c79a1a; --check-ink: #f3d98a; --ok: #2fbf96; } }
+  .field.flagged input, .field.flagged select, .detail.flagged input { border-color: var(--check-line); background: var(--check); }
+  .flagNote { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: .78rem; color: var(--check-ink); }
+  .flagNote button { padding: 2px 10px; font-size: .75rem; border-radius: 8px; background: transparent; color: var(--check-ink); border: 1px solid var(--check-line); font-weight: 600; }
+  .okBadge { margin-top: 4px; font-size: .75rem; color: var(--ok); }
+  h3 { margin: 18px 0 8px; font-size: .95rem; color: var(--muted); font-weight: 600; }
+  .detail { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 10px; }
+  .detail > div { flex: 1; }
+  .detail button { background: transparent; color: var(--muted); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); }
+  .detail.flash input { animation: flash 1.8s ease-out; }
+  #savedNote { display: none; margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: var(--flash); font-size: .9rem; }
+  #submitBtn { background: var(--brand); color: var(--brand-ink); width: 100%; border-radius: 12px; margin-top: 4px; }
+  #done { display: none; text-align: center; padding: 8px 0; }
+  #done h2 { color: var(--brand); }
+  .note { color: var(--muted); font-size: .8rem; margin-top: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Talk to our AI assistant</h1>
+  <p>Press Call and tell the assistant what you need, in Hindi or English. The form fills in as you talk, and you can correct anything by typing.</p>
+</header>
+<div id="banner"></div>
+<main>
+  <section class="card">
+    <h2>Call</h2>
+    <div class="callrow">
+      <button id="callBtn">Call</button>
+      <div class="status"><span class="dot" id="dot"></span><span id="stateText">Not connected</span></div>
+      <div id="timer">00:00</div>
+    </div>
+    <div id="slow">The voice is generated on this computer and can take a minute or more per sentence. Please wait.</div>
+    <div id="log" aria-live="polite"><div class="empty">The conversation will appear here. Use headphones to avoid echo.</div></div>
+  </section>
+  <section class="card">
+    <div id="cardsWrap" style="display:none"><h2>Your account</h2><div id="cards"></div><div class="note">Shown for your confirmed mobile number only. It disappears when the call ends.</div></div>
+    <div id="formWrap">
+      <h2>Your details <span id="count" style="color:var(--muted);font-weight:400"></span></h2>
+      <div class="progress"><i id="bar"></i></div>
+      <form id="form" autocomplete="off"></form>
+      <div id="detailsWrap" style="display:none"><h3>More details from your call</h3><div id="details"></div></div>
+      <div id="savedNote"></div>
+      <button id="submitBtn" disabled>Submit enquiry</button>
+      <div class="note">An AI assistant fills this form from the call. Please check every field before submitting.</div>
+    </div>
+    <div id="done"><h2>Thank you!</h2><p id="doneMsg">Your enquiry has been submitted. Our team will get in touch.</p><button id="againBtn" style="background:var(--brand);color:var(--brand-ink)">New enquiry</button></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const STATES = { idle: "Not connected", connecting: "Connecting…", listening: "Listening — please speak",
+                 complete: "Call complete — review the form and press Submit", thinking: "Thinking…", preparing: "Agent is preparing to speak…", speaking: "Agent is speaking", ended: "Call ended" };
+let flags = {}, confirmed = new Set(), verified = new Set();
+let fields = [], values = { details: {} }, callId = null, savedResolve = null, ws = null, ctx = null, micStream = null, node = null;
+let queue = [], playing = false, pending = 0, turnEnded = false, serverState = "idle", timerId = null, t0 = 0;
+
+const pretty = (s) => s.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+const banner = (text) => { const d = document.createElement("div"); d.textContent = text; $("banner").appendChild(d); };
+
+// ---------------- form ----------------
+async function buildForm() {
+  fields = await (await fetch("/api/form")).json();
+  $("form").innerHTML = "";
+  for (const f of fields) {
+    const wrap = document.createElement("div"); wrap.className = "field"; wrap.id = "f_" + f.key;
+    const lab = document.createElement("label"); lab.textContent = f.label; lab.htmlFor = "i_" + f.key;
+    if (f.required) { const r = document.createElement("span"); r.className = "req"; r.textContent = " *"; lab.appendChild(r); }
+    let el;
+    if (f.type === "choice") {
+      el = document.createElement("select");
+      el.innerHTML = '<option value="">—</option>' + f.options.map((o) => `<option value="${o}">${pretty(o)}</option>`).join("");
+    } else {
+      el = document.createElement("input");
+      el.type = f.type === "number" ? "number" : f.type === "phone" ? "tel" : "text";
+      if (f.type === "phone") el.maxLength = 10;
+    }
+    el.id = "i_" + f.key;
+    el.addEventListener("input", () => { values[f.key] = el.value; verify(f.key); });
+    wrap.append(lab, el); $("form").appendChild(wrap);
+  }
+  refresh();
+}
+function refresh() {
+  let need = 0, have = 0;
+  for (const f of fields) {
+    const filled = values[f.key] !== undefined && String(values[f.key]).trim() !== "";
+    if (f.required) { need++; if (filled) have++; }
+    $("f_" + f.key).classList.toggle("filled", filled);
+  }
+  const extra = Object.keys(values.details).length;
+  $("count").textContent = `${have} of ${need} required` + (extra ? ` · ${extra} extra detail${extra > 1 ? "s" : ""}` : "");
+  $("bar").style.width = (need ? 100 * have / need : 0) + "%";
+  const nf = Object.keys(flags).filter((k) => !verified.has(k)).length;
+  if (nf) $("count").textContent += ` · ${nf} to check`;
+  $("submitBtn").disabled = have < need;
+}
+function note(parent, key) {
+  parent.querySelectorAll(".flagNote,.okBadge").forEach((n) => n.remove());
+  const flagged = flags[key] !== undefined && !verified.has(key);
+  parent.classList.toggle("flagged", flagged);
+  if (flagged) {
+    const n = document.createElement("div"); n.className = "flagNote";
+    const t = document.createElement("span"); t.textContent = "⚠ Please check: " + flags[key];
+    const b = document.createElement("button"); b.type = "button"; b.textContent = "Looks right"; b.onclick = () => verify(key);
+    n.append(t, b); parent.appendChild(n);
+  } else if (confirmed.has(key) || verified.has(key)) {
+    const n = document.createElement("div"); n.className = "okBadge"; n.textContent = "✓ Confirmed"; parent.appendChild(n);
+  }
+}
+function annotate() {
+  for (const f of fields) note($("f_" + f.key), f.key);
+  for (const label of Object.keys(values.details)) { const row = $("d_" + label); if (row) note(row.firstChild, "detail:" + label); }
+  const n = Object.keys(flags).filter((k) => !verified.has(k)).length;
+  $("count").textContent = $("count").textContent.replace(/ · \d+ to check$/, "") + (n ? ` · ${n} to check` : "");
+}
+function verify(key) {              // the user typed the value, or pressed "Looks right"
+  verified.add(key); delete flags[key]; annotate(); refresh();
+}
+function renderDetails(flash) {
+  const box = $("details"); box.innerHTML = "";
+  const entries = Object.entries(values.details);
+  $("detailsWrap").style.display = entries.length ? "block" : "none";
+  for (const [label, val] of entries) {
+    const row = document.createElement("div"); row.className = "detail"; row.id = "d_" + label;
+    const inner = document.createElement("div");
+    const lab = document.createElement("label"); lab.textContent = pretty(label);
+    const inp = document.createElement("input"); inp.value = val;
+    inp.addEventListener("input", () => { values.details[label] = inp.value; verify("detail:" + label); });
+    inner.append(lab, inp);
+    const del = document.createElement("button"); del.type = "button"; del.textContent = "✕"; del.title = "Remove";
+    del.onclick = () => { delete values.details[label]; renderDetails(); refresh(); };
+    row.append(inner, del); box.appendChild(row);
+    if ((flash || []).includes("detail:" + label)) row.classList.add("flash");
+  }
+  annotate();
+}
+function applyForm(vals, changed, fl, conf) {
+  flags = { ...(fl || {}) }; confirmed = new Set(conf || []);
+  for (const k of changed || []) verified.delete(k);   // the agent just changed it: needs checking again
+  for (const [k, v] of Object.entries(vals)) {
+    if (k === "details") continue;
+    values[k] = v; const el = $("i_" + k); if (el) el.value = v;
+  }
+  values.details = { ...(vals.details || {}) };
+  renderDetails(changed);
+  for (const k of changed || []) {
+    const w = $("f_" + k); if (!w) continue;
+    w.classList.remove("flash"); void w.offsetWidth; w.classList.add("flash");
+  }
+  refresh();
+}
+$("submitBtn").onclick = async () => {
+  $("submitBtn").disabled = true;
+  const r = await fetch("/api/submit", { method: "POST", headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ call_id: callId, values, verified: [...verified] }) });
+  const j = await r.json();
+  document.querySelectorAll(".field").forEach((w) => w.classList.remove("bad"));
+  if (!r.ok) {
+    for (const k of Object.keys(j.errors || {})) $("f_" + k)?.classList.add("bad");
+    banner("Please check: " + Object.entries(j.errors).map(([k, m]) => (k === "call" ? "" : k + " - ") + m).join("; "));
+    refresh(); return;
+  }
+  $("doneMsg").textContent = "Your enquiry has been submitted" + (j.ticket && j.ticket.id ? `. Your reference number is ${j.ticket.id}.` : ".") + " Our team will get in touch.";
+  hangUp(); $("formWrap").style.display = "none"; $("done").style.display = "block";
+};
+$("againBtn").onclick = () => {
+  values = { details: {} }; flags = {}; confirmed = new Set(); verified = new Set(); callId = null; clearCards(); buildForm(); renderDetails();
+  $("done").style.display = "none"; $("formWrap").style.display = "block"; $("savedNote").style.display = "none";
+  $("log").innerHTML = '<div class="empty">The conversation will appear here. Use headphones to avoid echo.</div>';
+  serverState = "idle"; $("timer").textContent = "00:00"; render();
+};
+
+// ---------------- account cards (shown the moment the CRM data arrives) ----------------
+let cardData = new Map();
+function mergeCards(cards) {
+  for (const c of cards) {
+    const old = cardData.get(c.title);
+    if (!old) { cardData.set(c.title, { ...c, fresh: true }); continue; }
+    const rows = [...(old.rows || [])];
+    for (const r of c.rows || []) { const i = rows.findIndex((x) => x[0] === r[0]); if (i >= 0) rows[i] = r; else rows.push(r); }
+    cardData.set(c.title, { ...old, rows, table: c.table || old.table, fresh: true });
+  }
+  renderCards();
+}
+function renderCards() {
+  const box = $("cards"); box.innerHTML = "";
+  $("cardsWrap").style.display = cardData.size ? "block" : "none";
+  for (const c of cardData.values()) {
+    const el = document.createElement("div"); el.className = "acard" + (c.fresh ? " fresh" : ""); c.fresh = false;
+    const h = document.createElement("div"); h.className = "ctitle"; h.textContent = c.title; el.appendChild(h);
+    for (const [k, v] of c.rows || []) {
+      const row = document.createElement("div"); row.className = "kvrow";
+      const a = document.createElement("span"); a.textContent = k;
+      const b = document.createElement("strong"); b.textContent = v;
+      row.append(a, b); el.appendChild(row);
+    }
+    if (c.table) {
+      const t = document.createElement("table"); t.className = "data";
+      if (c.table.title) { const cap = document.createElement("caption"); cap.textContent = c.table.title; t.appendChild(cap); }
+      const head = document.createElement("tr");
+      for (const col of c.table.columns) { const th = document.createElement("th"); th.textContent = col; head.appendChild(th); }
+      t.appendChild(head);
+      for (const r of c.table.rows) {
+        const tr = document.createElement("tr");
+        for (const cell of r) { const td = document.createElement("td"); td.textContent = cell; tr.appendChild(td); }
+        t.appendChild(tr);
+      }
+      el.appendChild(t);
+    }
+    box.appendChild(el);
+  }
+}
+function clearCards() { cardData = new Map(); renderCards(); }
+
+// ---------------- status / transcript ----------------
+function render() {
+  let s = serverState;
+  if (s === "speaking" && !playing && queue.length === 0 && pending === 0) s = "preparing";
+  $("stateText").textContent = STATES[s] || s;
+  $("dot").className = "dot " + (s === "preparing" ? "thinking" : s);
+  $("slow").style.display = (s === "preparing" || s === "thinking") ? "block" : "none";
+}
+function addMsg(role, text, part) {
+  const log = $("log"); log.querySelector(".empty")?.remove();
+  const d = document.createElement("div"); d.className = "msg " + role;
+  d.innerHTML = `<small>${role === "agent" ? "Ria (AI assistant)" : "You" + (part > 1 ? " · part " + part : "")}</small>`;
+  d.appendChild(document.createTextNode(text)); log.appendChild(d); log.scrollTop = log.scrollHeight;
+}
+
+// ---------------- playback ----------------
+async function enqueue(b64) {
+  pending++;
+  try {
+    const bin = atob(b64), bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    queue.push(await ctx.decodeAudioData(bytes.buffer));
+  } finally { pending--; }
+  pump();
+}
+function pump() {
+  if (playing) return;
+  const buf = queue.shift();
+  if (!buf) { render(); maybeDone(); return; }
+  playing = true; render();
+  const src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination);
+  src.onended = () => { playing = false; pump(); };
+  src.start();
+}
+function maybeDone() {
+  if (turnEnded && !playing && queue.length === 0 && pending === 0) {
+    turnEnded = false;
+    setTimeout(() => ws && ws.readyState === 1 && ws.send(JSON.stringify({ type: "playback_done" })), 500); // let the speaker tail fade
+  }
+}
+
+// ---------------- microphone: downsample to 16 kHz mono PCM16 ----------------
+const workletSrc = `
+class PCM extends AudioWorkletProcessor {
+  constructor() { super(); this.ratio = sampleRate / 16000; this.pos = 0; this.acc = 0; this.n = 0; this.out = []; }
+  process(inputs) {
+    const ch = inputs[0][0]; if (!ch) return true;
+    for (let i = 0; i < ch.length; i++) {
+      this.acc += ch[i]; this.n++; this.pos += 1;
+      if (this.pos >= this.ratio) { this.pos -= this.ratio; this.out.push(this.acc / this.n); this.acc = 0; this.n = 0; }
+    }
+    if (this.out.length >= 1280) {
+      const pcm = new Int16Array(this.out.length);
+      for (let j = 0; j < pcm.length; j++) pcm[j] = Math.max(-1, Math.min(1, this.out[j])) * 32767;
+      this.port.postMessage(pcm.buffer, [pcm.buffer]); this.out = [];
+    }
+    return true;
+  }
+}
+registerProcessor("pcm16", PCM);`;
+
+async function startMic() {
+  micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false, channelCount: 1 } });
+  await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([workletSrc], { type: "application/javascript" })));
+  const src = ctx.createMediaStreamSource(micStream);
+  node = new AudioWorkletNode(ctx, "pcm16");
+  node.port.onmessage = (e) => { if (ws && ws.readyState === 1) ws.send(e.data); };
+  const mute = ctx.createGain(); mute.gain.value = 0;     // keeps the graph running without echoing the mic
+  src.connect(node); node.connect(mute); mute.connect(ctx.destination);
+}
+
+// ---------------- call ----------------
+async function startCall() {
+  $("callBtn").disabled = true; serverState = "connecting"; render();
+  try {
+    const h = await (await fetch("/api/health")).json();
+    if (!h.voicestudio) { banner("VoiceStudio is not running, so the agent cannot speak. Start it first, then try again."); throw new Error("no voicestudio"); }
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    await startMic();
+  } catch (e) {
+    if (e.name === "NotAllowedError") banner("Microphone permission was denied. Allow it in the browser and try again.");
+    else if (e.message !== "no voicestudio") banner("Could not start the microphone: " + e.message);
+    serverState = "idle"; render(); $("callBtn").disabled = false; return;
+  }
+  ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws/call");
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type: "start" }));
+    $("callBtn").textContent = "End call"; $("callBtn").classList.add("live"); $("callBtn").disabled = false;
+    t0 = Date.now(); timerId = setInterval(() => {
+      const s = Math.floor((Date.now() - t0) / 1000);
+      $("timer").textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+    }, 500);
+  };
+  ws.onmessage = (ev) => {
+    const m = JSON.parse(ev.data);
+    if (m.type === "status") { serverState = m.state; render(); }
+    else if (m.type === "transcript") addMsg(m.role, m.text, m.part);
+    else if (m.type === "form") applyForm(m.values, m.changed, m.flags, m.confirmed);
+    else if (m.type === "call") callId = m.id;
+    else if (m.type === "cards") mergeCards(m.cards);
+    else if (m.type === "call_complete") { serverState = "complete"; micStream?.getTracks().forEach((t) => t.stop()); render(); }
+    else if (m.type === "saved") {
+      const ref = m.ticket && m.ticket.id ? ` (reference ${m.ticket.id})` : "";
+      $("savedNote").textContent = `The call ended. Everything said so far has been saved${ref}. Review the form and press Submit to confirm it.`;
+      $("savedNote").style.display = m.status === "partial" ? "block" : "none";
+      if (savedResolve) savedResolve();
+    }
+    else if (m.type === "agent_audio") enqueue(m.data);
+    else if (m.type === "turn_end") { turnEnded = true; maybeDone(); }
+    else if (m.type === "error") banner(m.message);
+  };
+  ws.onclose = () => { if (ws) endCall(); };
+}
+async function hangUp() {
+  if (ws && ws.readyState === 1) {
+    $("callBtn").disabled = true;
+    try { ws.send(JSON.stringify({ type: "end" })); } catch (e) {}
+    await new Promise((res) => { savedResolve = res; setTimeout(res, 4000); });   // the server saves, then confirms
+    savedResolve = null;
+  }
+  endCall();
+}
+function endCall() {
+  if (ws && ws.readyState <= 1) ws.close();
+  ws = null; clearInterval(timerId);
+  micStream?.getTracks().forEach((t) => t.stop()); micStream = null;
+  node?.disconnect(); node = null; ctx?.close(); ctx = null;
+  queue = []; playing = false; pending = 0; turnEnded = false; clearCards();
+  if (serverState !== "idle") serverState = "ended";
+  $("callBtn").textContent = "Call"; $("callBtn").classList.remove("live"); $("callBtn").disabled = false; render();
+}
+$("callBtn").onclick = () => (ws ? hangUp() : startCall());
+
+buildForm(); render();
+fetch("/api/health").then((r) => r.json()).then((h) => {
+  if (!h.voicestudio) banner("VoiceStudio is not running — the agent cannot speak until it is started.");
+  if (!h.whisper) banner("Speech recognition is still loading; the first call may start slowly.");
+}).catch(() => banner("Cannot reach the server."));
+</script>
+</body>
+</html>

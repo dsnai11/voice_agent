@@ -1,0 +1,20 @@
+# real data and call records: never upload
+calls/
+company.db
+company_data.xlsx
+*_pending.csv
+audio_cache/
+audio_library/
+~$*
+
+# generated files
+__pycache__/
+*.pyc
+*.log
+kaggle/ria_app/
+kaggle/ria_app.zip
+ria_handover.zip
+
+# secrets
+.env
+*.key
