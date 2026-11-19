@@ -54,6 +54,18 @@ def chunks(text: str) -> list:
     return [p for p in parts if len(tokens(p)) >= 2 or any(len(t) >= 3 for t in tokens(p))]
 
 
+def _has_any(low: str, words) -> bool:
+    """True if any of the words appears in the (lower-case) text as a whole word. Entries use this for 'require' and 'forbid'."""
+    for w in words:
+        w = w.lower()
+        if w.isascii():
+            if re.search(r"(?<![a-z0-9])" + re.escape(w) + r"(?![a-z0-9])", low):
+                return True
+        elif w in low:
+            return True
+    return False
+
+
 class _Bank:
     def __init__(self, path: str = BANK_PATH):
         with open(path, encoding="utf-8") as f:
@@ -77,8 +89,15 @@ class _Bank:
         """(entry, score) for the best example of one chunk, or (None, 0)."""
         ct = set(tokens(text))
         top, top_score = None, 0.0
+        low = text.lower()
         for entry, ex in self.rows:
+            if entry.get("require") and not _has_any(low, entry["require"]):      # "NACH kya hota hai" must not get the EMI answer
+                continue
+            if entry.get("forbid") and _has_any(low, entry["forbid"]):
+                continue
             s = self.score(ct, ex)
+            if entry.get("require"):                                              # the question names the exact topic: prefer it over a generic entry
+                s *= 1.2
             if s > top_score:
                 top, top_score = entry, s
         return top, top_score

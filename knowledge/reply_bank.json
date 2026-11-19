@@ -314,13 +314,21 @@
    "id": "interest_rate",
    "topic": "interest rate",
    "examples": [
-    "interest kitna lagega",
     "byaaj kitna hai",
-    "rate of interest kya hai",
-    "kitne percent pe milega",
+    "exact rate batao",
+    "interest kitna lagega",
     "interest rate batao",
-    "sabse kam interest kitna",
-    "interest zyada hoga"
+    "interest rate kitna rahega mere liye",
+    "interest zyada hoga",
+    "kitna rate lagega mujhe",
+    "kitne percent par loan milega",
+    "kitne percent pe milega",
+    "mera exact interest rate kya hoga",
+    "mera rate kya hoga",
+    "mujhe kitne percent interest lagega",
+    "mujhe kitne percent par milega",
+    "rate of interest kya hai",
+    "sabse kam interest kitna"
    ],
    "reply": "जी, इंटरेस्ट आपकी प्रोफ़ाइल पर निर्भर करता है, इसलिए मैं अभी सही नंबर नहीं बता सकती। टीम आपको एग्ज़ैक्ट रेट बता देगी, क्या कॉलबैक लगा दूँ?",
    "note": "Never quote or guess a rate."
@@ -354,10 +362,16 @@
    "id": "prepayment",
    "topic": "part payment or early closure charges",
    "examples": [
-    "loan jaldi band kar sakta hoon",
     "foreclosure charge kitna hai",
+    "foreclosure kya hota hai",
+    "loan jaldi band kar sakta hoon",
+    "loan jaldi band karna ho to kya karna padega",
+    "loan jaldi khatam karna hai",
+    "loan pehle close karna hai",
+    "part payment kaise kare",
     "part payment kar sakta hoon",
     "pehle hi chuka du to penalty",
+    "poora loan ek saath bhar du to",
     "prepayment charges kya hain"
    ],
    "reply": "जी, लोन जल्दी बंद करने पर चार्ज लगता है, पर उसका सही अमाउंट टीम बताएगी। मैं कॉलबैक नोट कर लेती हूँ, किस टाइम पर करवाऊँ?",
@@ -795,12 +809,22 @@
     "tum log kaun si company ho",
     "company ka naam kya hai",
     "about your company",
-    "company kab se hai",
     "company ke bare me kuch batao",
     "kya aap nbfc ho"
    ],
    "reply": "जी, लक्ष्मी इंडिया फाइनेंस लिमिटेड जयपुर की एक नॉन-बैंकिंग फाइनेंस कंपनी है। हम पर्सनल, बिज़नेस, व्हीकल और प्रॉपर्टी जैसे कई तरह के लोन देते हैं।",
-   "note": "Only public company facts; never claim awards, ratings, sizes or years."
+   "note": "Only public company facts; never claim awards, ratings, sizes or years.",
+   "forbid": [
+    "turnover",
+    "profit",
+    "revenue",
+    "ceo",
+    "malik",
+    "owner",
+    "purani",
+    "valuation",
+    "kab se"
+   ]
   },
   {
    "id": "office_address",
@@ -843,7 +867,15 @@
     "cibil ka matlab batao",
     "cibil score kya hai samjhao"
    ],
-   "reply": "जी, सिबिल स्कोर 300 से 900 के बीच का एक नंबर होता है, जो बताता है कि आपने पहले के लोन कितने समय पर चुकाए। स्कोर अच्छा हो तो लोन मिलने में मदद होती है।"
+   "reply": "जी, सिबिल स्कोर 300 से 900 के बीच का एक नंबर होता है, जो बताता है कि आपने पहले के लोन कितने समय पर चुकाए। स्कोर अच्छा हो तो लोन मिलने में मदद होती है।",
+   "require": [
+    "cibil",
+    "civil",
+    "credit score",
+    "score",
+    "सिबिल",
+    "bureau"
+   ]
   },
   {
    "id": "cibil_required",
@@ -858,7 +890,14 @@
     "cibil score kitna hona chahiye"
    ],
    "reply": "जी, पर्सनल लोन के लिए आमतौर पर 650 या उससे ऊपर का सिबिल स्कोर अच्छा माना जाता है, पर फ़ैसला आपकी पूरी प्रोफ़ाइल देखकर टीम करती है।",
-   "note": "Never promise approval."
+   "note": "Never promise approval.",
+   "require": [
+    "cibil",
+    "civil",
+    "credit score",
+    "score",
+    "सिबिल"
+   ]
   },
   {
    "id": "what_is_emi",
@@ -870,7 +909,13 @@
     "emi ka matlab batao",
     "emi kya hoti hai"
    ],
-   "reply": "जी, ईएमआई वो तय रकम है जो आप हर महीने लोन चुकाने के लिए देते हैं, जिसमें मूल रकम और इंटरेस्ट दोनों शामिल होते हैं।"
+   "reply": "जी, ईएमआई वो तय रकम है जो आप हर महीने लोन चुकाने के लिए देते हैं, जिसमें मूल रकम और इंटरेस्ट दोनों शामिल होते हैं।",
+   "require": [
+    "emi",
+    "ईएमआई",
+    "kist",
+    "किस्त"
+   ]
   },
   {
    "id": "small_talk",
@@ -884,7 +929,17 @@
     "kaisi ho aap",
     "kya chal raha hai"
    ],
-   "reply": "मैं ठीक हूँ जी, शुक्रिया। बताइए, मैं आपकी क्या मदद कर सकती हूँ?"
+   "reply": "मैं ठीक हूँ जी, शुक्रिया। बताइए, मैं आपकी क्या मदद कर सकती हूँ?",
+   "require": [
+    "kaise ho",
+    "kaisi ho",
+    "kaisa ho",
+    "how are",
+    "haal",
+    "kya chal",
+    "theek ho",
+    "aap theek"
+   ]
   },
   {
    "id": "more_to_discuss",
@@ -947,6 +1002,510 @@
     "kyun puch rahe ho ye sab"
    ],
    "reply": "जी, ये जानकारी सिर्फ़ इसलिए चाहिए कि टीम आपके लिए सही लोन ऑप्शन देख सके। जो आप न बताना चाहें, उसे छोड़ सकते हैं।"
+  },
+  {
+   "id": "what_is_apr",
+   "topic": "what is APR",
+   "examples": [
+    "apr kya hota hai",
+    "apr matlab",
+    "annual percentage rate kya hai",
+    "apr aur interest rate me kya fark hai",
+    "apr kya hai"
+   ],
+   "require": [
+    "apr",
+    "annual percentage"
+   ],
+   "reply": "जी, एपीआर यानी सालाना कुल लागत। इसमें इंटरेस्ट के साथ फ़ीस और बाकी चार्ज भी जुड़े होते हैं, इसलिए दो लोन की तुलना एपीआर से करना सबसे सही रहता है।"
+  },
+  {
+   "id": "flat_vs_reducing",
+   "topic": "flat vs reducing interest",
+   "examples": [
+    "flat aur reducing me kaun sa sasta hai",
+    "flat interest kya hota hai",
+    "flat rate aur reducing rate me kya difference hai",
+    "flat rate aur reducing rate me kya fark hai",
+    "flat vs reducing interest",
+    "reducing balance kya hota hai",
+    "reducing rate kya hota hai"
+   ],
+   "require": [
+    "flat",
+    "reducing",
+    "ghatta"
+   ],
+   "reply": "जी, फ़्लैट रेट में इंटरेस्ट पूरी शुरुआती रकम पर लगता है, जबकि रिड्यूसिंग में सिर्फ़ बची हुई रकम पर। इसलिए उतने ही प्रतिशत पर रिड्यूसिंग सस्ता पड़ता है।"
+  },
+  {
+   "id": "what_is_kyc",
+   "topic": "what is KYC",
+   "examples": [
+    "kyc kya hota hai",
+    "kyc kyon zaroori hai",
+    "kyc matlab",
+    "kyc kya hai",
+    "kyc kaise hota hai"
+   ],
+   "require": [
+    "kyc",
+    "केवाईसी"
+   ],
+   "reply": "जी, केवाईसी का मतलब है अपनी पहचान और पते का सबूत देना, जैसे आधार, पैन, पासपोर्ट या वोटर आईडी। ये हर लोन के लिए नियमों के हिसाब से ज़रूरी होता है।"
+  },
+  {
+   "id": "what_is_nach",
+   "topic": "NACH / auto-debit",
+   "examples": [
+    "nach kya hota hai",
+    "e mandate kya hai",
+    "auto debit kya hota hai",
+    "emi auto debit kaise hoti hai",
+    "nach kya hai"
+   ],
+   "require": [
+    "nach",
+    "mandate",
+    "auto debit",
+    "autodebit",
+    "auto-debit",
+    "ecs",
+    "एनएसीएच"
+   ],
+   "reply": "जी, एनएसीएच एक ऑटो-डेबिट सुविधा है, जिससे आपकी ईएमआई हर महीने तय तारीख़ पर बैंक अकाउंट से अपने आप कट जाती है। उस दिन अकाउंट में बैलेंस रखना ज़रूरी है।"
+  },
+  {
+   "id": "emi_bounce_effect",
+   "topic": "what happens if an EMI bounces or is missed",
+   "examples": [
+    "agar emi bounce ho jaye to kya hoga",
+    "emi nahi bhari to kya hoga",
+    "emi miss ho gayi to kya hoga",
+    "emi late hone par kya hota hai",
+    "emi bounce hone se kya hota hai",
+    "agar emi time par na bhar paya to kya hoga"
+   ],
+   "require": [
+    "bounce",
+    "miss",
+    "late",
+    "nahi bhar",
+    "default",
+    "na bhar"
+   ],
+   "reply": "जी, ईएमआई बाउंस या लेट होने पर चार्ज लग सकता है और आपके सिबिल स्कोर पर बुरा असर पड़ सकता है। इसलिए ड्यू डेट से पहले अकाउंट में बैलेंस रखिए, और कोई दिक्कत हो तो कलेक्शंस टीम से बात करवा देती हूँ।"
+  },
+  {
+   "id": "what_is_fd",
+   "topic": "what is FD",
+   "examples": [
+    "fd kya hoti hai",
+    "fixed deposit kya hota hai",
+    "fd matlab",
+    "fd kya hota hai",
+    "fd kaise karte hain"
+   ],
+   "require": [
+    "fd",
+    "fixed deposit"
+   ],
+   "reply": "जी, एफडी यानी फ़िक्स्ड डिपॉज़िट में आप एक रकम तय समय के लिए तय रेट पर बैंक में रखते हैं। उस समय के बाद रकम ब्याज के साथ वापस मिलती है।"
+  },
+  {
+   "id": "what_is_rd",
+   "topic": "what is RD",
+   "examples": [
+    "rd kya hota hai",
+    "recurring deposit kya hai",
+    "rd kya hoti hai"
+   ],
+   "require": [
+    "rd",
+    "recurring"
+   ],
+   "reply": "जी, आरडी यानी रिकरिंग डिपॉज़िट में आप हर महीने एक तय रकम बैंक में जमा करते हैं, और तय समय के बाद ब्याज के साथ पूरी रकम मिलती है।"
+  },
+  {
+   "id": "what_is_guarantor",
+   "topic": "guarantor vs co-applicant",
+   "examples": [
+    "co applicant kya hota hai",
+    "gaurantor kya hota hai",
+    "guarantor aur co applicant me kya difference hai",
+    "guarantor aur co applicant me kya fark hai",
+    "guarantor kya hota hai"
+   ],
+   "require": [
+    "guarantor",
+    "co applicant",
+    "co-applicant",
+    "coapplicant",
+    "gaurantor",
+    "guarantee"
+   ],
+   "reply": "जी, को-एप्लिकेंट लोन और उसकी ईएमआई में बराबर का साझेदार होता है, जबकि गारंटर सिर्फ़ तब चुकाता है जब मुख्य कर्ज़दार न चुका पाए।"
+  },
+  {
+   "id": "secured_vs_unsecured",
+   "topic": "secured vs unsecured loan",
+   "examples": [
+    "secured aur unsecured loan me kya difference hai",
+    "secured aur unsecured loan me kya fark hai",
+    "secured loan aur unsecured loan me difference batao",
+    "secured loan kya hota hai",
+    "secured unsecured difference",
+    "secured vs unsecured loan",
+    "unsecured loan kya hota hai"
+   ],
+   "require": [
+    "secured",
+    "unsecured"
+   ],
+   "reply": "जी, सिक्योर्ड लोन में घर, सोना या गाड़ी जैसी चीज़ गिरवी रखी जाती है, इसलिए इंटरेस्ट कम होता है। अनसिक्योर्ड, जैसे पर्सनल लोन, में कुछ गिरवी नहीं रखना पड़ता।"
+  },
+  {
+   "id": "nbfc_vs_bank",
+   "topic": "NBFC vs bank",
+   "examples": [
+    "aap bank ho ya nbfc",
+    "nbfc aur bank me kya difference hai",
+    "nbfc aur bank me kya fark hai",
+    "nbfc bank se kaise alag hai",
+    "nbfc kya hai",
+    "nbfc kya hota hai",
+    "nbfc vs bank"
+   ],
+   "require": [
+    "nbfc",
+    "एनबीएफसी"
+   ],
+   "reply": "जी, एनबीएफसी यानी नॉन-बैंकिंग फ़ाइनेंस कंपनी लोन देती है, पर वो बैंक की तरह सेविंग्स अकाउंट नहीं खोल सकती। लक्ष्मी इंडिया फ़ाइनेंस एक एनबीएफसी है।"
+  },
+  {
+   "id": "upi_neft",
+   "topic": "UPI / NEFT / IMPS / RTGS",
+   "examples": [
+    "imps kya hota hai",
+    "neft imps rtgs me kya fark hai",
+    "neft kya hai",
+    "rtgs kya hota hai",
+    "upi aur neft me kya difference hai",
+    "upi aur neft me kya fark hai",
+    "upi kya hai"
+   ],
+   "require": [
+    "upi",
+    "neft",
+    "rtgs",
+    "imps"
+   ],
+   "reply": "जी, यूपीआई और आईएमपीएस तुरंत पैसे भेजते हैं और चौबीस घंटे चलते हैं। एनईएफटी भी चौबीस घंटे चलता है, और आरटीजीएस बड़ी रकम, कम से कम दो लाख रुपये, के लिए होता है। लिमिट हर बैंक की अलग होती है।"
+  },
+  {
+   "id": "free_credit_report",
+   "topic": "free credit report",
+   "examples": [
+    "free credit report kaise milti hai",
+    "cibil report free me kaise nikale",
+    "credit report kahan se milegi",
+    "free cibil score kaise check kare",
+    "apna credit score kaise check kare"
+   ],
+   "require": [
+    "credit report",
+    "cibil report",
+    "civil report",
+    "free score",
+    "free cibil",
+    "score check",
+    "score kaise check",
+    "report kaise"
+   ],
+   "reply": "जी, चारों क्रेडिट ब्यूरो, यानी सिबिल, एक्सपीरियन, इक्विफ़ैक्स और सीआरआईएफ़, हर साल एक बार पूरी क्रेडिट रिपोर्ट मुफ़्त देते हैं। अपना स्कोर खुद देखने से स्कोर कम नहीं होता।"
+  },
+  {
+   "id": "improve_cibil",
+   "topic": "how to improve credit score",
+   "examples": [
+    "cibil score kaise badhaye",
+    "credit score kaise sudhare",
+    "cibil score improve kaise kare",
+    "score kaise badhta hai",
+    "cibil kaise theek kare",
+    "credit score badhane ke tarike"
+   ],
+   "require": [
+    "cibil",
+    "civil",
+    "credit score",
+    "score",
+    "सिबिल"
+   ],
+   "reply": "जी, स्कोर बढ़ाने के लिए हर ईएमआई और क्रेडिट कार्ड का बिल समय पर भरिए, कार्ड की लिमिट का बहुत कम हिस्सा इस्तेमाल कीजिए, और एक साथ कई जगह लोन के लिए अप्लाई मत कीजिए। असर आने में कुछ महीने लगते हैं।"
+  },
+  {
+   "id": "cooling_off",
+   "topic": "cooling-off period",
+   "examples": [
+    "cooling off period kya hota hai",
+    "loan wapas kar sakte hain kya",
+    "loan lene ke baad cancel kar sakte hain",
+    "look up period kya hai",
+    "loan cancel kaise kare"
+   ],
+   "require": [
+    "cooling",
+    "look up",
+    "lookup",
+    "cancel",
+    "wapas"
+   ],
+   "reply": "जी, डिजिटल लोन में आरबीआई के नियम से एक कूलिंग-ऑफ़ पीरियड मिलता है, जिसमें आप पेनल्टी के बिना मूल रकम और उतने दिन का इंटरेस्ट देकर लोन बंद कर सकते हैं। सही दिन और शर्तें टीम कन्फ़र्म करेगी।"
+  },
+  {
+   "id": "report_fraud",
+   "topic": "how to report fraud",
+   "examples": [
+    "fraud call aaye to kahan complaint karun",
+    "online fraud ho gaya kahan report karu",
+    "scam call aaye to kya kare",
+    "cyber fraud complaint kahan kare",
+    "thagi ho gayi kya kare"
+   ],
+   "require": [
+    "fraud",
+    "scam",
+    "cyber",
+    "thagi",
+    "dhokha",
+    "dhoka"
+   ],
+   "reply": "जी, ऑनलाइन फ़्रॉड हो जाए तो तुरंत अपने बैंक को बताइए और साइबर क्राइम हेल्पलाइन, एक नौ तीन शून्य, पर कॉल कीजिए। कभी भी ओटीपी या पिन किसी से साझा मत कीजिए।"
+  },
+  {
+   "id": "deposit_safe",
+   "topic": "are bank deposits safe, DICGC",
+   "examples": [
+    "bank me paisa safe hai kya",
+    "deposit insured hota hai kya",
+    "dicgc kya hai",
+    "bank deposit safe hai kya",
+    "bank doob jaye to paisa milega"
+   ],
+   "require": [
+    "deposit",
+    "dicgc",
+    "bank me paisa",
+    "bank mein paisa",
+    "bank doob"
+   ],
+   "reply": "जी, बैंक में जमा रकम डीआईसीजीसी की तरफ़ से प्रति जमाकर्ता, प्रति बैंक पाँच लाख रुपये तक सुरक्षित होती है। एनबीएफसी के डिपॉज़िट पर ये बीमा नहीं मिलता।"
+  },
+  {
+   "id": "gold_loan_info",
+   "topic": "what is a gold loan",
+   "examples": [
+    "gold loan kya hota hai",
+    "sone par loan kaise milta hai",
+    "gold loan kaise milta hai"
+   ],
+   "require": [
+    "gold",
+    "sona",
+    "sone"
+   ],
+   "reply": "जी, गोल्ड लोन में आप अपना सोना गिरवी रखकर लोन लेते हैं। ये जल्दी मिल जाता है और पेपरवर्क कम होता है। हमारे यहाँ इसकी डिटेल टीम कन्फ़र्म करेगी।"
+  },
+  {
+   "id": "lap_info",
+   "topic": "what is loan against property",
+   "examples": [
+    "loan against property kya hota hai",
+    "property par loan kaise milta hai",
+    "lap loan kya hai",
+    "ghar par loan milta hai kya"
+   ],
+   "require": [
+    "property",
+    "lap",
+    "makaan",
+    "ghar par",
+    "ghar ke badle"
+   ],
+   "reply": "जी, लोन अगेंस्ट प्रॉपर्टी में आप अपनी प्रॉपर्टी गिरवी रखकर बड़ी रकम और लंबे समय का लोन ले सकते हैं, और इंटरेस्ट अक्सर पर्सनल लोन से कम होता है। हमारी टीम इसकी जानकारी देगी।"
+  },
+  {
+   "id": "card_vs_loan",
+   "topic": "credit card vs personal loan",
+   "examples": [
+    "credit card ya personal loan kaun sa better hai",
+    "credit card aur personal loan me kya fark hai",
+    "credit card se loan lena chahiye ya personal loan"
+   ],
+   "require": [
+    "credit card",
+    "card"
+   ],
+   "reply": "जी, क्रेडिट कार्ड छोटे और बार-बार के खर्च के लिए ठीक है, पर समय पर पूरा बिल न भरें तो उसका इंटरेस्ट ज़्यादा लगता है। बड़ी रकम के लिए पर्सनल लोन की तय ईएमआई आसान रहती है।"
+  },
+  {
+   "id": "what_is_overdraft",
+   "topic": "what is an overdraft",
+   "examples": [
+    "overdraft kya hota hai",
+    "overdraft kaise kaam karta hai"
+   ],
+   "require": [
+    "overdraft",
+    "od limit"
+   ],
+   "reply": "जी, ओवरड्राफ़्ट में बैंक आपके अकाउंट पर एक लिमिट देता है, जिसमें से आप ज़रूरत के हिसाब से पैसे निकाल सकते हैं, और ब्याज सिर्फ़ इस्तेमाल की गई रकम पर लगता है।"
+  },
+  {
+   "id": "what_is_moratorium",
+   "topic": "what is a moratorium / EMI holiday",
+   "examples": [
+    "moratorium kya hota hai",
+    "emi holiday kya hai",
+    "emi chhutti milti hai kya"
+   ],
+   "require": [
+    "moratorium",
+    "holiday",
+    "chhutti"
+   ],
+   "reply": "जी, मोराटोरियम वो समय होता है जब लोन की शुरुआत में ईएमआई नहीं देनी पड़ती, या सिर्फ़ इंटरेस्ट देना होता है। हमारे यहाँ ये मिलेगा या नहीं, टीम कन्फ़र्म करेगी।"
+  },
+  {
+   "id": "net_amount",
+   "topic": "how much comes in hand after fees",
+   "examples": [
+    "processing fee katne ke baad kitna milega",
+    "hath me kitna paisa aayega",
+    "fees kat kar kitna milega",
+    "haath me kitni rakam aayegi"
+   ],
+   "require": [
+    "kat",
+    "hath",
+    "haath",
+    "hand",
+    "net amount",
+    "katega",
+    "kat ke"
+   ],
+   "reply": "जी, प्रोसेसिंग फ़ीस और टैक्स सैंक्शन रकम में से कटकर आ सकते हैं, इसलिए हाथ में आने वाली रकम थोड़ी कम हो सकती है। सारे चार्ज और असली रकम टीम आपको पहले ही साफ़ बता देगी।"
+  },
+  {
+   "id": "docs_why",
+   "topic": "why so many documents",
+   "examples": [
+    "itne documents kyun maangte ho",
+    "documents kyun chahiye",
+    "ye documents kis liye",
+    "itne kagaz kyun chahiye",
+    "documents kyu lagte hain"
+   ],
+   "require": [
+    "kyun",
+    "kyu",
+    "kis liye",
+    "kisliye",
+    "why",
+    "kyon"
+   ],
+   "reply": "जी, हर डॉक्यूमेंट से आपकी पहचान, पते और इनकम की जाँच होती है, जो नियमों के हिसाब से ज़रूरी है। इससे लोन सही और सुरक्षित तरीके से प्रोसेस हो पाता है।"
+  },
+  {
+   "id": "invest_advice",
+   "topic": "investment advice (not given)",
+   "examples": [
+    "mutual fund me paisa lagana chahiye kya",
+    "share market me invest kare",
+    "kahan invest karun",
+    "sip kaisa rahega",
+    "stock kharidna chahiye kya"
+   ],
+   "require": [
+    "invest",
+    "mutual",
+    "sip",
+    "share market",
+    "stock",
+    "shares",
+    "nivesh"
+   ],
+   "reply": "जी, निवेश की सलाह मैं नहीं दे सकती, इसके लिए आप किसी रजिस्टर्ड फ़ाइनेंशियल सलाहकार से मिलिए। मैं लोन और उससे जुड़ी जानकारी में आपकी मदद कर सकती हूँ।"
+  },
+  {
+   "id": "tax_advice",
+   "topic": "tax advice (not given)",
+   "examples": [
+    "tax kaise bachana chahiye",
+    "itr kaise bhare",
+    "gst kya hota hai",
+    "income tax kaise bachaye"
+   ],
+   "require": [
+    "itr",
+    "tax saving",
+    "tax bachana",
+    "tax kaise",
+    "gst kya",
+    "income tax",
+    "tax bachane"
+   ],
+   "reply": "जी, टैक्स से जुड़ी सलाह मैं नहीं दे सकती, इसके लिए आप किसी सीए या टैक्स सलाहकार से पूछिए। लोन की जानकारी में मैं आपकी मदद कर सकती हूँ।"
+  },
+  {
+   "id": "live_rates_unknown",
+   "topic": "daily-changing market data (not known)",
+   "examples": [
+    "rbi ne aaj repo rate kitna kiya",
+    "repo rate kya hai",
+    "aaj ka sone ka bhav kya hai",
+    "sensex kitna hai",
+    "dollar ka rate kya hai",
+    "petrol ka rate"
+   ],
+   "require": [
+    "repo",
+    "sensex",
+    "nifty",
+    "dollar",
+    "bhav",
+    "petrol",
+    "rupee rate"
+   ],
+   "reply": "जी, ऐसी रोज़ बदलने वाली जानकारी मेरे पास अभी नहीं है, इसलिए पक्का नहीं बता सकती। इसके लिए आरबीआई की वेबसाइट या न्यूज़ देख लीजिए।"
+  },
+  {
+   "id": "company_facts_unknown",
+   "topic": "company numbers the assistant does not know",
+   "examples": [
+    "company ka turnover kitna hai",
+    "company ka profit kitna hai",
+    "company kitni purani hai",
+    "company ka malik kaun hai",
+    "ceo kaun hai",
+    "company kab se hai",
+    "company ke kitne employees hain"
+   ],
+   "require": [
+    "turnover",
+    "profit",
+    "revenue",
+    "ceo",
+    "malik",
+    "owner",
+    "purani",
+    "kab se",
+    "employees",
+    "karmchari",
+    "valuation"
+   ],
+   "reply": "जी, इस बारे में मुझे अभी पक्की जानकारी नहीं है, मैं इसे टीम से कन्फ़र्म करवा दूँगी।"
   }
  ]
 }

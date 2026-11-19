@@ -27,7 +27,9 @@ FREE_RULES = ("तुम रिया हो, लक्ष्मी इंडि
               "- कंपनी, लोन के नियम, दस्तावेज़, चार्ज, सिबिल, ईएमआई वगैरह के बारे में सिर्फ़ नीचे लिखे तथ्यों और सामान्य, सरल समझाइश से जवाब दो। जो तथ्यों में नहीं है, उसके लिए साफ़ कहो कि टीम कन्फ़र्म करेगी। कोई नंबर, रेट, फ़ीस या तारीख़ अपनी तरफ़ से मत बनाओ।\n"
               "- लोन पास होने, रेट, लिमिट या समय का कोई वादा मत करो। ओटीपी, पिन, पासवर्ड कभी मत माँगो।\n"
               "- 'कैसे हो', 'धन्यवाद', 'कुछ और बात करनी है' जैसी बातों का छोटा, गर्मजोशी वाला जवाब दो और कहो कि वे बताएँ।\n"
-              "- कॉलर से कोई नई जानकारी (नाम, नंबर, राशि) मत माँगो; वह फ़ॉर्म में अलग से पूछी जाती है।\n")
+              "- कॉलर से कोई नई जानकारी (नाम, नंबर, राशि) मत माँगो; वह फ़ॉर्म में अलग से पूछी जाती है।\n"
+              "- अगर सवाल फ़ाइनेंस या बैंकिंग का है और जवाब नीचे के तथ्यों या सामान्य जानकारी में है, तो पूरा, साफ़ और सरल जवाब दो। अगर पक्का नहीं पता, तो ईमानदारी से कहो: इसके बारे में मुझे अभी पक्का नहीं पता, मैं इसे टीम से कन्फ़र्म करवा दूँगी। अंदाज़ा कभी मत लगाओ।\n"
+              "- अगर सवाल फ़ाइनेंस या बैंकिंग से बिल्कुल अलग है (मौसम, क्रिकेट, राजनीति, धर्म, फ़िल्म), तो विनम्रता से कहो कि तुम सिर्फ़ लोन और फ़ाइनेंस में मदद कर सकती हो।\n")
 COMPANY_INFO = ""
 try:
     import os as _os
@@ -35,6 +37,14 @@ try:
         COMPANY_INFO = _f.read().strip()
 except OSError:
     pass
+GENERAL_FINANCE = ""
+try:
+    with open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "knowledge", "general_finance.txt"), encoding="utf-8") as _f:
+        GENERAL_FINANCE = _f.read().strip()
+except OSError:
+    pass
+OFF_LINE = "जी, मैं सिर्फ़ लोन और फाइनेंस से जुड़ी बातों में मदद कर सकती हूँ।"
+UNSURE = "इसके बारे में मुझे अभी पक्का नहीं पता, मैं इसे टीम से कन्फ़र्म करवा दूँगी।"
 
 SLOTS = ["full_name", "loan_type", "loan_amount", "loan_purpose", "employment", "monthly_income", "city", "existing_loans", "existing_emi", "phone", "consent", "callback_time"]
 
@@ -89,7 +99,19 @@ def is_ack_only(text: str) -> bool:
 DOMAIN = {"loan", "lone", "emi", "interest", "byaaj", "byaj", "rate", "cibil", "civil", "score", "credit", "company", "fee", "fees", "charge", "charges", "document",
           "documents", "eligibility", "eligible", "salary", "bank", "payment", "apply", "approval", "approve", "process", "tenure", "paisa", "paise", "rupee", "rupe",
           "rupaye", "lakh", "laakh", "hazaar", "kist", "installment", "penalty", "foreclosure", "prepayment", "insurance", "kyc", "pan", "aadhaar", "aadhar", "branch",
-          "office", "nbfc", "rbi", "limit", "amount", "disbursal", "processing", "payday", "overdraft", "guarantor", "collateral", "security", "safe", "trust", "fraud"}
+          "office", "nbfc", "rbi", "limit", "amount", "disbursal", "processing", "payday", "overdraft", "guarantor", "collateral", "security", "safe", "trust", "fraud",
+          "account", "savings", "current", "fd", "rd", "deposit", "upi", "neft", "rtgs", "imps", "atm", "card", "debit", "cheque", "check", "nach", "mandate", "bounce",
+          "kist", "moratorium", "foreclose", "foreclosure", "closure", "apr", "kfs", "cooling", "ombudsman", "complaint", "grievance", "cibil", "bureau", "experian", "equifax",
+          "insurance", "mutual", "sip", "tax", "gst", "itr", "pan", "aadhaar", "gold", "property", "mortgage", "vehicle", "business", "msme", "scam", "otp", "kyc", "paise",
+          "interest", "sood", "byaj", "karz", "karza", "udhaar", "udhar", "paisa", "rupaya", "rupees", "bank", "banks", "lender", "borrower", "credit", "debt", "dicgc", "nbfcs"}
+OFFTOPIC = {"mausam", "weather", "cricket", "match", "movie", "film", "gaana", "song", "khana", "restaurant", "news", "politics", "neta", "election", "modi", "bhagwan", "dharm", "god",
+            "joke", "chutkula", "shayari", "biwi", "girlfriend", "boyfriend", "pyaar", "love", "football", "ipl", "weather", "barish", "rain", "hotel", "flight", "ticket"}
+
+
+def offtopic_like(text: str) -> bool:
+    """Clearly not about money: weather, cricket, politics, jokes ... (she politely says she only helps with loans and finance)."""
+    w = set(_words(text))
+    return bool(w & OFFTOPIC) and not (w & DOMAIN)
 
 
 def domain_like(text: str) -> bool:
@@ -270,6 +292,7 @@ def static_sentences() -> list:
         out += qs
     out += ACKS
     out += list(EXAMPLES.values())
+    out.append(OFF_LINE)
     out += ["धन्यवाद, नंबर कन्फ़र्म हो गया।", "ठीक है जी, कोई बात नहीं। कृपया अपना मोबाइल नंबर एक बार फिर, धीरे-धीरे बोलिए।",
             "माफ़ कीजिए, मैं ठीक से समझ नहीं पाई।", "जी, लोन के बारे में मैं आपकी पूरी मदद करूँगी।",
             "कृपया नंबर दोबारा, धीरे-धीरे बोलिए।", "पूरा दस अंकों का नंबर चाहिए।",
@@ -545,6 +568,8 @@ class Flow:
             approved = [m["entry"]["reply"] for m in bank if m["id"] not in LEGACY_IDS][:2]
             if approved:
                 return " ".join(approved)
+            if offtopic_like(text):
+                return OFF_LINE
             answer = self._free(text) if (domain_like(text) or "?" in text) else None
             if answer:
                 return answer
@@ -589,6 +614,9 @@ class Flow:
             if is_ack_only(text):                                        # "ok", "chalo": agreement, not a failure; carry on with the same question
                 self.fails[asked] = -1
                 parts.append(random.choice(ACKS))
+            elif not bank and offtopic_like(text) and asked not in (None, "phone", "phone_confirm"):
+                parts.append(OFF_LINE)                                   # then the form question continues
+                self.fails[asked] = -1
             elif not bank and asked not in (None, "phone", "phone_confirm") and domain_like(text) and looks_like_question(text):
                 answer = self._free(text)                                # a question outside the form: answer it, then continue
                 if answer:
@@ -659,6 +687,19 @@ class Flow:
             return s
         return None
 
+    @staticmethod
+    def _guard_ok(answer: str, question: str, knowledge: str) -> bool:
+        """Runtime check of an AI-written answer before it is spoken: no invented numbers, no promises, no list formatting."""
+        if re.search(r"(^|\s)\d+[.)]\s", answer):                              # "1. ..." lists read badly on a phone
+            return False
+        if re.search(r"गारंटी|पक्का मंज़ूर|पक्का मंजूर|अप्रूव हो जाएगा|मंज़ूर हो जाएगा|मंजूर हो जाएगा|ज़रूर पास", answer):
+            return False
+        allowed = {n.replace(",", "") for n in re.findall(r"\d[\d,]*", knowledge + " " + question)}
+        for n in re.findall(r"\d[\d,]*", answer):
+            if n.replace(",", "").rstrip(".") not in allowed:
+                return False                                                      # a number that is in neither the approved facts nor the caller's own words
+        return True
+
     def _free(self, text: str):
         """A short grounded answer for anything the flow has no answer for (company, loan details, CIBIL, small talk). None on any problem."""
         try:
@@ -668,7 +709,7 @@ class Flow:
             facts = {k: v for k, v in form.items() if k in ("full_name", "category", "reason")}
             facts.update({k: v for k, v in (form.get("details") or {}).items() if not str(k).startswith(("crm_", "identity"))})
             known = ", ".join(f"{k}: {v}" for k, v in facts.items() if v)
-            system = FREE_RULES + brain.KNOWLEDGE + "\n" + COMPANY_INFO + "\nकॉल में अब तक कॉलर ने बताया: " + (known or "कुछ नहीं") + "।"
+            system = FREE_RULES + brain.KNOWLEDGE + "\n" + COMPANY_INFO + "\n" + GENERAL_FINANCE + "\nकॉल में अब तक कॉलर ने बताया: " + (known or "कुछ नहीं") + "।"
             msgs = [{"role": "system", "content": system}]
             for m in self.call.history[1:][-8:]:
                 if m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str) and m["content"] and not m.get("tool_calls"):
@@ -676,20 +717,23 @@ class Flow:
             strong = [m for m in replybank.match(text) if m["score"] >= 0.75]
             guide = replybank.hint(text) if strong else ""
             msgs.append({"role": "user", "content": text + ("\n" + guide if guide else "")})
-            r = brain._llm.chat.completions.create(model=brain.LLM_MODEL, messages=msgs, max_tokens=90, temperature=0.3)
+            r = brain._llm.chat.completions.create(model=brain.LLM_MODEL, messages=msgs, max_tokens=90, temperature=0.3, timeout=9)
             out = voice.sanitize_reply((r.choices[0].message.content or "").strip())
             if r.choices[0].finish_reason == "length":
                 done_sentences = [x for x in voice.split_sentences(out) if x.rstrip()[-1:] in "।.?!"]
                 out = " ".join(done_sentences)
             english = not re.search(r"[ऀ-ॿ]", text) and not re.search(r"\b(hai|hoon|hu|kya|kaise|mujhe|mera|aap|nahi|haan|batao)\b", text.lower())
             if not out or (not english and not re.search(r"[ऀ-ॿ]", out)):
-                return None
+                return UNSURE
+            if not self._guard_ok(out, text, brain.KNOWLEDGE + COMPANY_INFO + GENERAL_FINANCE):
+                print("   [flow] free answer blocked by the guard:", out[:80], flush=True)
+                return UNSURE
             for latin, deva in (("EMI", "ईएमआई"), ("CIBIL", "सिबिल"), ("KYC", "केवाईसी"), ("OTP", "ओटीपी"), ("PAN", "पैन"), ("NBFC", "एनबीएफसी"), ("AI", "एआई")):
                 out = out.replace(latin, deva)
             return " ".join(voice.split_sentences(out)[:2])
         except Exception as e:
             print(f"   [flow] free answer failed: {type(e).__name__}: {e}", flush=True)
-            return None
+            return UNSURE
 
     def _llm_name(self, text: str):
         """A name said in Devanagari must be written in English letters for the form."""

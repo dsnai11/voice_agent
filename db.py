@@ -23,7 +23,7 @@ from datetime import datetime
 import requests
 
 BACKEND = os.environ.get("DATA_BACKEND", "excel").lower()
-EXCEL_PATH = os.environ.get("COMPANY_XLSX", r"C:\Voice-agent\company_data.xlsx")
+EXCEL_PATH = os.environ.get("COMPANY_XLSX", os.path.join(os.path.dirname(os.path.abspath(__file__)), "company_data.xlsx"))   # next to the code (on D:); never a fixed C: path
 
 # >>> EDIT to match your sheet names / column headers (case-insensitive)
 SHEETS = {"customers": "customers", "orders": "orders", "callbacks": "callbacks"}

@@ -24,3 +24,6 @@ ria_handover.zip
 asr_models/
 *.wav
 calls/
+
+testdata/
+logs/

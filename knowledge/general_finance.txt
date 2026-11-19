@@ -1,0 +1,38 @@
+GENERAL FINANCE AND BANKING KNOWLEDGE (public, general facts for explaining things in simple words. These are NOT promises or offers of this company. Where this company's own approved facts say something different, the company facts win. Do not add numbers that are not written here.)
+
+Loans, interest, EMI
+- EMI is a fixed monthly payment made of part principal and part interest. A longer tenure gives a smaller EMI but more total interest paid.
+- Flat rate: interest is charged on the full original loan for the whole tenure. Reducing balance: interest is charged only on what is still outstanding, so it costs less than a flat rate with the same percentage. APR (annual percentage rate) is the full yearly cost of the loan including fees, so it is the fair way to compare offers.
+- Secured loan: backed by something of value (property, gold, vehicle), usually lower interest. Unsecured loan (like most personal loans): no collateral, so interest is usually higher.
+- Co-applicant shares the loan and the repayment. Guarantor promises to repay only if the borrower fails.
+- Moratorium: a period at the start when no EMI (or only interest) is paid. Foreclosure: closing the whole loan early. Part-prepayment: paying some extra amount to reduce the loan.
+- RBI rule: no prepayment penalty on floating-rate loans taken by individuals. Fixed-rate loans can carry a prepayment charge as agreed in the loan terms.
+- Processing fee is a one-time fee, usually a percentage of the loan, with tax added. Any charge must be told to the borrower in advance.
+- Overdraft: a limit on a bank account that can be used and repaid as needed, interest only on the amount used. Gold loan: loan against gold, quick, low paperwork. Loan against property: secured on property, larger amounts, longer tenure. A credit card gives revolving credit and its interest is usually higher than a personal loan if the balance is not paid in full.
+
+RBI protections for borrowers
+- The lender must give a Key Fact Statement (KFS) before the loan: it shows the APR, all charges, the recovery process and the grievance officer. A charge that is not in the KFS cannot be levied later.
+- For digital loans there is a cooling-off (look-up) period, at least one day under the 2025 RBI directions, during which the borrower can exit by repaying the principal and proportionate interest without a penalty; a processing fee disclosed in the KFS may be kept.
+- Credit limits cannot be increased automatically without the borrower's clear consent. Penal charges must be disclosed in advance and are charged only on the overdue amount, not added to the interest rate.
+- Recovery must be polite and within fair practice: calls only between 8 AM and 7 PM, only to the borrower, no threats or harassment.
+- Complaint path: first the lender (toll-free number or branch), the grievance officer, and if there is no reply in 30 days, the RBI Complaint Management portal cms.rbi.org.in under the RBI Integrated Ombudsman Scheme.
+
+Credit score
+- A credit score (CIBIL score) is a 3-digit number from 300 to 900 that summarises how well a person has repaid loans and cards. 750 and above is generally seen as good, but each lender sets its own cut-off. Four RBI-licensed credit bureaus exist: TransUnion CIBIL, Experian, Equifax and CRIF High Mark.
+- Everyone can get one free full credit report every year from each bureau. Checking your own score does not reduce it. A lender's enquiry when applying for a loan can reduce it slightly, and many applications in a short time look risky.
+- What affects it: paying EMIs and card bills on time (most important), how much of the card limit is used (keep it low, around 30 percent or less), how long the credit history is, the mix of loans, and new enquiries.
+- To improve: pay every EMI and bill on time, do not max out cards, do not apply to many lenders at once, and check the report for mistakes and raise a correction request with the bureau. Improvement takes months, not days.
+- A missed or bounced EMI is reported to the bureaus and lowers the score.
+
+KYC, safety and fraud
+- KYC means proving identity and address: Aadhaar, PAN, passport, voter ID or driving licence. A PAN is needed for most loans. Some lenders do KYC by video call.
+- Never share an OTP, PIN, CVV, card number or password with anyone, including someone saying they are from a bank or a finance company. A genuine lender never asks for them.
+- Report online fraud immediately to your bank and on the national cyber crime helpline 1930 or cybercrime.gov.in.
+
+Payments and banking basics
+- NACH or e-mandate: an instruction that lets the EMI be debited automatically from the bank account on the due date. If the balance is short, the debit fails (a bounce), a charge applies and the credit score can suffer, so keep enough balance before the due date.
+- UPI, IMPS and NEFT are bank-to-bank transfer systems that work round the clock; UPI and IMPS are instant, and each bank sets its own limits. RTGS is for large transfers (minimum 2 lakh rupees).
+- Savings account: for everyday money, earns small interest. Current account: for businesses. Fixed deposit (FD): a lump sum kept for a fixed period at a fixed rate. Recurring deposit (RD): a fixed amount deposited every month.
+- Bank deposits are insured up to 5 lakh rupees per depositor per bank by DICGC. An NBFC (non-banking finance company) gives loans but is not a bank: it cannot open savings accounts, and deposits with an NBFC are not covered by that insurance.
+
+When the answer is not here or in the company facts, say you are not sure and that the team will confirm. Never guess a rate, fee, date, limit or rule.
