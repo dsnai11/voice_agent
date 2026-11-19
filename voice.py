@@ -12,7 +12,7 @@ import requests
 VOICESTUDIO_URL = os.environ.get("VOICESTUDIO_URL", "http://localhost:3900")   # GPU server address later
 VOICE_ID = os.environ.get("VOICE_ID", "07c6a52e")                              # "Hindi Narrator"
 VOICE_LANGUAGE = os.environ.get("VOICE_LANGUAGE", "hi")                        # ISO code sent with every request
-VOICE_SPEED = float(os.environ.get("VOICE_SPEED", "0.85"))                     # 1.0 = normal, lower = slower
+VOICE_SPEED = float(os.environ.get("VOICE_SPEED", "1.0"))                     # 1.0 = normal conversation pace (0.85 sounds like a narrator)
 VOICE_NUM_STEP = int(os.environ.get("VOICE_NUM_STEP", "0"))                    # 0 = VoiceStudio's default (16); try 8 to 12 for speed
 LIVE_FORMAT = os.environ.get("VOICE_FORMAT", "wav")                            # live replies: "mp3" is about 10x smaller than "wav" over a slow link
 VOICESTUDIO_API_KEY = os.environ.get("VOICESTUDIO_API_KEY", "")               # set when VoiceStudio runs on a remote GPU (Kaggle, a rented server)

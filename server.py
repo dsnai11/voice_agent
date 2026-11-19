@@ -34,7 +34,7 @@ def _setting(name: str, default: str) -> str:
 
 VOICESTUDIO_URL = _setting("VOICESTUDIO_URL", "http://localhost:3900")   # GPU server address later
 VOICE_ID = _setting("VOICE_ID", "07c6a52e")
-VOICE_SPEED = _setting("VOICE_SPEED", "0.85")
+VOICE_SPEED = _setting("VOICE_SPEED", "1.0")
 DENOISE = _setting("DENOISE", "spectral")                                 # noise removal before listening: "rnnoise", "spectral" or "none"
 STT_ENGINE = _setting("STT_ENGINE", "gemini")                           # "gemini" (audio goes to Google), "api" (VoiceStudio on the GPU server) or "whisper" (local)
 STT_LANGUAGE = _setting("STT_LANGUAGE", "hi")                            # used by the local Whisper fallback
