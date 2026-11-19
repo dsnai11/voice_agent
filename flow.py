@@ -50,6 +50,10 @@ QUESTIONS = {
     "consent": ["क्या हमारी टीम आपको इस नंबर पर कॉल कर सकती है?", "क्या हमारी टीम आपको कॉल करके आगे की जानकारी दे सकती है?"],
     "callback_time": ["आपको किस दिन और किस टाइम पर कॉल करवा दूँ?", "कॉल के लिए कौन सा दिन और टाइम ठीक रहेगा?"],
 }
+EXAMPLES = {"full_name": "जैसे, मेरा नाम अर्जुन शर्मा है।", "loan_type": "आप बस पर्सनल, पेडे या सैलरी बोल दीजिए।", "loan_amount": "आप बस रकम बोल दीजिए, जैसे पाँच लाख।",
+            "employment": "आप बस नौकरी या बिज़नेस बोल दीजिए।", "monthly_income": "आप बस रकम बोल दीजिए, जैसे पचास हज़ार।", "city": "आप बस शहर का नाम बोल दीजिए, जैसे जयपुर।",
+            "existing_loans": "आप बस हाँ या ना बोल दीजिए।", "phone": "आप दस अंकों का नंबर धीरे-धीरे बोल दीजिए।", "consent": "आप बस हाँ या ना बोल दीजिए।",
+            "callback_time": "आप बस दिन और टाइम बोल दीजिए, जैसे कल शाम पाँच बजे।"}
 ACKS = ["जी।", "ठीक है।", "जी, समझ गई।", "अच्छा।", "धन्यवाद जी।", "शुक्रिया जी।", "बहुत अच्छा, धन्यवाद।"]
 END_NOW = r"call\s*(kaat|kat\b|cut|band|disconnect|end)|kaat\s*do|cut\s*(the\s*)?call|phone\s*rakh|\bbye\b|alvida|rakh(ta|ti)\s*hoo?n|hang\s*up|disconnect"
 END_DONE = r"dhanyavaad|dhanyawad|dhanyabad|shukriya|thank\s*you|thanks|bas\s*itn|ho\s*gaya|nothing\s*else|aur\s*kuch\s*nahi|that'?s\s*all|koi\s*sawal\s*nahi"
@@ -78,6 +82,17 @@ def is_ack_only(text: str) -> bool:
     """A very short agreement such as 'ok', 'theek hai', 'chalo aage chalo' (it brings no new information)."""
     w = _words(text)
     return 0 < len(w) <= 5 and all(x in ACK_WORDS for x in w)
+
+
+DOMAIN = {"loan", "lone", "emi", "interest", "byaaj", "byaj", "rate", "cibil", "civil", "score", "credit", "company", "fee", "fees", "charge", "charges", "document",
+          "documents", "eligibility", "eligible", "salary", "bank", "payment", "apply", "approval", "approve", "process", "tenure", "paisa", "paise", "rupee", "rupe",
+          "rupaye", "lakh", "laakh", "hazaar", "kist", "installment", "penalty", "foreclosure", "prepayment", "insurance", "kyc", "pan", "aadhaar", "aadhar", "branch",
+          "office", "nbfc", "rbi", "limit", "amount", "disbursal", "processing", "payday", "overdraft", "guarantor", "collateral", "security", "safe", "trust", "fraud"}
+
+
+def domain_like(text: str) -> bool:
+    """True when the caller is asking about loans, money or the company (the only things worth an AI-written answer)."""
+    return bool(set(_words(text)) & DOMAIN)
 
 
 def looks_like_question(text: str) -> bool:
@@ -152,6 +167,9 @@ def parse_name(text: str, strict: bool):
             break
         if w not in STOP and len(w) > 1:
             toks.append(w)
+    fixes = {"sinh": "singh", "sing": "singh", "singha": "singh", "shrma": "sharma", "sarma": "sharma", "varma": "verma", "kumaar": "kumar", "gupta": "gupta", "yadaw": "yadav",
+             "patil": "patil", "pateel": "patel", "jain": "jain", "mishr": "mishra", "tripathy": "tripathi", "chouhan": "chauhan", "chohan": "chauhan"}
+    toks = [fixes.get(w, w) for w in toks]
     return " ".join(toks[:4]).title() if toks else None
 
 
@@ -249,6 +267,7 @@ def static_sentences() -> list:
     for qs in QUESTIONS.values():
         out += qs
     out += ACKS
+    out += list(EXAMPLES.values())
     out += ["धन्यवाद, नंबर कन्फ़र्म हो गया।", "ठीक है जी, कोई बात नहीं। कृपया अपना मोबाइल नंबर एक बार फिर, धीरे-धीरे बोलिए।",
             "माफ़ कीजिए, मैं ठीक से समझ नहीं पाई।", "जी, लोन के बारे में मैं आपकी पूरी मदद करूँगी।",
             "कृपया नंबर दोबारा, धीरे-धीरे बोलिए।", "पूरा दस अंकों का नंबर चाहिए।",
@@ -493,7 +512,7 @@ class Flow:
             approved = [m["entry"]["reply"] for m in bank if m["id"] not in LEGACY_IDS][:2]
             if approved:
                 return " ".join(approved)
-            answer = self._free(text)
+            answer = self._free(text) if (domain_like(text) or "?" in text) else None
             if answer:
                 return answer
             self.unclear_after_done += 1
@@ -537,7 +556,7 @@ class Flow:
             if is_ack_only(text):                                        # "ok", "chalo": agreement, not a failure; carry on with the same question
                 self.fails[asked] = -1
                 parts.append(random.choice(ACKS))
-            elif not bank and asked not in (None, "phone", "phone_confirm") and (looks_like_question(text) or len(_words(text)) >= 4):
+            elif not bank and asked not in (None, "phone", "phone_confirm") and domain_like(text) and looks_like_question(text):
                 answer = self._free(text)                                # a question outside the form: answer it, then continue
                 if answer:
                     parts.append(answer)
@@ -576,7 +595,7 @@ class Flow:
         if asked_question and nxt == self.asked:
             return " ".join(parts)                                      # the approved answer already ends with a question
         self.fails[nxt] = self.fails.get(nxt, 0) + (1 if (nxt == self.asked and not captured) else 0)
-        if self.fails.get(nxt, 0) >= 3:                                  # the caller keeps not answering this one: move on
+        if self.fails.get(nxt, 0) >= 6:                                  # the caller really cannot or will not answer this one: move on
             self.skipped.add(nxt)
             nxt = self._next()
             if nxt is None:
@@ -585,6 +604,8 @@ class Flow:
         question = random.choice(QUESTIONS[nxt])
         if nxt == self.asked and not captured and not bank and self.fails.get(nxt, 0) >= 1:
             parts.append("माफ़ कीजिए, मैं ठीक से समझ नहीं पाई।")
+        if self.fails.get(nxt, 0) >= 2 and nxt in EXAMPLES:               # noise or a hard-to-hear answer: show what a good answer sounds like
+            question += " " + EXAMPLES[nxt]
         if nxt == "consent":
             question = f"{self._name()} जी, " + question if self._name() else question
         parts.append(question)
