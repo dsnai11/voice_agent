@@ -13,9 +13,10 @@ FLOWS = {
     "loan_purpose": (["Personal loan", "5 lakh"], ["medical", "shaadi ke liye", "ghar ki repair", "bachon ki padhai", "hospital ka kharcha", "business ke liye", "emergency", "travel"], ("loan_purpose", lambda v: bool(v))),
     "employment": (["Personal loan", "5 lakh", "medical"], ["job", "naukri", "salaried", "service", "private job", "business", "self employed", "apna business", "dukaan", "main job karta hoon", "sarkari naukri"], ("employment_type", lambda v: v in ("salaried", "self-employed"))),
     "monthly_income": (["Personal loan", "5 lakh", "medical", "job"], ["5000", "5,000", "5000 rupaye", "5 hazaar", "paanch hazaar", "50000", "50 hazaar", "pachas hazaar", "meri 5000 rupaye salary hai", "25k", "1 lakh", "30 hazar", "40000 rupees", "do lakh"], ("monthly_income", lambda v: str(v).isdigit() and int(v) >= 1000)),
-    "city": (["Personal loan", "5 lakh", "medical", "job", "50000"], ["Jaipur", "jaipur mein", "main Jaipur se hoon", "Delhi", "Udaipur", "Bhopal", "Kota", "Sikar", "Jodhpur", "Pune"], ("city", lambda v: bool(v))),
-    "existing_loans": (["Personal loan", "5 lakh", "medical", "job", "50000", "Jaipur"], ["nahi", "nahin", "koi nahi", "no", "haan", "haan hai", "ek chal raha hai", "ji haan", "bilkul nahi"], ("existing_loans", lambda v: v in ("yes", "no"))),
-    "existing_emi": (["Personal loan", "5 lakh", "medical", "job", "50000", "Jaipur", "haan"], ["5000", "5,000 rupaye", "paanch hazaar", "8000", "2 hazaar", "3500", "meri 6000 ki emi jaati hai", "10 hazaar", "1500"], ("existing_emi", lambda v: str(v).isdigit() and int(v) >= 500)),
+    "work_tenure": (["Personal loan", "5 lakh", "medical", "job", "50000"], ["2 saal", "do saal", "6 mahine", "5 years", "dedh saal", "teen saal se", "10 saal", "1 saal", "mujhe 4 saal ho gaye"], ("time_with_current_employer", lambda v: bool(v))),
+    "city": (["Personal loan", "5 lakh", "medical", "job", "50000", "2 saal"], ["Jaipur", "jaipur mein", "main Jaipur se hoon", "Delhi", "Udaipur", "Bhopal", "Kota", "Sikar", "Jodhpur", "Pune"], ("city", lambda v: bool(v))),
+    "existing_loans": (["Personal loan", "5 lakh", "medical", "job", "50000", "2 saal", "Jaipur"], ["nahi", "nahin", "koi nahi", "no", "haan", "haan hai", "ek chal raha hai", "ji haan", "bilkul nahi"], ("existing_loans", lambda v: v in ("yes", "no"))),
+    "existing_emi": (["Personal loan", "5 lakh", "medical", "job", "50000", "2 saal", "Jaipur", "haan"], ["5000", "5,000 rupaye", "paanch hazaar", "8000", "2 hazaar", "3500", "meri 6000 ki emi jaati hai", "10 hazaar", "1500"], ("existing_emi", lambda v: str(v).isdigit() and int(v) >= 500)),
 }
 
 

@@ -46,7 +46,7 @@ except OSError:
 OFF_LINE = "जी, मैं सिर्फ़ लोन और फाइनेंस से जुड़ी बातों में मदद कर सकती हूँ।"
 UNSURE = "इसके बारे में मुझे अभी पक्का नहीं पता, मैं इसे टीम से कन्फ़र्म करवा दूँगी।"
 
-SLOTS = ["full_name", "loan_type", "loan_amount", "loan_purpose", "employment", "monthly_income", "city", "existing_loans", "existing_emi", "phone", "consent", "callback_time"]
+SLOTS = ["full_name", "loan_type", "loan_amount", "loan_purpose", "employment", "monthly_income", "work_tenure", "city", "existing_loans", "existing_emi", "phone", "consent", "callback_time"]
 
 QUESTIONS = {
     "loan_purpose": ["आपको यह लोन किस काम के लिए चाहिए?", "लोन का इस्तेमाल आप किस ज़रूरत के लिए करेंगे?"],
@@ -62,7 +62,26 @@ QUESTIONS = {
     "consent": ["क्या हमारी टीम आपको इस नंबर पर कॉल कर सकती है?", "क्या हमारी टीम आपको कॉल करके आगे की जानकारी दे सकती है?"],
     "callback_time": ["आपको किस दिन और किस टाइम पर कॉल करवा दूँ?", "कॉल के लिए कौन सा दिन और टाइम ठीक रहेगा?"],
 }
-EXAMPLES = {"loan_purpose": "आप बस एक-दो शब्द में बता दीजिए, जैसे मेडिकल, शादी या घर की मरम्मत।", "existing_emi": "आप बस रकम बोल दीजिए, जैसे पाँच हज़ार।", "full_name": "जैसे, मेरा नाम अर्जुन शर्मा है।", "loan_type": "आप बस पर्सनल, पेडे या सैलरी बोल दीजिए।", "loan_amount": "आप बस रकम बोल दीजिए, जैसे पाँच लाख।",
+INCOME_Q = {
+    "salaried": ["आपकी महीने की सैलरी लगभग कितनी है?", "आपको हर महीने टेक-होम सैलरी लगभग कितनी मिलती है?"],
+    "self-employed": ["आपके बिज़नेस से महीने की इनकम लगभग कितनी हो जाती है?", "आपकी बिज़नेस से हर महीने की कमाई लगभग कितनी होती है?"],
+    "pensioner": ["आपकी महीने की पेंशन लगभग कितनी आती है?"],
+    "not-earning": ["आपके परिवार की महीने की कुल इनकम लगभग कितनी है?"],
+}
+TENURE_Q = {
+    "salaried": ["आप अभी की कंपनी में कितने समय से काम कर रहे हैं?"],
+    "self-employed": ["आपका बिज़नेस कितने साल से चल रहा है?"],
+}
+# answers that must change with the caller's work type (the general ones above assume a salaried person)
+ALT_REPLIES = {
+    ("documents", "self-employed"): "जी, अपना बिज़नेस करने वालों के लिए आमतौर पर आधार या पैन जैसा आईडी प्रूफ, एड्रेस प्रूफ, पिछले छह महीने का बैंक स्टेटमेंट, बिज़नेस का प्रूफ और आईटीआर जैसे इनकम के कागज़ लगते हैं। सही लिस्ट टीम कन्फ़र्म करेगी।",
+    ("documents", "pensioner"): "जी, पेंशनर के लिए आमतौर पर आईडी प्रूफ, एड्रेस प्रूफ, पेंशन सर्टिफ़िकेट या पेंशन की पर्ची और बैंक स्टेटमेंट लगता है। सही लिस्ट टीम कन्फ़र्म करेगी।",
+    ("documents", "not-earning"): "जी, आमतौर पर आईडी प्रूफ, एड्रेस प्रूफ, बैंक स्टेटमेंट और घर में कमाने वाले, यानी को-एप्लिकेंट, के इनकम के कागज़ लगते हैं। सही लिस्ट टीम कन्फ़र्म करेगी।",
+    ("low_salary", "self-employed"): "जी, बिज़नेस करने वालों की इनकम उनके बैंक स्टेटमेंट और आईटीआर जैसे कागज़ों से देखी जाती है, और सही रकम टीम चेक करके बताएगी।",
+    ("low_salary", "pensioner"): "जी, पेंशनर की इनकम पेंशन और बैंक स्टेटमेंट से देखी जाती है, और सही रकम टीम चेक करके बताएगी।",
+    ("new_job", "self-employed"): "जी, बिज़नेस वालों के लिए आमतौर पर कम से कम दो साल का बिज़नेस देखा जाता है।",
+}
+EXAMPLES = {"work_tenure": "आप बस बोल दीजिए, जैसे दो साल या छह महीने।", "loan_purpose": "आप बस एक-दो शब्द में बता दीजिए, जैसे मेडिकल, शादी या घर की मरम्मत।", "existing_emi": "आप बस रकम बोल दीजिए, जैसे पाँच हज़ार।", "full_name": "जैसे, मेरा नाम अर्जुन शर्मा है।", "loan_type": "आप बस पर्सनल, पेडे या सैलरी बोल दीजिए।", "loan_amount": "आप बस रकम बोल दीजिए, जैसे पाँच लाख।",
             "employment": "आप बस नौकरी या बिज़नेस बोल दीजिए।", "monthly_income": "आप बस रकम बोल दीजिए, जैसे पचास हज़ार।", "city": "आप बस शहर का नाम बोल दीजिए, जैसे जयपुर।",
             "existing_loans": "आप बस हाँ या ना बोल दीजिए।", "phone": "आप दस अंकों का नंबर धीरे-धीरे बोल दीजिए।", "consent": "आप बस हाँ या ना बोल दीजिए।",
             "callback_time": "आप बस दिन और टाइम बोल दीजिए, जैसे कल शाम पाँच बजे।"}
@@ -197,6 +216,39 @@ def parse_name(text: str, strict: bool):
     return " ".join(toks[:4]).title() if toks else None
 
 
+def parse_employment(text: str, asked):
+    """salaried | self-employed | pensioner | not-earning, or None. A businessman is self-employed even if he says 'job' nowhere."""
+    low = text.lower()
+    if re.search(r"pension|retired|retire\b|sevanivrit|रिटायर|सेवानिवृत्त", low):
+        return "pensioner"
+    if re.search(r"housewife|house wife|homemaker|grihini|student|padhai|studying|unemployed|berozgar|berojgar|not working|naukri nahi|job nahi|kaam nahi|बेरोज़गार|बेरोजगार", low):
+        return "not-earning"
+    selfish = re.search(SELF + r"|farmer|kisan|kheti|farming|doctor|lawyer|advocate|\bca\b|professional|freelanc|consultant|contractor|trader|vyapari|shopkeeper|dukandar|self\s*-?\s*employed", low)
+    if selfish and not re.search(r"business\s+loan", low):
+        plain = re.sub(r"self\s*-?\s*employed", " ", low.replace("salary", ""))          # "self employed" must not count as having an employer
+        if re.search(SALARIED.replace("company|", ""), plain):
+            return "salaried"
+        return "self-employed"
+    if re.search(SALARIED, re.sub(r"self\s*-?\s*employed", " ", low)):
+        return "salaried"
+    return None
+
+
+def parse_duration_years(text: str):
+    """'2 saal', 'do saal se', '6 mahine', 'dedh saal' -> years as a number; None if no duration is said."""
+    n = None
+    for w in _words(text):
+        if re.fullmatch(r"\d+(?:\.\d+)?", w):
+            n = float(w)
+        elif w in NUM:
+            n = NUM[w]
+        elif w in ("saal", "sal", "year", "years", "yr", "yrs", "varsh", "baras") and n is not None:
+            return n
+        elif w in ("mahine", "mahina", "mahinon", "month", "months") and n is not None:
+            return round(n / 12, 2)
+    return None
+
+
 def parse_city(text: str):
     low = text.lower()
     import difflib
@@ -292,6 +344,9 @@ def static_sentences() -> list:
         out += qs
     out += ACKS
     out += list(EXAMPLES.values())
+    for qs in list(INCOME_Q.values()) + list(TENURE_Q.values()):
+        out += qs
+    out += list(ALT_REPLIES.values())
     out.append(OFF_LINE)
     out += ["धन्यवाद, नंबर कन्फ़र्म हो गया।", "ठीक है जी, कोई बात नहीं। कृपया अपना मोबाइल नंबर एक बार फिर, धीरे-धीरे बोलिए।",
             "माफ़ कीजिए, मैं ठीक से समझ नहीं पाई।", "जी, लोन के बारे में मैं आपकी पूरी मदद करूँगी।",
@@ -462,11 +517,7 @@ class Flow:
             if target not in self.v or asked == target:
                 details[target] = amt
                 captured.append(target)
-        emp = None
-        if asked == "employment" or re.search(SELF, low) and not re.search(r"business\s+loan", low) or re.search(r"naukri|nokri|\bjob\b", low):
-            emp = "self-employed" if re.search(SELF, low) and not re.search(SALARIED.replace("company|", ""), low.replace("salary", "")) else ("salaried" if re.search(SALARIED, low) else None)
-            if asked == "employment" and emp is None and re.search(SELF, low):
-                emp = "self-employed"
+        emp = parse_employment(text, asked) if (asked == "employment" or "employment" not in self.v) else None
         if emp and ("employment" not in self.v or asked == "employment"):
             details["employment_type"] = emp
             captured.append("employment")
@@ -494,6 +545,12 @@ class Flow:
             if canon:
                 details["loan_purpose"] = canon
                 captured.append("loan_purpose")
+        if asked == "work_tenure" and text:
+            yrs = parse_duration_years(text)
+            if yrs is not None:
+                label = "business_vintage" if self.v.get("employment") == "self-employed" else "time_with_current_employer"
+                details[label] = (f"{round(yrs * 12)} months" if yrs < 1 else f"{yrs:g} years")
+                captured.append("work_tenure")
         if asked == "existing_emi" and text:
             emi = parse_amount(text, minimum=100)
             if emi:
@@ -553,6 +610,8 @@ class Flow:
                     self.v[k] = core["preferred_callback_time"]
                 elif k == "employment":
                     self.v[k] = details["employment_type"]
+                elif k == "work_tenure":
+                    self.v[k] = details.get("business_vintage") or details.get("time_with_current_employer")
                 else:
                     self.v[k] = details[k]
             self._sync_reason()
@@ -565,7 +624,7 @@ class Flow:
         if self.done and not captured:
             if is_ack_only(text):
                 return "जी, अगर आपको कुछ और पूछना हो तो बताइए, वरना आप कॉल खत्म कर सकते हैं।"
-            approved = [m["entry"]["reply"] for m in bank if m["id"] not in LEGACY_IDS][:2]
+            approved = [self._alt(m) for m in bank if m["id"] not in LEGACY_IDS][:2]
             if approved:
                 return " ".join(approved)
             if offtopic_like(text):
@@ -604,7 +663,7 @@ class Flow:
             if m["id"] in LEGACY_IDS or m["id"] in self.told:            # an approved answer is given once per call: never repeat it
                 continue
             self.told.add(m["id"])
-            reply = m["entry"]["reply"]
+            reply = self._alt(m)
             if self._next() is not None:
                 reply = _drop_trailing_questions(reply)
             parts.append(reply)
@@ -662,7 +721,7 @@ class Flow:
             if nxt is None:
                 return " ".join(parts) or random.choice(ACKS)
         self.asked = nxt
-        question = random.choice(QUESTIONS[nxt])
+        question = self._question(nxt)
         if nxt == self.asked and not captured and not bank and self.fails.get(nxt, 0) >= 1:
             parts.append("माफ़ कीजिए, मैं ठीक से समझ नहीं पाई।")
         if self.fails.get(nxt, 0) >= 2 and nxt in EXAMPLES:               # noise or a hard-to-hear answer: show what a good answer sounds like
@@ -672,6 +731,19 @@ class Flow:
         parts.append(question)
         return " ".join(parts)
 
+    def _question(self, slot: str) -> str:
+        """The question for a slot, worded for this caller: a salary for an employee, income for a businessman, pension for a pensioner."""
+        et = self.v.get("employment")
+        if slot == "monthly_income":
+            return random.choice(INCOME_Q.get(et, INCOME_Q["salaried"] if et is None else QUESTIONS["monthly_income"]))
+        if slot == "work_tenure":
+            return random.choice(TENURE_Q.get(et, TENURE_Q["salaried"]))
+        return random.choice(QUESTIONS[slot])
+
+    def _alt(self, m: dict) -> str:
+        """An approved answer, or the version written for this caller's work type."""
+        return ALT_REPLIES.get((m["id"], self.v.get("employment")), m["entry"]["reply"])
+
     def _next(self):
         for s in SLOTS:
             if s == "callback_time" and self.v.get("consent") != "yes":
@@ -679,6 +751,8 @@ class Flow:
             if s in self.v or s in self.skipped:
                 continue
             if s == "existing_emi" and self.v.get("existing_loans") != "yes":
+                continue
+            if s == "work_tenure" and self.v.get("employment") not in ("salaried", "self-employed"):
                 continue
             if s == "phone" and self.call.form.get("phone") and "phone" in self.call.confirmed:
                 continue
@@ -701,6 +775,23 @@ class Flow:
         return True
 
     def _free(self, text: str):
+        """_free_raw, plus a local note of every question she could not answer, for the team to review (calls/unanswered.jsonl; nothing leaves this PC)."""
+        out = self._free_raw(text)
+        if out == UNSURE:
+            try:
+                import json
+                import os
+                import time
+
+                folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "calls")
+                os.makedirs(folder, exist_ok=True)
+                with open(os.path.join(folder, "unanswered.jsonl"), "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"time": time.strftime("%Y-%m-%d %H:%M:%S"), "question": text, "caller_type": self.v.get("employment"), "loan_type": self.v.get("loan_type")}, ensure_ascii=False) + chr(10))
+            except OSError:
+                pass
+        return out
+
+    def _free_raw(self, text: str):
         """A short grounded answer for anything the flow has no answer for (company, loan details, CIBIL, small talk). None on any problem."""
         try:
             import brain

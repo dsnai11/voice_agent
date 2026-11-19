@@ -17,7 +17,7 @@ QUESTIONS = [
 def done_call():
     c = brain.Call("enquiry", on_form=lambda v, ch, f, k: None)
     c.start_with("नमस्ते")
-    for t in ["Arjun Sharma", "Personal loan", "5 lakh", "medical", "job", "50000", "Jaipur", "nahi", "Nau nau nau shunya shunya shunya do do do do", "haan", "haan", "kal subah 10 baje"]:
+    for t in ["Arjun Sharma", "Personal loan", "5 lakh", "medical", "job", "50000", "2 saal", "Jaipur", "nahi", "Nau nau nau shunya shunya shunya do do do do", "haan", "haan", "kal subah 10 baje"]:
         c.reply(t)
     assert c.flow.done, "call should be complete"
     return c
