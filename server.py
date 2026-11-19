@@ -44,7 +44,8 @@ STT_COMPUTE = _setting("STT_COMPUTE", "int8")                            # GPU: 
 LLM_MODEL = _setting("LLM_MODEL", "gemini-3.5-flash-lite")
 DATA_BACKEND = _setting("DATA_BACKEND", "excel")
 CHUNK_SILENCE_S = float(_setting("CHUNK_SILENCE_S", "0.5"))                # a pause this long ends a chunk of the caller's speech
-TURN_SILENCE_S = float(_setting("TURN_SILENCE_S", "1.0"))                  # quiet this long ends the caller's turn: the replies are spoken
+TURN_SILENCE_S = float(_setting("TURN_SILENCE_S", "1.2"))                  # quiet this long ends the caller's turn: the replies are spoken
+PHONE_SILENCE_S = float(_setting("PHONE_SILENCE_S", "3.5"))              # while a phone number is half said, wait this long before answering
 HOST = _setting("HOST", "127.0.0.1")                                     # keep local; see notes before exposing
 PORT = int(_setting("PORT", "8000"))
 FILLER_DELAY_S = float(_setting("FILLER_DELAY_S", "1.0"))                # play a waiting phrase if the reply takes longer than this
@@ -431,52 +432,48 @@ class CallSession:
             self.tasks.add(self.worker)
 
     async def _chunk_worker(self):
-        """Takes the chunks in the order they were spoken, waits for each transcript, and writes that chunk's own reply."""
+        """Takes the chunks in the order they were spoken and collects what each one says. The reply is written once, in end_turn,
+        for everything the caller said in this turn: a pause in the middle of a sentence or a phone number must not split it."""
         while True:
-            batch, heard = [await self.chunk_q.get()], []
+            _idx, _audio, stt_task = await self.chunk_q.get()
             try:
-                # Chunks that are already waiting (or arrive while earlier ones are transcribed) get one shared reply.
-                pending = list(batch)
-                while pending:
-                    for _idx, _audio, stt_task in pending:
-                        try:
-                            part = await stt_task
-                        except Exception:
-                            part = ""
-                        if part:
-                            heard.append(part)
-                    pending = []
-                    while not self.chunk_q.empty():
-                        pending.append(self.chunk_q.get_nowait())
-                    batch.extend(pending)
-                if not heard:
-                    continue
-                text = " ".join(heard)
-                self.not_heard_streak = 0
-                self.turn_texts.extend(heard)
-                self.transcript.extend(("caller", h) for h in heard)
-                # Is the caller still going? Wait until we know: the turn has closed, or more speech is already there.
-                while not (self.turn_ending or not self.chunk_q.empty() or (self.seg is not None and self.seg.speaking)):
-                    await asyncio.sleep(0.05)
-                self.call.more_coming = (not self.chunk_q.empty()) or bool(self.seg is not None and self.seg.speaking)
-                t = time.time()
                 try:
-                    reply = await asyncio.to_thread(self.call.reply, text)
+                    part = await stt_task
                 except Exception:
-                    reply = None
-                print(f"  chunk reply written in {time.time() - t:.1f}s (more speech coming: {self.call.more_coming})", flush=True)
-                self.turn_replies.append(reply)
+                    part = ""
+                if part:
+                    self.not_heard_streak = 0
+                    self.turn_texts.append(part)
+                    self.transcript.append(("caller", part))
             finally:
-                for _ in batch:
-                    self.chunk_q.task_done()
+                self.chunk_q.task_done()
+
+    def _turn_silence(self) -> float:
+        """How long the caller must be quiet before the turn ends. Longer while a phone number is half said."""
+        fl = self.call.flow
+        if fl is not None and fl.asked == "phone":
+            import flow as _flow
+            have = len(fl.phone_buf) + len(_flow.digits_from_speech(" ".join(self.turn_texts)))
+            if 0 < have < 10 or not self.turn_texts:
+                return PHONE_SILENCE_S
+        return TURN_SILENCE_S
 
     async def end_turn(self):
         """The caller has been quiet long enough: finish the pending chunks, then speak the replies in order."""
         await self.send(type="status", state="thinking")
         filler = asyncio.create_task(self._filler_after(FILLER_DELAY_S))      # covers a slow reply with a short phrase
         await self.chunk_q.join()
+        texts, audio_s, replies = list(self.turn_texts), self.turn_audio_s, []
+        if texts:                                                              # everything said in this turn, merged, answered once
+            self.call.more_coming = False
+            t = time.time()
+            try:
+                replies = [await asyncio.to_thread(self.call.reply, " ".join(texts))]
+            except Exception as e:
+                print(f"  reply failed: {type(e).__name__}: {e}", flush=True)
+                replies = [None]
+            print(f"  turn heard: {' | '.join(texts)!r} -> reply written in {time.time() - t:.1f}s", flush=True)
         filler.cancel()
-        texts, replies, audio_s = self.turn_texts, self.turn_replies, self.turn_audio_s
         self._reset_turn()
         if not texts:                                                          # nothing clear was heard
             self.not_heard_streak += 1
@@ -537,7 +534,7 @@ class CallSession:
                     stt_task = asyncio.ensure_future(self._hear(self.turn_parts, chunk))
                     self.chunk_q.put_nowait((self.chunk_idx, chunk, stt_task))
                     self._ensure_worker()
-                if self.turn_has_audio and not self.seg.speaking and self.silent_s >= TURN_SILENCE_S and not self.turn_ending:
+                if self.turn_has_audio and not self.seg.speaking and self.silent_s >= self._turn_silence() and not self.turn_ending:
                     self.turn_ending, self.listening = True, False   # quiet long enough: the turn is over
                     self.spawn(self.end_turn())
 

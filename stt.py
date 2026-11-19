@@ -53,6 +53,7 @@ def transcribe_hinglish(audio: np.ndarray, rate: int = 16000) -> str:
 
 # Business words this model is known to mishear (it was not trained on loan vocabulary). Only exact, unambiguous slips are fixed here.
 _TERM_FIXES = [
+    (r"\bp\.?\s?d\.?\s+loan\b|\bpaid\s+loan\b|\bpede\s+loan\b", "payday loan"),
     (r"\bpay\s*-?\s*day\s+(?:loan|lone|launch|lan|loon)\b", "payday loan"),
     (r"\bpay\s*-?\s*day\b", "payday"),
     (r"\bsalary\s+(?:lone|launch|loon)\b", "salary loan"),

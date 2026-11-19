@@ -130,7 +130,7 @@ const STATES = { idle: "Not connected", connecting: "Connecting…", listening: 
                  complete: "Call complete — review the form and press Submit", thinking: "Thinking…", preparing: "Agent is preparing to speak…", speaking: "Agent is speaking", ended: "Call ended" };
 let flags = {}, confirmed = new Set(), verified = new Set();
 let fields = [], values = { details: {} }, callId = null, savedResolve = null, ws = null, ctx = null, micStream = null, node = null;
-let queue = [], playing = false, pending = 0, turnEnded = false, serverState = "idle", timerId = null, t0 = 0;
+let callComplete = false, queue = [], playing = false, pending = 0, turnEnded = false, serverState = "idle", timerId = null, t0 = 0;
 
 const pretty = (s) => s.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 const banner = (text) => { const d = document.createElement("div"); d.textContent = text; $("banner").appendChild(d); };
@@ -325,6 +325,11 @@ function pump() {
   src.start();
 }
 function maybeDone() {
+  if (callComplete && !playing && queue.length === 0 && pending === 0 && ws) {      // the goodbye has been spoken: hang up like a phone call
+    callComplete = false;
+    setTimeout(() => { if (ws) hangUp(); }, 700);
+    return;
+  }
   if (turnEnded && !playing && queue.length === 0 && pending === 0) {
     turnEnded = false;
     setTimeout(() => ws && ws.readyState === 1 && ws.send(JSON.stringify({ type: "playback_done" })), 500); // let the speaker tail fade
@@ -404,7 +409,7 @@ async function startCall() {
     else if (m.type === "form") applyForm(m.values, m.changed, m.flags, m.confirmed);
     else if (m.type === "call") callId = m.id;
     else if (m.type === "cards") mergeCards(m.cards);
-    else if (m.type === "call_complete") { serverState = "complete"; micStream?.getTracks().forEach((t) => t.stop()); render(); }
+    else if (m.type === "call_complete") { serverState = "complete"; callComplete = true; micStream?.getTracks().forEach((t) => t.stop()); render(); maybeDone(); }
     else if (m.type === "saved") {
       const ref = m.ticket && m.ticket.id ? ` (reference ${m.ticket.id})` : "";
       $("savedNote").textContent = `The call ended. Everything said so far has been saved${ref}. Review the form and press Submit to confirm it.`;
@@ -431,7 +436,7 @@ function endCall() {
   ws = null; clearInterval(timerId);
   micStream?.getTracks().forEach((t) => t.stop()); micStream = null;
   node?.disconnect(); node = null; ctx?.close(); ctx = null;
-  queue = []; playing = false; pending = 0; turnEnded = false; clearCards();
+  queue = []; playing = false; pending = 0; turnEnded = false; callComplete = false; clearCards();
   if (serverState !== "idle") serverState = "ended";
   $("callBtn").textContent = "Call"; $("callBtn").classList.remove("live"); $("callBtn").disabled = false; render();
 }

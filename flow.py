@@ -35,7 +35,9 @@ QUESTIONS = {
     "consent": ["क्या हमारी टीम आपको इस नंबर पर कॉल कर सकती है?", "क्या हमारी टीम आपको कॉल करके आगे की जानकारी दे सकती है?"],
     "callback_time": ["आपको किस दिन और किस टाइम पर कॉल करवा दूँ?", "कॉल के लिए कौन सा दिन और टाइम ठीक रहेगा?"],
 }
-ACKS = ["जी।", "ठीक है।", "जी, समझ गई।", "अच्छा।"]
+ACKS = ["जी।", "ठीक है।", "जी, समझ गई।", "अच्छा।", "धन्यवाद जी।", "शुक्रिया जी।", "बहुत अच्छा, धन्यवाद।"]
+END_NOW = r"call\s*(kaat|kat\b|cut|band|disconnect|end)|kaat\s*do|cut\s*(the\s*)?call|phone\s*rakh|\bbye\b|alvida|rakh(ta|ti)\s*hoo?n|hang\s*up|disconnect"
+END_DONE = r"dhanyavaad|dhanyawad|dhanyabad|shukriya|thank\s*you|thanks|bas\s*itn|ho\s*gaya|nothing\s*else|aur\s*kuch\s*nahi|that'?s\s*all|koi\s*sawal\s*nahi"
 # bank topics that belong to existing customers, complaints or collections: the full assistant handles them
 LEGACY_IDS = {"status_check", "payment_how", "existing_loan", "closure_papers", "app_issue", "complaint", "harassment", "dispute_loan",
               "late_fee", "overdue_collections", "hardship", "abusive"}
@@ -53,7 +55,7 @@ YES = {"haan", "han", "ha", "haa", "ji", "yes", "yeah", "yep", "theek", "thik", 
 NO = {"nahi", "nahin", "nhi", "nai", "no", "mat", "na", "galat", "wrong", "incorrect", "nope"}
 STOP = {"mera", "meraa", "naam", "name", "nam", "is", "hai", "hain", "main", "mai", "my", "the", "ji", "sir", "madam", "full", "i", "am", "hu", "hoon", "hun",
         "bol", "raha", "rahi", "rha", "rhi", "se", "ka", "ki", "toh", "to", "haan", "han", "ha", "yes", "sorry", "bhai", "aur", "and", "please", "plz", "mujhe", "hello", "namaste"}
-LOAN_WORDS = [("payday", r"pay\s*-?\s*day|pe\s*day|पेडे|पे डे"), ("salary", r"salary\s+(?:loan|advance)|advance\s+salary|सैलरी\s+लोन"),
+LOAN_WORDS = [("payday", r"pay\s*-?\s*day|pe\s*day|पेडे|पे डे|\bp\.?\s?d\.?\s+loan|paid\s+loan|\bpedey?\b|\bpayd\b"), ("salary", r"salary\s+(?:loan|advance)|advance\s+salary|सैलरी\s+लोन"),
               ("personal", r"personal|पर्सनल"), ("home", r"home\s+loan|\bghar\b|property|makaan|मकान|होम"), ("business", r"business\s+loan|\bvyapar|vyapaar|\bdhandh|बिज़नेस\s+लोन"),
               ("vehicle", r"vehicle|\bcar\b|\bbike\b|gaadi|gadi|auto loan"), ("gold", r"\bgold\b|\bsona\b|सोना|गोल्ड")]
 SALARIED = r"salar|naukri|nokri|\bjob\b|employee|private|sarkari|government|company|नौकरी|सैलरी"
@@ -64,20 +66,35 @@ def _words(text: str) -> list:
     return re.findall(r"[a-z]+|\d+(?:\.\d+)?", text.lower())
 
 
+def digits_from_speech(text: str) -> str:
+    """Every digit in what was said: '9', 'nau', 'shoony', and 'double 9' (= 99) / 'triple 0' (= 000)."""
+    def rep(m):
+        n = 2 if m.group(1).lower() in ("double", "dabal", "dubal") else 3
+        return (" " + m.group(2) + " ") * n
+
+    t = re.sub(r"\b(double|dabal|dubal|triple|treble)\s+(\w+)", rep, text, flags=re.I)
+    return re.sub(r"\D", "", db.spoken_digits(t))
+
+
 def parse_amount(text: str):
-    """'paanch laakh' / '5 lakh' / '2.5 lakh' / '50 hazaar' / '500000' -> rupees (int), or None if no amount is present."""
+    """'paanch laakh' / '5 lakh' / '2.5 lakh' / '50 hazaar' / '500000' -> rupees (int), or None if no amount is present.
+    A small number with no lakh / hazaar / crore after it ("ek taarikh") is not part of an amount."""
     if re.search(r"\d{9,}", text.replace(",", "").replace(" ", "")):          # a phone number, not an amount
         return None
-    total, cur, seen = 0.0, None, False
-    for w in _words(text.replace(",", "")):
+    words = _words(text.replace(",", ""))
+    total, cur, found = 0.0, None, False
+    for w in words:
         if re.fullmatch(r"\d+(?:\.\d+)?", w):
-            cur, seen = float(w), True
+            cur = float(w)
+            if cur >= 1000:                                   # plain digits such as 500000
+                total, cur, found = total + cur, None, True
         elif w in NUM:
-            cur, seen = (NUM[w] if cur is None or w in ("dedh", "dhai", "adhai", "sava") else cur + NUM[w]), True
-        elif w in MULT:
-            total, cur, seen = total + (1 if cur is None else cur) * MULT[w], None, True
-    total += cur or 0
-    return int(total) if seen and total >= 1000 else None
+            cur = NUM[w] if (cur is None or w in ("dedh", "dhai", "adhai", "sava")) else cur + NUM[w]
+        elif w in MULT and (cur is not None or w in ("lakh", "laakh", "lac", "hazaar", "crore", "karod")):
+            total, cur, found = total + (1 if cur is None else cur) * MULT[w], None, True
+        else:
+            cur = None if w not in NUM and w not in MULT else cur
+    return int(total) if found and total >= 1000 else None
 
 
 def yes_no(text: str):
@@ -91,7 +108,7 @@ def yes_no(text: str):
 
 def parse_name(text: str, strict: bool):
     t = text.lower().strip()
-    m = (re.search(r"(?:mera|meraa|my)\s+(?:full\s+)?(?:naam|nam|name)\s+(?:is\s+|hai\s+)?([a-z .]{2,40}?)(?:\s+(?:hai|hain|hu|hoon|hun|aur|and|bol|se|ka|ki|ko|mujhe|me|mein|ye|yeh)|[,.!?]|$)", t)
+    m = (re.search(r"(?:mera|meraa|my)\s+(?:full\s+)?(?:naam|nam|name)\s+(?:is\s+|hai\s+)?([a-z .]{2,40}?)(?:\s+(?:hai|hain|hu|hoon|hun|aur|and|bol|se|ka|ki|ko|mujhe|me|mein|ye|yeh)\b|[,.!?]|$)", t)
          or re.search(r"(?:i am|i'm|main|mai)\s+([a-z .]{2,30}?)\s+(?:bol|hoon|hu|hun|here|speaking)", t)
          or re.search(r"(?:naam|name)\s+([a-z .]{2,30})", t))
     cand = m.group(1) if m else (t if strict and len(t.split()) <= 5 else "")
@@ -203,7 +220,12 @@ def static_sentences() -> list:
     out += ["धन्यवाद, नंबर कन्फ़र्म हो गया।", "ठीक है जी, कोई बात नहीं। कृपया अपना मोबाइल नंबर एक बार फिर, धीरे-धीरे बोलिए।",
             "माफ़ कीजिए, मैं ठीक से समझ नहीं पाई।", "जी, लोन के बारे में मैं आपकी पूरी मदद करूँगी।",
             "कृपया नंबर दोबारा, धीरे-धीरे बोलिए।", "पूरा दस अंकों का नंबर चाहिए।",
-            "ठीक है जी, मैंने नोट कर लिया, हमारी टीम आपको उसी समय कॉल करेगी।"]
+            "ठीक है जी, मैंने नोट कर लिया, हमारी टीम आपको उसी समय कॉल करेगी।",
+            "ठीक है जी, आपकी जानकारी नोट हो गई है और हमारी टीम जल्दी आपसे संपर्क करेगी।", "ठीक है जी, जितनी जानकारी मिली है वो मैंने नोट कर ली है।",
+            "जी, मैं ठीक से समझ नहीं पाई। क्या आप अपनी बात एक बार फिर बता सकते हैं?",
+            "जी, आप चाहें तो स्क्रीन पर फ़ॉर्म सबमिट कर दीजिए, हमारी टीम जल्दी आपसे संपर्क करेगी।",
+            "यह नंबर सही नहीं लग रहा, मोबाइल नंबर छह, सात, आठ या नौ से शुरू होता है। कृपया नंबर दोबारा बोलिए।"]
+    out += [f"अभी तक {n} अंक मिले हैं, बाकी के अंक भी बता दीजिए।" for n in range(1, 10)]
     try:
         with open(replybank.BANK_PATH, encoding="utf-8") as f:
             for e in json.load(f)["entries"]:
@@ -241,7 +263,10 @@ class Flow:
         self.skipped = set()
         self.fails = {}
         self.phone_pending = None
+        self.phone_buf = ""                # digits heard so far while the number is still being said
         self.done = False
+        self.unclear_after_done = 0
+        self.told = set()                 # approved answers already given in this call
 
     # -------------------------------------------------------------- saving
     def _save(self, core=None, details=None, **extra):
@@ -274,6 +299,13 @@ class Flow:
         text = (text or "").strip()
         low = text.lower()
         captured, ack = [], None
+
+        # --- the caller wants to end the call: say one closing line; the server then plays the thank-you and the call ends
+        if re.search(END_NOW, low) or (self.done and re.search(END_DONE, low)):
+            c.finished = True
+            if self.done:
+                return "ठीक है जी, आपकी जानकारी नोट हो गई है और हमारी टीम जल्दी आपसे संपर्क करेगी।"
+            return "ठीक है जी, जितनी जानकारी मिली है वो मैंने नोट कर ली है।"
 
         # --- phone read-back answer
         if self.asked == "phone_confirm" and self.phone_pending:
@@ -331,14 +363,22 @@ class Flow:
                     details["loan_type"] = lt
                     captured.append("loan_type")
                 break
-        has_income_word = re.search(r"salary|income|kamat|kamai|tankhw|mahin|monthly|महीने|सैलरी|कमाई", re.sub(r"salary\s+(?:loan|advance)|advance\s+salary|सैलरी\s+लोन", " ", low))
-        amt = parse_amount(text)
-        if amt:
-            target = "monthly_income" if (asked == "monthly_income" or (has_income_word and asked != "loan_amount")) else "loan_amount"
-            if asked in ("loan_amount", "monthly_income") or target == "loan_amount" and re.search(r"loan|lakh|laakh|hazaar|rupe|rs\b|chahiye|chahie", low) or has_income_word:
-                if target not in self.v or asked == target:
-                    details[target] = amt
-                    captured.append(target)
+        income_re = r"salary|income|kamat|kamai|tankhw|mahin|monthly|महीने|सैलरी|कमाई"
+        loan_re = r"loan|lakh|laakh|hazaar|rupe|rs\b|chahiye|chahie|paisa|paise|लोन"
+        for clause in re.split(r"[.;!?]|\b(?:aur|and|but|lekin|par)\b", text):
+            amt = parse_amount(clause)
+            if not amt:
+                continue
+            plain = re.sub(r"salary\s+(?:loan|advance)|advance\s+salary|सैलरी\s+लोन", " ", clause.lower())     # "salary loan" is a product, not income
+            if re.search(income_re, plain) or asked == "monthly_income":
+                target = "monthly_income"
+            elif asked == "loan_amount" or re.search(loan_re, plain):
+                target = "loan_amount"
+            else:
+                continue
+            if target not in self.v or asked == target:
+                details[target] = amt
+                captured.append(target)
         emp = None
         if asked == "employment" or re.search(SELF, low) and not re.search(r"business\s+loan", low) or re.search(r"naukri|nokri|\bjob\b", low):
             emp = "self-employed" if re.search(SELF, low) and not re.search(SALARIED.replace("company|", ""), low.replace("salary", "")) else ("salaried" if re.search(SALARIED, low) else None)
@@ -359,16 +399,27 @@ class Flow:
             if yn:
                 details["existing_loans"] = yn
                 captured.append("existing_loans")
-        digits = re.sub(r"\D", "", db.spoken_digits(text))
-        if asked in ("phone", "phone_confirm") or len(digits) >= 8:
-            if len(digits) >= 10 and asked != "phone_confirm" or (asked == "phone_confirm" and len(digits) >= 10):
-                self.phone_pending = digits[-10:]
+        digits = digits_from_speech(text)
+        if asked == "phone_confirm" and len(digits) >= 10:
+            self.phone_pending = digits[-10:]
+            if forms.clean("phone", self.phone_pending)[0]:
+                core["phone"] = self.phone_pending
+                captured.append("phone")
+        elif asked == "phone" or len(digits) >= 10:
+            buf = (self.phone_buf if asked == "phone" else "") + digits
+            if asked == "phone" and digits and re.search(r"\b(galat|wrong|dobara|again|restart|phir\s*se|naya|naye|shuru)\b", low):
+                buf = digits                                              # the caller starts the number again
+            if len(buf) >= 10:
+                self.phone_buf = ""
+                self.phone_pending = buf[-10:]
                 if forms.clean("phone", self.phone_pending)[0]:
                     core["phone"] = self.phone_pending
                     captured.append("phone")
+                else:
+                    return "यह नंबर सही नहीं लग रहा, मोबाइल नंबर छह, सात, आठ या नौ से शुरू होता है। कृपया नंबर दोबारा बोलिए।"
             elif asked == "phone" and digits:
-                self.fails["phone"] = self.fails.get("phone", 0) + 1
-                return f"मुझे सिर्फ़ {voice._digit_words(digits)} सुनाई दिया, पूरा दस अंकों का नंबर चाहिए। कृपया नंबर दोबारा, धीरे-धीरे बोलिए।"
+                self.phone_buf = buf                                      # keep what was said: the caller may be mid-number
+                return f"अभी तक {len(buf)} अंक मिले हैं, बाकी के अंक भी बता दीजिए।"
         if asked == "consent":
             yn = yes_no(text)
             if yn:
@@ -417,8 +468,9 @@ class Flow:
             self.fails[asked] = -1                                  # not a failure: the caller just has not said which kind yet
         asked_question = False
         for m in bank[:2]:
-            if m["id"] in LEGACY_IDS:
+            if m["id"] in LEGACY_IDS or m["id"] in self.told:            # an approved answer is given once per call: never repeat it
                 continue
+            self.told.add(m["id"])
             reply = m["entry"]["reply"]
             if self._next() is not None:
                 reply = _drop_trailing_questions(reply)
@@ -448,8 +500,12 @@ class Flow:
             if not self.done:
                 self.done = True
                 parts.append(f"बहुत शुक्रिया {self._name()} जी, आपकी सारी डिटेल्स नोट हो गई हैं। कृपया स्क्रीन पर फ़ॉर्म देखकर सबमिट बटन दबा दीजिए। और कुछ पूछना हो तो बताइए।")
-            elif not parts:
-                return None                                              # everything is collected: free conversation goes to the assistant
+            elif not parts:                                              # everything is collected and the caller said something we cannot place
+                self.unclear_after_done += 1
+                if self.unclear_after_done == 1:
+                    return "जी, मैं ठीक से समझ नहीं पाई। क्या आप अपनी बात एक बार फिर बता सकते हैं?"
+                return "जी, आप चाहें तो स्क्रीन पर फ़ॉर्म सबमिट कर दीजिए, हमारी टीम जल्दी आपसे संपर्क करेगी।"
+            self.asked = None
             return " ".join(parts)
         if asked_question and nxt == self.asked:
             return " ".join(parts)                                      # the approved answer already ends with a question
