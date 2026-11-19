@@ -348,6 +348,7 @@ def static_sentences() -> list:
         out += qs
     out += list(ALT_REPLIES.values())
     out.append(OFF_LINE)
+    out += ["ठीक है, रकम पक्की कर दी।", "ठीक है जी, कोई बात नहीं। आप रकम एक बार फिर बोलिए, जैसे पाँच लाख।"]
     out += ["धन्यवाद, नंबर कन्फ़र्म हो गया।", "ठीक है जी, कोई बात नहीं। कृपया अपना मोबाइल नंबर एक बार फिर, धीरे-धीरे बोलिए।",
             "माफ़ कीजिए, मैं ठीक से समझ नहीं पाई।", "जी, लोन के बारे में मैं आपकी पूरी मदद करूँगी।",
             "कृपया नंबर दोबारा, धीरे-धीरे बोलिए।", "पूरा दस अंकों का नंबर चाहिए।",
@@ -455,6 +456,18 @@ class Flow:
             elif not (set(_words(low)) & {"nau", "do", "teen", "char"} or re.search(r"\d{5,}", low)):
                 pass
 
+        # --- big-amount read-back answer
+        if self.asked == "amount_confirm":
+            yn = yes_no(text)
+            if yn == "no":
+                self.v.pop("loan_amount", None)
+                (c.form.get("details") or {}).pop("loan_amount", None)
+                self.asked = "loan_amount"
+                return "ठीक है जी, कोई बात नहीं। आप रकम एक बार फिर बोलिए, जैसे पाँच लाख।"
+            self.asked = None
+            if yn == "yes":
+                ack = "ठीक है, रकम पक्की कर दी।"
+
         # --- approved reply for a question or special request
         bank = [m for m in replybank.match(text) if m["score"] >= (0.45 if m["id"] in ("more_to_discuss", "small_talk") else 0.5 if m["entry"].get("require") else 0.6) and m["id"] not in SKIP_IDS]
         if is_ack_only(text):
@@ -501,6 +514,16 @@ class Flow:
             if asked == "loan_type" and re.search(r"salar|सैलरी", low):          # one word: "salary"
                 details["loan_type"] = "salary"
                 captured.append("loan_type")
+            elif asked == "loan_type":
+                import difflib
+
+                known = {"personal": "personal", "parsanal": "personal", "payday": "payday", "pede": "payday", "salary": "salary", "saalari": "salary", "sailri": "salary", "salri": "salary"}
+                for w in re.findall(r"[a-z]{4,}", low):
+                    hit = difflib.get_close_matches(w, list(known), n=1, cutoff=0.68)          # "chalary" ~ "salary"
+                    if hit:
+                        details["loan_type"] = known[hit[0]]
+                        captured.append("loan_type")
+                        break
         income_re = r"salary|income|kamat|kamai|tankhw|mahin|monthly|महीने|सैलरी|कमाई"
         loan_re = r"loan|lakh|laakh|hazaar|rupe|rs\b|chahiye|chahie|paisa|paise|लोन"
         for clause in re.split(r"[.;!?]|\b(?:aur|and|but|lekin|par)\b", text):
@@ -517,7 +540,7 @@ class Flow:
             if target not in self.v or asked == target:
                 details[target] = amt
                 captured.append(target)
-        emp = parse_employment(text, asked) if (asked == "employment" or "employment" not in self.v) else None
+        emp = parse_employment(text, asked) if (asked == "employment" or ("employment" not in self.v and asked not in ("loan_purpose", "loan_type", "loan_amount", "full_name"))) else None
         if emp and ("employment" not in self.v or asked == "employment"):
             details["employment_type"] = emp
             captured.append("employment")
@@ -556,15 +579,22 @@ class Flow:
                 captured.append("work_tenure")
         if asked == "existing_emi" and text:
             emi = parse_amount(text, minimum=100)
+            w_ = set(_words(text))
+            zero = bool(re.fullmatch(r"[0 ,.]+", text.strip())) or bool(w_ & {"zero", "shunya", "shoony"})
             if emi:
                 details["existing_emi"] = emi
+                captured.append("existing_emi")
+            elif zero or yes_no(text) == "no":                              # "no loan is running": the earlier "yes" was a mistake
+                details["existing_emi"] = 0
+                details["existing_loans"] = "no"
                 captured.append("existing_emi")
             elif yes_no(text) == "no" and len(_words(text)) <= 2:
                 details["existing_emi"] = 0
                 captured.append("existing_emi")
         if asked == "existing_loans":
             yn = yes_no(text)
-            if yn is None and set(_words(text)) & {"chal", "raha", "rahi", "hai", "ek", "do", "teen", "car", "bike", "home", "personal", "gold", "credit", "card", "emi", "loan"}:
+            w_ = set(_words(text))
+            if yn is None and "koi" not in w_ and (w_ & {"ek", "do", "teen", "car", "bike", "home", "personal", "gold", "credit", "card"} or {"chal", "raha"} <= w_ or {"chal", "rahi"} <= w_):
                 yn = "yes"
             if yn:
                 details["existing_loans"] = yn
@@ -590,7 +620,12 @@ class Flow:
             elif asked == "phone" and digits:
                 self.phone_buf = buf                                      # keep what was said: the caller may be mid-number
                 return f"अभी तक {len(buf)} अंक मिले हैं, बाकी के अंक भी बता दीजिए।"
-        if asked == "consent":
+        when_said = speak_time(text)
+        if asked not in ("callback_time", "phone", "phone_confirm") and when_said and re.search(r"call|phone|baat", low) and "callback_time" not in self.v and not looks_like_question(text):
+            core["preferred_callback_time"] = " ".join(text.split())[:80]
+            core["consent_to_contact"] = "yes"
+            captured += ["callback_time", "consent"]
+        if asked == "consent" and "consent" not in captured:
             yn = yes_no(text)
             if yn:
                 core["consent_to_contact"] = yn
@@ -615,10 +650,17 @@ class Flow:
                     self.v[k] = details["employment_type"]
                 elif k == "work_tenure":
                     self.v[k] = details.get("business_vintage") or details.get("time_with_current_employer")
+                elif k == "existing_emi":
+                    self.v[k] = details[k]
+                    if "existing_loans" in details:
+                        self.v["existing_loans"] = details["existing_loans"]
                 else:
                     self.v[k] = details[k]
             self._sync_reason()
 
+        if "callback_time" in captured:                                  # the time has been taken: no extra "busy, call later" answer on top
+            bank = [m for m in bank if m["id"] != "busy_callback"]
+            ids = [m["id"] for m in bank]
         if asked in captured:                                            # the caller answered the question that was asked: only a strong, specific topic may still reply
             bank = [m for m in bank if m["score"] >= 0.9]
             ids = [m["id"] for m in bank]
@@ -692,6 +734,9 @@ class Flow:
         if c.more_coming:                                               # the caller is still speaking: brief acknowledgement only
             return " ".join(parts[:1]) or random.choice(ACKS)
 
+        if "loan_amount" in captured and (self.v.get("loan_amount") or 0) >= 1_000_000:
+            self.asked = "amount_confirm"
+            return f"जी, {self.v['loan_amount']} रुपये। क्या यह सही है?"
         if "phone" in captured:                                         # read the number back before trusting it
             self.asked = "phone_confirm"
             parts.append(f"आपका नंबर {self.phone_pending} है, क्या यह सही है?")

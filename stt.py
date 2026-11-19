@@ -63,7 +63,7 @@ _TERM_FIXES = [
 ]
 
 
-_PHANTOM = {"you", "thanks for watching", "thank you for watching", "subscribe", "music", "bye", "mm", "hmm", "uh", "um", "subtitles by the amara.org community"}
+_PHANTOM = {"nan", "none", "null", "[silence]", "you", "thanks for watching", "thank you for watching", "subscribe", "music", "bye", "mm", "hmm", "uh", "um", "subtitles by the amara.org community"}
 
 
 def fix_terms(text: str) -> str:
