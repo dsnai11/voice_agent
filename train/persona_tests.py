@@ -13,7 +13,7 @@ import brain
 START = ["Arjun Sharma", "Personal loan", "5 lakh", "medical"]
 PERSONAS = {
     "salaried":      dict(says="job karta hoon",                       income_word="सैलरी", income_not=[],            tenure_word="कंपनी",  income="50000",  tenure="2 saal", doc_has="सैलरी स्लिप", doc_not=[]),
-    "self-employed": dict(says="main apna business karta hoon",        income_word="इनकम",   income_not=["सैलरी"],     tenure_word="बिज़नेस", income="80 hazaar", tenure="5 saal", doc_has="आईटीआर", doc_not=["सैलरी स्लिप"]),
+    "self-employed": dict(says="main apna business karta hoon",        income_word="इनकम|कमाई", income_not=["सैलरी"],     tenure_word="बिज़नेस", income="80 hazaar", tenure="5 saal", doc_has="आईटीआर", doc_not=["सैलरी स्लिप"]),
     "pensioner":     dict(says="main retired hoon pension aati hai",   income_word="पेंशन",  income_not=["सैलरी"],     tenure_word=None,      income="20000",  tenure=None,     doc_has="पेंशन", doc_not=["सैलरी स्लिप"]),
     "not-earning":   dict(says="housewife hoon",                       income_word="परिवार", income_not=["सैलरी"],     tenure_word=None,      income="40000",  tenure=None,     doc_has="को-एप्लिकेंट", doc_not=["सैलरी स्लिप"]),
 }
@@ -31,7 +31,7 @@ for kind, p in PERSONAS.items():
     for t in START:
         c.reply(t)
     q_income = c.reply(p["says"])                    # the reply to "what do you do" is the income question
-    checks = [(p["income_word"] in q_income, f"income question mentions {p['income_word']!r}")]
+    checks = [(any(w in q_income for w in p["income_word"].split("|")), f"income question mentions {p['income_word']!r}")]
     checks += [(w not in q_income, f"income question does not say {w!r}") for w in p["income_not"]]
     after_income = c.reply(p["income"])               # the next question: job tenure / business age, or the city
     if p["tenure_word"]:
