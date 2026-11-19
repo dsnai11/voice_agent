@@ -36,9 +36,11 @@ try:
 except OSError:
     pass
 
-SLOTS = ["full_name", "loan_type", "loan_amount", "employment", "monthly_income", "city", "existing_loans", "phone", "consent", "callback_time"]
+SLOTS = ["full_name", "loan_type", "loan_amount", "loan_purpose", "employment", "monthly_income", "city", "existing_loans", "existing_emi", "phone", "consent", "callback_time"]
 
 QUESTIONS = {
+    "loan_purpose": ["आपको यह लोन किस काम के लिए चाहिए?", "लोन का इस्तेमाल आप किस ज़रूरत के लिए करेंगे?"],
+    "existing_emi": ["अभी हर महीने कुल कितनी ईएमआई जाती है?", "आपकी सब ईएमआई मिलाकर महीने की लगभग कितनी बनती हैं?"],
     "full_name": ["कृपया अपना पूरा नाम बताइए।"],
     "loan_type": ["आपको किस तरह का लोन चाहिए, पर्सनल, पेडे या सैलरी लोन?", "आपको कौन सा लोन चाहिए, पर्सनल लोन, पेडे लोन या सैलरी लोन?"],
     "loan_amount": ["आपको कितने रुपये का लोन चाहिए?", "आपको लगभग कितनी रकम का लोन चाहिए?"],
@@ -50,7 +52,7 @@ QUESTIONS = {
     "consent": ["क्या हमारी टीम आपको इस नंबर पर कॉल कर सकती है?", "क्या हमारी टीम आपको कॉल करके आगे की जानकारी दे सकती है?"],
     "callback_time": ["आपको किस दिन और किस टाइम पर कॉल करवा दूँ?", "कॉल के लिए कौन सा दिन और टाइम ठीक रहेगा?"],
 }
-EXAMPLES = {"full_name": "जैसे, मेरा नाम अर्जुन शर्मा है।", "loan_type": "आप बस पर्सनल, पेडे या सैलरी बोल दीजिए।", "loan_amount": "आप बस रकम बोल दीजिए, जैसे पाँच लाख।",
+EXAMPLES = {"loan_purpose": "आप बस एक-दो शब्द में बता दीजिए, जैसे मेडिकल, शादी या घर की मरम्मत।", "existing_emi": "आप बस रकम बोल दीजिए, जैसे पाँच हज़ार।", "full_name": "जैसे, मेरा नाम अर्जुन शर्मा है।", "loan_type": "आप बस पर्सनल, पेडे या सैलरी बोल दीजिए।", "loan_amount": "आप बस रकम बोल दीजिए, जैसे पाँच लाख।",
             "employment": "आप बस नौकरी या बिज़नेस बोल दीजिए।", "monthly_income": "आप बस रकम बोल दीजिए, जैसे पचास हज़ार।", "city": "आप बस शहर का नाम बोल दीजिए, जैसे जयपुर।",
             "existing_loans": "आप बस हाँ या ना बोल दीजिए।", "phone": "आप दस अंकों का नंबर धीरे-धीरे बोल दीजिए।", "consent": "आप बस हाँ या ना बोल दीजिए।",
             "callback_time": "आप बस दिन और टाइम बोल दीजिए, जैसे कल शाम पाँच बजे।"}
@@ -105,7 +107,7 @@ STOP = {"mera", "meraa", "naam", "name", "nam", "is", "hai", "hain", "main", "ma
 LOAN_WORDS = [("payday", r"pay\s*-?\s*day|pe\s*day|पेडे|पे डे|\bp\.?\s?d\.?\s+loan|paid\s+loan|\bpedey?\b|\bpayd\b"), ("salary", r"salary\s+(?:loan|advance)|advance\s+salary|सैलरी\s+लोन"),
               ("personal", r"personal|पर्सनल"), ("home", r"home\s+loan|\bghar\b|property|makaan|मकान|होम"), ("business", r"business\s+loan|\bvyapar|vyapaar|\bdhandh|बिज़नेस\s+लोन"),
               ("vehicle", r"vehicle|\bcar\b|\bbike\b|gaadi|gadi|auto loan"), ("gold", r"\bgold\b|\bsona\b|सोना|गोल्ड")]
-SALARIED = r"salar|naukri|nokri|\bjob\b|employee|private|sarkari|government|company|नौकरी|सैलरी"
+SALARIED = r"salar|naukri|nokri|service|sarvice|employed|\bjob\b|employee|private|sarkari|government|company|नौकरी|सैलरी"
 SELF = r"business|dukaan|dukan|shop|self\s*-?\s*employ|vyapar|vyapaar|dhandha|dhanda|apna\s+kaam|freelanc|दुकान|बिज़नेस|व्यापार"
 
 
@@ -123,7 +125,7 @@ def digits_from_speech(text: str) -> str:
     return re.sub(r"\D", "", db.spoken_digits(t))
 
 
-def parse_amount(text: str):
+def parse_amount(text: str, minimum: int = 1000):
     """'paanch laakh' / '5 lakh' / '2.5 lakh' / '50 hazaar' / '500000' -> rupees (int), or None if no amount is present.
     A small number with no lakh / hazaar / crore after it ("ek taarikh") is not part of an amount."""
     if re.search(r"\d{9,}", text.replace(",", "").replace(" ", "")):          # a phone number, not an amount
@@ -133,7 +135,7 @@ def parse_amount(text: str):
     for w in words:
         if re.fullmatch(r"\d+(?:\.\d+)?", w):
             cur = float(w)
-            if cur >= 1000:                                   # plain digits such as 500000
+            if cur >= minimum:                                # plain digits such as 500000
                 total, cur, found = total + cur, None, True
         elif w in NUM:
             cur = NUM[w] if (cur is None or w in ("dedh", "dhai", "adhai", "sava")) else cur + NUM[w]
@@ -141,7 +143,7 @@ def parse_amount(text: str):
             total, cur, found = total + (1 if cur is None else cur) * MULT[w], None, True
         else:
             cur = None if w not in NUM and w not in MULT else cur
-    return int(total) if found and total >= 1000 else None
+    return int(total) if found and total >= minimum else None
 
 
 def yes_no(text: str):
@@ -417,10 +419,14 @@ class Flow:
                     details["loan_type"] = lt
                     captured.append("loan_type")
                 break
+        else:
+            if asked == "loan_type" and re.search(r"salar|सैलरी", low):          # one word: "salary"
+                details["loan_type"] = "salary"
+                captured.append("loan_type")
         income_re = r"salary|income|kamat|kamai|tankhw|mahin|monthly|महीने|सैलरी|कमाई"
         loan_re = r"loan|lakh|laakh|hazaar|rupe|rs\b|chahiye|chahie|paisa|paise|लोन"
         for clause in re.split(r"[.;!?]|\b(?:aur|and|but|lekin|par)\b", text):
-            amt = parse_amount(clause)
+            amt = None if asked == "existing_emi" else parse_amount(clause)
             if not amt:
                 continue
             plain = re.sub(r"salary\s+(?:loan|advance)|advance\s+salary|सैलरी\s+लोन", " ", clause.lower())     # "salary loan" is a product, not income
@@ -448,8 +454,35 @@ class Flow:
         elif asked == "city" and not city and 0 < len(re.findall(r"[a-z]+", low)) <= 2 and not bank:
             details["city"] = " ".join(re.findall(r"[a-z]+", low)).title()
             captured.append("city")
+        if asked == "loan_purpose" and text and not bank:
+            low_p = low
+            canon = None
+            for word, pat in (("medical", r"medical|ilaj|ilaaj|hospital|dawai|bimar|operation|treatment|doctor"), ("wedding", r"shaadi|shadi|wedding|vivah|marriage"),
+                              ("home repair", r"ghar|makaan|repair|renovation|marammat|construction"), ("education", r"education|padhai|padai|fees|school|college|course|study"),
+                              ("business", r"business|dukaan|dukan|vyapar|vyapaar|dhandha|stock|machine"), ("travel", r"travel|ghumn|trip|yatra|vacation|holiday"),
+                              ("debt repayment", r"karz|karza|purana loan|debt|emi bharn|credit card|bill"), ("emergency", r"emergency|zaroorat|jaruri|urgent|turant")):
+                if re.search(pat, low_p):
+                    canon = word
+                    break
+            if canon is None and yes_no(text) == "no" and len(_words(text)) <= 3:
+                canon = "not shared"
+            if canon is None and re.fullmatch(r"[a-z ]{3,40}", re.sub(r"[^a-z ]", " ", low_p).strip() or "-"):
+                canon = re.sub(r"[^a-z ]", " ", low_p).strip()[:40]
+            if canon:
+                details["loan_purpose"] = canon
+                captured.append("loan_purpose")
+        if asked == "existing_emi" and text:
+            emi = parse_amount(text, minimum=100)
+            if emi:
+                details["existing_emi"] = emi
+                captured.append("existing_emi")
+            elif yes_no(text) == "no" and len(_words(text)) <= 2:
+                details["existing_emi"] = 0
+                captured.append("existing_emi")
         if asked == "existing_loans":
             yn = yes_no(text)
+            if yn is None and set(_words(text)) & {"chal", "raha", "rahi", "hai", "ek", "do", "teen", "car", "bike", "home", "personal", "gold", "credit", "card", "emi", "loan"}:
+                yn = "yes"
             if yn:
                 details["existing_loans"] = yn
                 captured.append("existing_loans")
@@ -584,7 +617,7 @@ class Flow:
         if nxt is None:
             if not self.done:
                 self.done = True
-                parts.append(f"बहुत शुक्रिया {self._name()} जी, आपकी सारी डिटेल्स नोट हो गई हैं। कृपया स्क्रीन पर फ़ॉर्म देखकर सबमिट बटन दबा दीजिए। और कुछ पूछना हो तो बताइए।")
+                parts.append(f"बहुत शुक्रिया {self._name()} जी, आपकी सारी जानकारी नोट हो गई है। और कुछ पूछना हो तो बताइए, वरना आप स्क्रीन पर फ़ॉर्म देखकर सबमिट कर सकते हैं।")
             elif not parts:                                              # everything is collected and the caller said something we cannot place
                 self.unclear_after_done += 1
                 if self.unclear_after_done == 1:
@@ -616,6 +649,8 @@ class Flow:
             if s == "callback_time" and self.v.get("consent") != "yes":
                 continue
             if s in self.v or s in self.skipped:
+                continue
+            if s == "existing_emi" and self.v.get("existing_loans") != "yes":
                 continue
             if s == "phone" and self.call.form.get("phone") and "phone" in self.call.confirmed:
                 continue

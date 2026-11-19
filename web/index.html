@@ -327,7 +327,9 @@ function pump() {
 function maybeDone() {
   if (callComplete && !playing && queue.length === 0 && pending === 0 && ws) {      // the goodbye has been spoken: hang up like a phone call
     callComplete = false;
-    setTimeout(() => { if (ws) hangUp(); }, 700);
+    setTimeout(() => {                                                    // re-check: a late sentence must never be cut off
+      if (ws && !playing && queue.length === 0 && pending === 0) hangUp(); else { callComplete = true; maybeDone(); }
+    }, 1500);
     return;
   }
   if (turnEnded && !playing && queue.length === 0 && pending === 0) {

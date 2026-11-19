@@ -915,6 +915,38 @@
     "mujhe kuch aur puchna hai"
    ],
    "reply": "जी बिल्कुल, बताइए, आप क्या पूछना चाहते हैं?"
+  },
+  {
+   "id": "rate_too_high",
+   "topic": "caller says the interest is too high",
+   "examples": [
+    "interest bahut zyada hai",
+    "byaaj jyada lagta hai",
+    "rate bahut high hai",
+    "itna interest kyun hai",
+    "kam interest chahiye",
+    "interest kam karo",
+    "itna zyada rate kyun",
+    "dusri jagah kam interest hai",
+    "interest rate bahut jyada hai"
+   ],
+   "reply": "जी, मैं आपकी बात समझती हूँ। इंटरेस्ट आपकी प्रोफ़ाइल, यानी इनकम और क्रेडिट हिस्ट्री पर निर्भर करता है, और सही रेट टीम आपको बताएगी। मैं आपकी डिटेल्स नोट कर लेती हूँ ताकि टीम आपको सबसे ठीक ऑफ़र बता सके।",
+   "note": "Never promise a lower rate, never compare with other lenders' rates."
+  },
+  {
+   "id": "details_why",
+   "topic": "why are you asking for my details",
+   "examples": [
+    "meri salary kyun poochh rahe ho",
+    "ye sab kyun chahiye",
+    "itni details kyun",
+    "income kyun batani hai",
+    "ye sab kyun pooch rahe ho",
+    "mera naam number kyun chahiye",
+    "ye jaankari kyun chahiye",
+    "kyun puch rahe ho ye sab"
+   ],
+   "reply": "जी, ये जानकारी सिर्फ़ इसलिए चाहिए कि टीम आपके लिए सही लोन ऑप्शन देख सके। जो आप न बताना चाहें, उसे छोड़ सकते हैं।"
   }
  ]
 }

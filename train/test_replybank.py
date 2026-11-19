@@ -45,6 +45,15 @@ CASES = [   # (what the caller says, ids that must all be found; [] means nothin
     ("processing fee kitni hai aur kitne din me paisa milega", ["processing_fee", "disbursal_time"]),
     ("abhi paise nahi hain, late fee bhi zyada laga hai", ["hardship", "late_fee"]),
     ("aaj mausam kaisa hai", ["off_topic"]),
+    ("company ke baare mein batao", ["company_about"]),
+    ("civil score kya hota hai", ["what_is_cibil"]),
+    ("kitna cibil score chahiye", ["cibil_required"]),
+    ("emi kya hota hai", ["what_is_emi"]),
+    ("mujhe kuch aur baat karni hai", ["more_to_discuss"]),
+    ("aap kaise ho", ["small_talk"]),
+    ("interest bahut zyada hai", ["rate_too_high"]),
+    ("meri salary kyun poochh rahe ho", ["details_why"]),
+    ("office ka pata batao", ["office_address"]),
     ("sun raha hoon thik hai", []),
 ]
 
