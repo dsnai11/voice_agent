@@ -202,18 +202,75 @@
 
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; } }
   @media (max-width: 520px) { .card { padding: 18px; border-radius: 20px; } .orb-wrap { transform: scale(.9); } #log { height: 280px; } }
+
+  /* ======== fit-to-screen layout: everything visible at once, no page scroll ======== */
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; overflow: hidden; }
+  .top { width: 100%; max-width: 1240px; padding: 12px 24px 0; flex: none; display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; }
+  .ttl h1 { margin: 0; font-size: clamp(1.15rem, 2.4vw, 1.7rem); line-height: 1.15; background: linear-gradient(100deg, var(--ink) 30%, var(--brand) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .ttl p { margin: 3px 0 0; color: var(--muted); font-size: .84rem; line-height: 1.35; max-width: 70ch; }
+  @media (max-height: 700px) { .ttl p { display: none; } }
+  #banner { width: 100%; max-width: 1240px; margin: 0 auto; padding: 0 24px; flex: none; }
+  #banner div { margin-top: 6px; padding: 7px 12px; font-size: .84rem; }
+  main { flex: 1; min-height: 0; width: 100%; max-width: 1240px; padding: 12px 24px 16px; gap: 18px; grid-template-rows: minmax(0, 1fr); }
+  .card { height: 100%; min-height: 0; display: flex; flex-direction: column; padding: 18px 22px; overflow: hidden; }
+  /* left: avatar scales with the window height, the conversation takes the rest */
+  .stage { flex: none; padding: 0; gap: 2px; }
+  .orb-wrap { width: clamp(120px, 24vh, 184px); height: clamp(120px, 24vh, 184px); margin-bottom: 0; }
+  .orb { width: 60%; height: 60%; } .orb svg { width: 46%; height: 46%; } .ring { inset: 12%; }
+  .who h2 { font-size: 1.12rem; } .who span { font-size: .8rem; }
+  .status { margin-top: 4px; padding: 5px 13px; font-size: .86rem; } #timer { margin-top: 2px; font-size: .8rem; }
+  #callBtn { margin-top: 10px; padding: 12px 22px; border-radius: 15px; flex: none; }
+  #meterWrap { margin-top: 8px; flex: none; } #meterWarn { margin-top: 8px; padding: 7px 11px; font-size: .8rem; flex: none; }
+  #log { flex: 1; min-height: 0; height: auto; margin-top: 10px; }
+  .typing { flex: none; margin-top: 6px; }
+  /* right: the form is two columns so six fields fit in four rows */
+  #formWrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .form-head { margin-bottom: 10px; flex: none; } .ringp { width: 52px; height: 52px; font-size: .88rem; } .progress { margin: 0 0 12px; flex: none; }
+  #form { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; grid-template-areas: "name phone" "reason reason" "cat consent" "time time"; flex: none; }
+  #f_full_name { grid-area: name; } #f_phone { grid-area: phone; } #f_reason { grid-area: reason; } #f_category { grid-area: cat; }
+  #f_consent_to_contact { grid-area: consent; } #f_preferred_callback_time { grid-area: time; }
+  .field { margin-bottom: 9px; } label { margin-bottom: 3px; }
+  input, select { padding: 9px 12px; border-radius: 12px; font-size: .95rem; }
+  #detailsWrap { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding-right: 4px; } #detailsWrap h3 { margin: 8px 0 8px; position: sticky; top: 0; z-index: 1; }
+  .detail { margin-bottom: 8px; } #savedNote { flex: none; margin-top: 8px; padding: 9px 13px; font-size: .84rem; }
+  #submitBtn { flex: none; margin-top: 6px; padding: 12px; } #formWrap > .note { flex: none; margin-top: 8px; font-size: .74rem; }
+  section.card:nth-of-type(2) { overflow-y: auto; scrollbar-width: thin; }
+  #cardsWrap { flex: none; margin-bottom: 14px; }
+  #done { margin: auto; } .tick { width: 72px; height: 72px; }
+  /* phones and narrow windows: stack the cards and let the page scroll */
+  @media (max-width: 860px) {
+    body { height: auto; overflow: auto; display: block; }
+    .top { grid-template-columns: auto auto; } .ttl { grid-column: 1 / -1; order: 3; }
+    main { display: grid; grid-template-columns: 1fr; padding: 12px 16px 28px; } .card { height: auto; overflow: visible; } #log { height: 260px; flex: none; }
+    #form { grid-template-columns: 1fr; grid-template-areas: none; } #form .field { grid-area: auto !important; }
+  }
+
+  /* extra details: compact two-column grid so more of them show at once */
+  #details { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+  #details .detail { margin: 0; gap: 4px; align-items: flex-end; animation-duration: .3s; }
+  #details .detail label { font-size: .68rem; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #details .detail input { padding: 6px 10px; font-size: .86rem; border-radius: 10px; }
+  #details .detail button { padding: 6px 9px; font-size: .75rem; border-radius: 9px; }
+  @media (max-width: 1100px) { #details { grid-template-columns: 1fr; } }
+
+  /* a tighter form: three rows instead of four, so the extra details get more room */
+  #form { grid-template-columns: repeat(6, 1fr); grid-template-areas: "name name name phone phone phone" "reason reason reason reason reason reason" "cat cat consent consent time time"; }
+  .progress { display: none; }
+  .form-head { margin-bottom: 8px; }
+  @media (max-width: 1100px) { #form { grid-template-columns: 1fr 1fr; grid-template-areas: "name phone" "reason reason" "cat consent" "time time"; } }
+
+  #form { grid-template-columns: repeat(12, 1fr); grid-template-areas: "name name name name name name phone phone phone phone phone phone" "reason reason reason reason reason reason reason reason reason reason reason reason" "cat cat cat cat cat consent consent consent time time time time"; }
+  @media (max-width: 1100px) { #form { grid-template-columns: 1fr 1fr; grid-template-areas: "name phone" "reason reason" "cat consent" "time time"; } }
 </style>
 </head>
 <body data-state="idle">
 <div class="aurora"></div>
 <header class="top rise">
   <div class="brand"><div class="logo">L</div><div><b>Laxmi India Finance</b><small>Loan assistance</small></div></div>
+  <div class="ttl"><h1>Talk to our AI assistant</h1><p>Press Call and tell Ria what you need, in Hindi or English. The form fills in as you talk; you can correct anything by typing.</p></div>
   <div class="chip"><i></i> Secure line</div>
 </header>
-<div class="hero rise d1">
-  <h1>Talk to our AI assistant</h1>
-  <p>Press Call and tell Ria what you need, in Hindi or English. The form fills in as you talk, and you can correct anything by typing.</p>
-</div>
 <div id="banner"></div>
 <main>
   <section class="card rise d2">
