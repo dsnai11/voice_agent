@@ -101,6 +101,11 @@
       <div class="status"><span class="dot" id="dot"></span><span id="stateText">Not connected</span></div>
       <div id="timer">00:00</div>
     </div>
+    <div id="meterWrap" style="display:none;align-items:center;gap:8px;margin-top:10px;font-size:.82rem;color:var(--muted)">
+      <span>Mic:</span><div style="flex:1;height:8px;background:var(--line);border-radius:99px;overflow:hidden"><i id="meterBar" style="display:block;height:100%;width:0;background:var(--brand)"></i></div>
+      <span id="micName" style="max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    </div>
+    <div id="meterWarn" style="display:none;margin-top:8px;padding:8px 12px;border-radius:10px;background:var(--warn);color:var(--warn-ink);font-size:.88rem">No sound from the microphone. Speak now; if this stays, check Windows Sound settings (Input volume, not muted) or reload with <b>?raw=1</b> at the end of the address.</div>
     <div id="slow">The voice is generated on this computer and can take a minute or more per sentence. Please wait.</div>
     <div id="log" aria-live="polite"><div class="empty">The conversation will appear here. Use headphones to avoid echo.</div></div>
   </section>
@@ -347,9 +352,23 @@ class PCM extends AudioWorkletProcessor {
 registerProcessor("pcm16", PCM);`;
 
 async function startMic() {
-  micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false, channelCount: 1 } });
+  const raw = new URLSearchParams(location.search).has("raw");      // ?raw=1: no browser voice processing (fixes some laptop mics that come out silent)
+  micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: !raw, noiseSuppression: !raw, autoGainControl: raw, channelCount: 1 } });
   await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([workletSrc], { type: "application/javascript" })));
   const src = ctx.createMediaStreamSource(micStream);
+  const an = ctx.createAnalyser(); an.fftSize = 1024; src.connect(an);      // live microphone level bar
+  const buf = new Float32Array(an.fftSize); let quiet = 0;
+  $("meterWrap").style.display = "flex"; $("micName").textContent = micStream.getAudioTracks()[0]?.label || "microphone";
+  const tick = () => {
+    if (!micStream) return;
+    an.getFloatTimeDomainData(buf);
+    let s = 0; for (const v of buf) s += v * v; const level = Math.sqrt(s / buf.length);
+    $("meterBar").style.width = Math.min(100, level * 600) + "%";
+    quiet = level < 0.0005 ? quiet + 1 : 0;
+    $("meterWarn").style.display = quiet > 180 ? "block" : "none";       // about 3 seconds of dead silence
+    requestAnimationFrame(tick);
+  };
+  tick();
   node = new AudioWorkletNode(ctx, "pcm16");
   node.port.onmessage = (e) => { if (ws && ws.readyState === 1) ws.send(e.data); };
   const mute = ctx.createGain(); mute.gain.value = 0;     // keeps the graph running without echoing the mic

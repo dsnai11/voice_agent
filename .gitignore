@@ -18,3 +18,9 @@ ria_handover.zip
 # secrets
 .env
 *.key
+
+# local Python environment and model files
+.venv/
+asr_models/
+*.wav
+calls/

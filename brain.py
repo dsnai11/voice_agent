@@ -205,6 +205,10 @@ class Call:
         self.finished = False         # Gemini has called finish_call: the app plays the recorded goodbye
         self.flags = {}               # key -> reason a value looks doubtful
         self.confirmed = set()        # keys the caller (or the user on the page) has confirmed
+        self.flow = None              # guided new-loan enquiry flow (flow.py); FLOW=0 switches it off
+        if mode == "enquiry" and os.environ.get("FLOW", "1") != "0":
+            import flow
+            self.flow = flow.Flow(self)
 
     def _run_tool(self, name, args):
         # The model never chooses whose data to read: we use the verified customer only.
@@ -467,6 +471,20 @@ class Call:
         """The reply to what the caller just said (one chunk of their speech)."""
         if not self._turn_open:
             self.turn_no, self._turn_open = self.turn_no + 1, True
+        if self.flow is not None and not user_text.startswith("("):       # guided flow first: exact values, one question at a time
+            try:
+                out = self.flow.handle(user_text)
+            except Exception as e:                                         # a flow bug must never silence the call: fall back to the assistant
+                print(f"   [flow] error {type(e).__name__}: {e}", flush=True)
+                out = None
+            if out is not None:
+                print("   [flow]", {k: v for k, v in self.flow.v.items()}, "| asked:", self.flow.asked, flush=True)
+                self.history.append({"role": "user", "content": user_text})
+                self.history.append({"role": "assistant", "content": out})
+                self._trim()
+                if not self.more_coming:
+                    self._turn_open = False
+                return out
         note = self._MORE_COMING_NOTE if (self.more_coming and self.mode == "enquiry") else ""
         if self.mode == "enquiry" and not user_text.startswith("("):          # internal prompts are not caller speech
             guide = replybank.hint(user_text)

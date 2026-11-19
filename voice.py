@@ -91,11 +91,15 @@ def synth(sentence: str, fmt: str = "wav") -> bytes:
     return r.content
 
 
+def cache_path(sentence: str, fmt: str = "wav") -> str:
+    key = hashlib.sha1(f"{VOICE_ID}|{VOICE_LANGUAGE}|{VOICE_SPEED}|{VOICE_NUM_STEP}|{fmt}|{sentence}".encode()).hexdigest()[:16]
+    return os.path.join(CACHE_DIR, key + ".bin")
+
+
 def audio_for(sentence: str, fmt: str = "wav") -> bytes:
     """Disk cache: a sentence is generated once, then reused if it is spoken again."""
     os.makedirs(CACHE_DIR, exist_ok=True)
-    key = hashlib.sha1(f"{VOICE_ID}|{VOICE_LANGUAGE}|{VOICE_SPEED}|{VOICE_NUM_STEP}|{fmt}|{sentence}".encode()).hexdigest()[:16]
-    path = os.path.join(CACHE_DIR, key + ".bin")
+    path = cache_path(sentence, fmt)
     if os.path.exists(path):
         with open(path, "rb") as f:
             return f.read()

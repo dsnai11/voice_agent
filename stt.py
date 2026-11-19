@@ -34,6 +34,45 @@ API_HINT = os.environ.get("STT_HINT", "लोन, पर्सनल लोन, 
                                       "पाँच लाख रुपये, पचास हज़ार, जयपुर, दिल्ली, मुंबई, कॉलबैक, शिकायत।")
 
 
+ASR_URL = os.environ.get("ASR_URL", "http://127.0.0.1:3950")
+
+
+def transcribe_hinglish(audio: np.ndarray, rate: int = 16000) -> str:
+    """Listen with the local Hinglish model (asr_server.py): the caller's own words in Roman letters, no hint prompt, quiet audio boosted."""
+    import requests
+
+    buf = io.BytesIO()
+    sf.write(buf, audio, rate, format="WAV", subtype="PCM_16")
+    r = requests.post(ASR_URL.rstrip("/") + "/transcribe", files={"file": ("audio.wav", buf.getvalue(), "audio/wav")}, timeout=60)
+    r.raise_for_status()
+    text = fix_terms((r.json().get("text") or "").strip())
+    if text.lower().strip(" .!?,") in _PHANTOM:
+        return ""
+    return text
+
+
+# Business words this model is known to mishear (it was not trained on loan vocabulary). Only exact, unambiguous slips are fixed here.
+_TERM_FIXES = [
+    (r"\bpay\s*-?\s*day\s+(?:loan|lone|launch|lan|loon)\b", "payday loan"),
+    (r"\bpay\s*-?\s*day\b", "payday"),
+    (r"\bsalary\s+(?:lone|launch|loon)\b", "salary loan"),
+    (r"\bpersonal\s+(?:lone|launch|loon)\b", "personal loan"),
+    (r"\b(?:e\.?\s?m\.?\s?i\.?|emmi|aimi)\b", "EMI"),
+    (r"\bsibil\b|\bcibil\b|\bcivil\s+score\b", "CIBIL"),
+]
+
+
+_PHANTOM = {"you", "thanks for watching", "thank you for watching", "subscribe", "music", "bye", "mm", "hmm", "uh", "um", "subtitles by the amara.org community"}
+
+
+def fix_terms(text: str) -> str:
+    import re
+
+    for pattern, good in _TERM_FIXES:
+        text = re.sub(pattern, good, text, flags=re.I)
+    return text
+
+
 def transcribe_api(audio: np.ndarray, rate: int = 16000) -> str:
     """Listen through VoiceStudio's OpenAI-style /v1/audio/transcriptions: the same GPU server that speaks also listens."""
     import requests

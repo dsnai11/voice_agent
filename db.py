@@ -55,7 +55,7 @@ _NUMBER_WORDS = {
     "पाँच": "5", "पांच": "5", "पाच": "5", "छह": "6", "छः": "6", "छे": "6", "छ": "6", "छै": "6",
     "सात": "7", "आठ": "8", "नौ": "9", "नो": "9",
     # Hindi in Roman letters
-    "shunya": "0", "ek": "1", "do": "2", "teen": "3", "char": "4", "chaar": "4", "paanch": "5", "panch": "5",
+    "shunya": "0", "shoony": "0", "shuny": "0", "shunay": "0", "sunya": "0", "jero": "0", "ek": "1", "do": "2", "teen": "3", "char": "4", "chaar": "4", "paanch": "5", "panch": "5",
     "chhe": "6", "che": "6", "chah": "6", "saat": "7", "aath": "8", "nau": "9",
     # English
     "zero": "0", "oh": "0", "one": "1", "two": "2", "three": "3", "four": "4", "five": "5",

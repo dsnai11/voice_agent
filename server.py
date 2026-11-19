@@ -43,12 +43,15 @@ STT_DEVICE = _setting("STT_DEVICE", "cpu")                               # GPU: 
 STT_COMPUTE = _setting("STT_COMPUTE", "int8")                            # GPU: "float16"
 LLM_MODEL = _setting("LLM_MODEL", "gemini-3.5-flash-lite")
 DATA_BACKEND = _setting("DATA_BACKEND", "excel")
-CHUNK_SILENCE_S = float(_setting("CHUNK_SILENCE_S", "0.7"))                # a pause this long ends a chunk of the caller's speech
-TURN_SILENCE_S = float(_setting("TURN_SILENCE_S", "1.6"))                  # quiet this long ends the caller's turn: the replies are spoken
+CHUNK_SILENCE_S = float(_setting("CHUNK_SILENCE_S", "0.5"))                # a pause this long ends a chunk of the caller's speech
+TURN_SILENCE_S = float(_setting("TURN_SILENCE_S", "1.0"))                  # quiet this long ends the caller's turn: the replies are spoken
 HOST = _setting("HOST", "127.0.0.1")                                     # keep local; see notes before exposing
 PORT = int(_setting("PORT", "8000"))
 FILLER_DELAY_S = float(_setting("FILLER_DELAY_S", "1.0"))                # play a waiting phrase if the reply takes longer than this
 MAX_CALL_S = int(_setting("MAX_CALL_S", "0"))                       # 0 = no limit on how long a call can last
+STT_DEBUG = _setting("STT_DEBUG", "0") == "1"                              # 1 = save every chunk of caller audio + what was heard (for tuning the listener)
+STT_DEBUG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "calls", "stt_debug")
+_STT_DEBUG_LAST = [None]
 # ----------------------------------------------------------------------
 for _k, _v in dict(LLM_MODEL=LLM_MODEL, DATA_BACKEND=DATA_BACKEND, VOICESTUDIO_URL=VOICESTUDIO_URL,
                    VOICE_ID=VOICE_ID, VOICE_SPEED=VOICE_SPEED, DENOISE=DENOISE).items():
@@ -74,7 +77,21 @@ SESSIONS = OrderedDict()          # call_id -> CallSession (kept after the call 
 async def lifespan(_app):
     if STT_ENGINE == "whisper":                                  # with Gemini listening, Whisper loads only if it is needed
         threading.Thread(target=_load_stt, daemon=True).start()
+    threading.Thread(target=_prewarm_voice, daemon=True).start()
     yield
+
+
+def _prewarm_voice():
+    """Generate Ria's common sentences once, in the background, so they play with no wait during calls (new ones are cached as they are spoken)."""
+    try:
+        import flow
+        todo = [x for x in flow.static_sentences() if not os.path.exists(voice.cache_path(voice.speakable(x), voice.LIVE_FORMAT))]
+        print(f"voice cache: {len(todo)} common sentences to prepare in the background", flush=True)
+        for x in todo:
+            voice.audio_for(voice.speakable(x), voice.LIVE_FORMAT)
+        print("voice cache ready", flush=True)
+    except Exception as e:
+        print(f"voice cache stopped: {type(e).__name__}: {e}", flush=True)
 
 
 app = FastAPI(lifespan=lifespan)
@@ -101,12 +118,28 @@ def _load_stt():
 def transcribe(audio: np.ndarray) -> str:
     if audio.size < listen.RATE * 0.3:
         return ""
+    raw = audio
     audio = denoise.clean(audio)                                 # background noise out before anything listens
+    if STT_DEBUG:                                                # keep the audio so the listener settings can be compared offline
+        try:
+            import soundfile as _sf
+            os.makedirs(STT_DEBUG_DIR, exist_ok=True)
+            _stamp = f"{int(time.time() * 1000)}"
+            _sf.write(os.path.join(STT_DEBUG_DIR, _stamp + ".wav"), raw, listen.RATE, subtype="PCM_16")
+            _STT_DEBUG_LAST[0] = _stamp
+        except Exception:
+            pass
     if STT_ENGINE == "gemini":
         try:
             return stt.transcribe_gemini(audio)
         except Exception as e:                                   # network / quota problem: fall back to local Whisper
             print(f"Gemini listening failed ({type(e).__name__}); using Whisper instead.", flush=True)
+    if STT_ENGINE == "hinglish":
+        try:
+            return stt.transcribe_hinglish(audio)
+        except Exception as e:                                   # listening service down: do not guess, ask the caller to repeat
+            print(f"Hinglish listening failed ({type(e).__name__}): {e}", flush=True)
+            return ""
     if STT_ENGINE == "api":
         try:
             return stt.transcribe_api(audio)
@@ -136,7 +169,7 @@ def api_health():
         voicestudio = requests.get(VOICESTUDIO_URL.rstrip("/") + "/v1/audio/voices", headers=voice.auth_headers(), timeout=3).ok
     except requests.RequestException:
         voicestudio = False
-    return {"voicestudio": voicestudio, "whisper": STT_ENGINE == "gemini" or _stt_ready.is_set(),
+    return {"voicestudio": voicestudio, "whisper": STT_ENGINE in ("gemini", "api", "hinglish") or _stt_ready.is_set(),
             "stt_engine": STT_ENGINE, "llm_model": LLM_MODEL,
             "data_backend": DATA_BACKEND}
 
@@ -335,19 +368,29 @@ class CallSession:
         await self.speak(text)
 
     async def speak(self, text: str, end_turn: bool = True):
-        """Send the reply one sentence at a time, so the first sentence can start playing as soon as it is ready."""
+        """Send the reply one sentence at a time. Every sentence starts generating at once (sentences heard before come straight
+        from the cache), and the text appears on screen together with the first audio, so what is written is what is being said."""
         self.transcript.append(("agent", text))
-        await self.send(type="transcript", role="agent", text=text)
         await self.send(type="status", state="speaking")
-        for sentence in voice.split_sentences(text):
+        t0 = time.time()
+        jobs = [asyncio.create_task(asyncio.to_thread(voice.audio_for, voice.speakable(sentence), voice.LIVE_FORMAT))
+                for sentence in voice.split_sentences(text)]
+        shown = False
+        for sentence, job in zip(voice.split_sentences(text), jobs):
             try:
-                t = time.time()
-                wav = await asyncio.to_thread(voice.audio_for, voice.speakable(sentence), voice.LIVE_FORMAT)
-                print(f"  voice: {len(sentence)} characters spoken in {time.time() - t:.1f}s ({len(wav) // 1024} KB)", flush=True)
+                wav = await job
             except Exception as e:
                 await self.send(type="error", message=f"Voice engine failed ({type(e).__name__}). Is VoiceStudio running?")
+                for j in jobs:
+                    j.cancel()
                 break
+            if not shown:
+                shown = True
+                await self.send(type="transcript", role="agent", text=text)
+                print(f"  voice: first audio ready {time.time() - t0:.1f}s after the reply was written", flush=True)
             await self.send(type="agent_audio", text=sentence, data=base64.b64encode(wav).decode())
+        if not shown:
+            await self.send(type="transcript", role="agent", text=text)
         if end_turn:
             await self.send(type="turn_end")
 
@@ -366,7 +409,13 @@ class CallSession:
         """Transcribe one chunk and show it at once, without waiting for the replies to earlier chunks."""
         t = time.time()
         text = await asyncio.to_thread(transcribe, audio)
-        print(f"  chunk {part}: heard in {time.time() - t:.1f}s ({len(audio) / listen.RATE:.1f}s of speech)", flush=True)
+        print(f"  chunk {part}: heard in {time.time() - t:.1f}s ({len(audio) / listen.RATE:.1f}s of speech): {text!r}", flush=True)
+        if STT_DEBUG and _STT_DEBUG_LAST[0]:
+            try:
+                with open(os.path.join(STT_DEBUG_DIR, _STT_DEBUG_LAST[0] + ".txt"), "w", encoding="utf-8") as _f:
+                    _f.write(text)
+            except OSError:
+                pass
         if text:
             await self.send(type="transcript", role="user", text=text, part=part)
         return text
@@ -431,7 +480,7 @@ class CallSession:
         self._reset_turn()
         if not texts:                                                          # nothing clear was heard
             self.not_heard_streak += 1
-            if audio_s < 1.5 or self.not_heard_streak > 2:                     # a short noise, or already asked twice: keep quiet and keep listening
+            if audio_s < 0.6 or self.not_heard_streak > 3:                     # a short noise, or already asked twice: keep quiet and keep listening
                 self.playback_done()
                 return
             if await self.play_clip("not_heard"):
@@ -467,9 +516,17 @@ class CallSession:
             if self.seg is None:                                  # first second: measure the room noise
                 self.noise.append(listen.rms(block))
                 if len(self.noise) * listen.BLOCK_S >= 1.0:
-                    thr = max(0.012, float(np.median(self.noise)) * 4.0)
+                    # The greeting may already be playing during this second: use the quietest part, not the median,
+                    # and cap the result so Ria's own voice can never push the threshold above normal speech.
+                    thr = min(0.04, max(0.012, float(np.percentile(self.noise, 20)) * 4.0))
                     self.seg = listen.Segmenter(thr, end_silence_s=CHUNK_SILENCE_S)
+                    print(f"  mic threshold {thr:.4f} (median noise {float(np.median(self.noise)):.4f}, peak {max(self.noise):.4f})", flush=True)
             elif self.listening:
+                self.peak = max(getattr(self, "peak", 0.0), listen.rms(block))
+                if int(time.time()) != getattr(self, "_peak_t", 0) and int(time.time()) % 3 == 0:
+                    self._peak_t = int(time.time())
+                    print(f"  mic level peak {self.peak:.4f} vs threshold {self.seg.thr:.4f}", flush=True)
+                    self.peak = 0.0
                 self.silent_s = 0.0 if listen.rms(block) > self.seg.thr else self.silent_s + listen.BLOCK_S
                 chunk = self.seg.feed(block)
                 if chunk is not None:                             # a chunk of speech just ended: transcribe it right away
