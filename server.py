@@ -91,6 +91,11 @@ def _prewarm_voice():
         for x in todo:
             voice.audio_for(voice.speakable(x), voice.LIVE_FORMAT)
         print("voice cache ready", flush=True)
+        try:
+            requests.post(VOICESTUDIO_URL.rstrip("/") + "/system/flush-memory", headers=voice.auth_headers(), timeout=60)
+            print("voice server GPU memory flushed", flush=True)
+        except requests.RequestException:
+            pass
     except Exception as e:
         print(f"voice cache stopped: {type(e).__name__}: {e}", flush=True)
 

@@ -21,6 +21,21 @@ import forms
 import replybank
 import voice
 
+FREE_RULES = ("तुम रिया हो, लक्ष्मी इंडिया फाइनेंस लिमिटेड की फ़ोन असिस्टेंट (महिला, एआई)। कॉलर ने अभी जो पूछा या कहा है उसका सीधा, सही और विनम्र जवाब दो।\n"
+              "- हिंग्लिश में बोलो: आसान रोज़ की हिंदी देवनागरी में, लोन, ईएमआई, सैलरी, सिबिल जैसे अंग्रेज़ी शब्द भी देवनागरी में लिखो। अगर कॉलर पूरी अंग्रेज़ी में बोले तो अंग्रेज़ी में जवाब दो।\n"
+              "- जवाब सिर्फ़ 1 से 2 छोटे वाक्यों का हो। कोई मार्कडाउन, लिस्ट या इमोजी नहीं। अपने लिए स्त्रीलिंग (करती हूँ, बताती हूँ) और कॉलर के लिए लिंग-निरपेक्ष शब्द, नाम के बाद 'जी'।\n"
+              "- कंपनी, लोन के नियम, दस्तावेज़, चार्ज, सिबिल, ईएमआई वगैरह के बारे में सिर्फ़ नीचे लिखे तथ्यों और सामान्य, सरल समझाइश से जवाब दो। जो तथ्यों में नहीं है, उसके लिए साफ़ कहो कि टीम कन्फ़र्म करेगी। कोई नंबर, रेट, फ़ीस या तारीख़ अपनी तरफ़ से मत बनाओ।\n"
+              "- लोन पास होने, रेट, लिमिट या समय का कोई वादा मत करो। ओटीपी, पिन, पासवर्ड कभी मत माँगो।\n"
+              "- 'कैसे हो', 'धन्यवाद', 'कुछ और बात करनी है' जैसी बातों का छोटा, गर्मजोशी वाला जवाब दो और कहो कि वे बताएँ।\n"
+              "- कॉलर से कोई नई जानकारी (नाम, नंबर, राशि) मत माँगो; वह फ़ॉर्म में अलग से पूछी जाती है।\n")
+COMPANY_INFO = ""
+try:
+    import os as _os
+    with open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "knowledge", "company_info.txt"), encoding="utf-8") as _f:
+        COMPANY_INFO = _f.read().strip()
+except OSError:
+    pass
+
 SLOTS = ["full_name", "loan_type", "loan_amount", "employment", "monthly_income", "city", "existing_loans", "phone", "consent", "callback_time"]
 
 QUESTIONS = {
@@ -51,8 +66,25 @@ NUM = {"ek": 1, "do": 2, "teen": 3, "char": 4, "chaar": 4, "paanch": 5, "panch":
        "thirty": 30, "forty": 40, "fifty": 50, "dedh": 1.5, "dhai": 2.5, "adhai": 2.5, "sava": 1.25, "aadha": 0.5, "half": 0.5}
 MULT = {"sau": 100, "hundred": 100, "hazaar": 1000, "hazar": 1000, "hajar": 1000, "thousand": 1000, "k": 1000, "lakh": 100000, "laakh": 100000,
         "lac": 100000, "lacs": 100000, "lakhs": 100000, "laakhon": 100000, "crore": 10_000_000, "karod": 10_000_000, "cr": 10_000_000}
-YES = {"haan", "han", "ha", "haa", "ji", "yes", "yeah", "yep", "theek", "thik", "sahi", "bilkul", "correct", "right", "ok", "okay", "zaroor", "kijiye", "karo", "kar"}
+YES = {"haan", "han", "ha", "haa", "hanji", "haanji", "haji", "ji", "yes", "yeah", "yep", "theek", "thik", "sahi", "bilkul", "correct", "right", "ok", "okay", "okey",
+       "oke", "kk", "zaroor", "kijiye", "karo", "kar", "de", "dijiye", "chalega", "chalo", "chaliye", "accha", "achha", "acha", "sure", "done", "hmm", "hm", "aage",
+       "continue", "proceed"}
+ACK_WORDS = YES | {"hai", "to", "toh", "bhai", "abhi", "bas", "thanks", "thank", "you", "fine", "good", "great", "perfect", "nice", "badhiya", "mera", "meri",
+                   "taraf", "se", "aap", "chalu", "karein", "karte", "hain", "chal", "ahead", "go", "next", "phir", "fir"}
 NO = {"nahi", "nahin", "nhi", "nai", "no", "mat", "na", "galat", "wrong", "incorrect", "nope"}
+
+
+def is_ack_only(text: str) -> bool:
+    """A very short agreement such as 'ok', 'theek hai', 'chalo aage chalo' (it brings no new information)."""
+    w = _words(text)
+    return 0 < len(w) <= 5 and all(x in ACK_WORDS for x in w)
+
+
+def looks_like_question(text: str) -> bool:
+    low = text.lower()
+    return "?" in text or bool(re.search(r"\b(kya|kaise|kyun|kyu|kab|kitna|kitni|kitne|kaun|kahan|kaha|what|how|why|when|which|who|where|can|could|batao|bataiye|bataye|samjhao|samjhaiye|matlab|explain|details?|jankari|jaankari|baare|bare|baat|poochna|puchna|company|civil|cibil|score)\b", low))
+
+
 STOP = {"mera", "meraa", "naam", "name", "nam", "is", "hai", "hain", "main", "mai", "my", "the", "ji", "sir", "madam", "full", "i", "am", "hu", "hoon", "hun",
         "bol", "raha", "rahi", "rha", "rhi", "se", "ka", "ki", "toh", "to", "haan", "han", "ha", "yes", "sorry", "bhai", "aur", "and", "please", "plz", "mujhe", "hello", "namaste"}
 LOAN_WORDS = [("payday", r"pay\s*-?\s*day|pe\s*day|पेडे|पे डे|\bp\.?\s?d\.?\s+loan|paid\s+loan|\bpedey?\b|\bpayd\b"), ("salary", r"salary\s+(?:loan|advance)|advance\s+salary|सैलरी\s+लोन"),
@@ -221,7 +253,7 @@ def static_sentences() -> list:
             "माफ़ कीजिए, मैं ठीक से समझ नहीं पाई।", "जी, लोन के बारे में मैं आपकी पूरी मदद करूँगी।",
             "कृपया नंबर दोबारा, धीरे-धीरे बोलिए।", "पूरा दस अंकों का नंबर चाहिए।",
             "ठीक है जी, मैंने नोट कर लिया, हमारी टीम आपको उसी समय कॉल करेगी।",
-            "ठीक है जी, आपकी जानकारी नोट हो गई है और हमारी टीम जल्दी आपसे संपर्क करेगी।", "ठीक है जी, जितनी जानकारी मिली है वो मैंने नोट कर ली है।",
+            "ठीक है जी, आपकी जानकारी नोट हो गई है और हमारी टीम जल्दी आपसे संपर्क करेगी।", "ठीक है जी, जितनी जानकारी मिली है वो मैंने नोट कर ली है।", "जी, अगर आपको कुछ और पूछना हो तो बताइए, वरना आप कॉल खत्म कर सकते हैं।",
             "जी, मैं ठीक से समझ नहीं पाई। क्या आप अपनी बात एक बार फिर बता सकते हैं?",
             "जी, आप चाहें तो स्क्रीन पर फ़ॉर्म सबमिट कर दीजिए, हमारी टीम जल्दी आपसे संपर्क करेगी।",
             "यह नंबर सही नहीं लग रहा, मोबाइल नंबर छह, सात, आठ या नौ से शुरू होता है। कृपया नंबर दोबारा बोलिए।"]
@@ -325,7 +357,10 @@ class Flow:
                 pass
 
         # --- approved reply for a question or special request
-        bank = [m for m in replybank.match(text) if m["score"] >= 0.6 and m["id"] not in SKIP_IDS]
+        bank = [m for m in replybank.match(text) if m["score"] >= (0.45 if m["id"] in ("more_to_discuss", "small_talk") else 0.6) and m["id"] not in SKIP_IDS]
+        if is_ack_only(text):
+            bank = []
+        bank = [m for m in bank if m["id"] not in LEGACY_IDS or m["score"] >= 0.72]
         # "call me in half an hour" must never be mistaken for "do not call me": stopping needs an explicit refusal word
         strong = re.search(r"\b(mat|band|stop|dnd|do\s+not|don't|dont|not\s+interested|nahin\s+chahiye|nahi\s+chahiye|nhi\s+chahiye)\b", low)
         if self.asked in ("callback_time", "consent") and not re.search(r"\b(mat|stop|dnd|do\s+not|don't|dont|not\s+interested|band)\b", low):
@@ -426,7 +461,7 @@ class Flow:
                 core["consent_to_contact"] = yn
                 captured.append("consent")
         if asked == "callback_time" and text and not bank:
-            core["preferred_callback_time"] = re.sub(r"\s+", " ", text)[:80]
+            core["preferred_callback_time"] = "any time" if (yes_no(text) == "no" and len(_words(text)) <= 2) else re.sub(r"\s+", " ", text)[:80]
             captured.append("callback_time")
 
         # --- apply what was captured
@@ -451,10 +486,31 @@ class Flow:
         if any(i in LEGACY_IDS for i in ids) and not captured:
             return None
 
+        # --- everything is collected: the caller can talk about anything else
+        if self.done and not captured:
+            if is_ack_only(text):
+                return "जी, अगर आपको कुछ और पूछना हो तो बताइए, वरना आप कॉल खत्म कर सकते हैं।"
+            approved = [m["entry"]["reply"] for m in bank if m["id"] not in LEGACY_IDS][:2]
+            if approved:
+                return " ".join(approved)
+            answer = self._free(text)
+            if answer:
+                return answer
+            self.unclear_after_done += 1
+            if self.unclear_after_done == 1:
+                return "जी, मैं ठीक से समझ नहीं पाई। क्या आप अपनी बात एक बार फिर बता सकते हैं?"
+            return "जी, आप चाहें तो स्क्रीन पर फ़ॉर्म सबमिट कर दीजिए, हमारी टीम जल्दी आपसे संपर्क करेगी।"
+
         parts = []
         if "callback_time" in captured and not ack:
             when = speak_time(self.v.get("callback_time", ""))
-            ack = f"ठीक है जी, टीम आपको {when} कॉल करेगी।" if when else "ठीक है जी, मैंने नोट कर लिया, टीम आपको उसी समय कॉल करेगी।"
+            if self.v.get("callback_time") == "any time":
+                ack = "ठीक है जी, हमारी टीम आपको जल्दी ही कॉल करेगी।"
+            elif when:
+                ack = f"ठीक है जी, टीम आपको {when} कॉल करेगी।"
+            else:
+                ack = None
+            ack = ack or "ठीक है जी, मैंने नोट कर लिया, टीम आपको उसी समय कॉल करेगी।"
         if ack:
             parts.append(ack)
         elif "full_name" in captured:
@@ -476,6 +532,16 @@ class Flow:
                 reply = _drop_trailing_questions(reply)
             parts.append(reply)
             asked_question = asked_question or reply.rstrip().endswith("?")
+
+        if not captured and not parts:
+            if is_ack_only(text):                                        # "ok", "chalo": agreement, not a failure; carry on with the same question
+                self.fails[asked] = -1
+                parts.append(random.choice(ACKS))
+            elif not bank and asked not in (None, "phone", "phone_confirm") and (looks_like_question(text) or len(_words(text)) >= 4):
+                answer = self._free(text)                                # a question outside the form: answer it, then continue
+                if answer:
+                    parts.append(answer)
+                    self.fails[asked] = -1
 
         if c.more_coming:                                               # the caller is still speaking: brief acknowledgement only
             return " ".join(parts[:1]) or random.choice(ACKS)
@@ -536,6 +602,38 @@ class Flow:
                 continue
             return s
         return None
+
+    def _free(self, text: str):
+        """A short grounded answer for anything the flow has no answer for (company, loan details, CIBIL, small talk). None on any problem."""
+        try:
+            import brain
+
+            form = self.call.form
+            facts = {k: v for k, v in form.items() if k in ("full_name", "category", "reason")}
+            facts.update({k: v for k, v in (form.get("details") or {}).items() if not str(k).startswith(("crm_", "identity"))})
+            known = ", ".join(f"{k}: {v}" for k, v in facts.items() if v)
+            system = FREE_RULES + brain.KNOWLEDGE + "\n" + COMPANY_INFO + "\nकॉल में अब तक कॉलर ने बताया: " + (known or "कुछ नहीं") + "।"
+            msgs = [{"role": "system", "content": system}]
+            for m in self.call.history[1:][-8:]:
+                if m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str) and m["content"] and not m.get("tool_calls"):
+                    msgs.append({"role": m["role"], "content": m["content"]})
+            strong = [m for m in replybank.match(text) if m["score"] >= 0.75]
+            guide = replybank.hint(text) if strong else ""
+            msgs.append({"role": "user", "content": text + ("\n" + guide if guide else "")})
+            r = brain._llm.chat.completions.create(model=brain.LLM_MODEL, messages=msgs, max_tokens=90, temperature=0.3)
+            out = voice.sanitize_reply((r.choices[0].message.content or "").strip())
+            if r.choices[0].finish_reason == "length":
+                done_sentences = [x for x in voice.split_sentences(out) if x.rstrip()[-1:] in "।.?!"]
+                out = " ".join(done_sentences)
+            english = not re.search(r"[ऀ-ॿ]", text) and not re.search(r"\b(hai|hoon|hu|kya|kaise|mujhe|mera|aap|nahi|haan|batao)\b", text.lower())
+            if not out or (not english and not re.search(r"[ऀ-ॿ]", out)):
+                return None
+            for latin, deva in (("EMI", "ईएमआई"), ("CIBIL", "सिबिल"), ("KYC", "केवाईसी"), ("OTP", "ओटीपी"), ("PAN", "पैन"), ("NBFC", "एनबीएफसी"), ("AI", "एआई")):
+                out = out.replace(latin, deva)
+            return " ".join(voice.split_sentences(out)[:2])
+        except Exception as e:
+            print(f"   [flow] free answer failed: {type(e).__name__}: {e}", flush=True)
+            return None
 
     def _llm_name(self, text: str):
         """A name said in Devanagari must be written in English letters for the form."""
