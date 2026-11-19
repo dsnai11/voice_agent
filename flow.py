@@ -94,7 +94,7 @@ LEGACY_IDS = {"status_check", "payment_how", "existing_loan", "closure_papers", 
 SKIP_IDS = {"how_apply", "wrong_number", "new_job", "not_heard", "not_understood", "off_topic"}      # these misfire on plain answers
 
 NUM = {"ek": 1, "do": 2, "teen": 3, "char": 4, "chaar": 4, "paanch": 5, "panch": 5, "chhe": 6, "chhah": 6, "cheh": 6, "chhe": 6, "saat": 7,
-       "sat": 7, "aath": 8, "ath": 8, "nau": 9, "das": 10, "dus": 10, "gyarah": 11, "barah": 12, "terah": 13, "chaudah": 14, "pandrah": 15,
+       "sat": 7, "aath": 8, "ath": 8, "nau": 9, "tin": 3, "teenn": 3, "paach": 5, "chah": 6, "nou": 9, "baarah": 12, "ik": 1, "das": 10, "dus": 10, "gyarah": 11, "barah": 12, "terah": 13, "chaudah": 14, "pandrah": 15,
        "solah": 16, "satrah": 17, "atharah": 18, "unnis": 19, "bees": 20, "pachees": 25, "pachchis": 25, "tees": 30, "chalis": 40,
        "paintalis": 45, "pachas": 50, "pachaas": 50, "saath": 60, "sattar": 70, "pachhattar": 75, "assi": 80, "nabbe": 90,
        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10, "twenty": 20,
@@ -218,7 +218,7 @@ def parse_name(text: str, strict: bool):
 
 def parse_employment(text: str, asked):
     """salaried | self-employed | pensioner | not-earning, or None. A businessman is self-employed even if he says 'job' nowhere."""
-    low = text.lower()
+    low = re.sub(r"(salary|sailri|salry|सैलरी)\s*(loan|advance|lone)|advance\s*salary|payday|pay\s*day", " ", text.lower())      # a loan type, not a job
     if re.search(r"pension|retired|retire\b|sevanivrit|रिटायर|सेवानिवृत्त", low):
         return "pensioner"
     if re.search(r"housewife|house wife|homemaker|grihini|student|padhai|studying|unemployed|berozgar|berojgar|not working|naukri nahi|job nahi|kaam nahi|बेरोज़गार|बेरोजगार", low):
@@ -456,7 +456,7 @@ class Flow:
                 pass
 
         # --- approved reply for a question or special request
-        bank = [m for m in replybank.match(text) if m["score"] >= (0.45 if m["id"] in ("more_to_discuss", "small_talk") else 0.6) and m["id"] not in SKIP_IDS]
+        bank = [m for m in replybank.match(text) if m["score"] >= (0.45 if m["id"] in ("more_to_discuss", "small_talk") else 0.5 if m["entry"].get("require") else 0.6) and m["id"] not in SKIP_IDS]
         if is_ack_only(text):
             bank = []
         bank = [m for m in bank if m["id"] not in LEGACY_IDS or m["score"] >= 0.72]
@@ -528,20 +528,23 @@ class Flow:
         elif asked == "city" and not city and 0 < len(re.findall(r"[a-z]+", low)) <= 2 and not bank:
             details["city"] = " ".join(re.findall(r"[a-z]+", low)).title()
             captured.append("city")
-        if asked == "loan_purpose" and text and not bank:
+        if asked == "loan_purpose" and text:
             low_p = low
             canon = None
-            for word, pat in (("medical", r"medical|ilaj|ilaaj|hospital|dawai|bimar|operation|treatment|doctor"), ("wedding", r"shaadi|shadi|wedding|vivah|marriage"),
+            for word, pat in (("medical", r"medical|ilaj|ilaaj|hospital|dawai|bimar|operation|treatment|doctor"), ("wedding", r"shaadi|shadi|shaaadi|wedding|vivah|marriage|byah"),
                               ("home repair", r"ghar|makaan|repair|renovation|marammat|construction"), ("education", r"education|padhai|padai|fees|school|college|course|study"),
                               ("business", r"business|dukaan|dukan|vyapar|vyapaar|dhandha|stock|machine"), ("travel", r"travel|ghumn|trip|yatra|vacation|holiday"),
                               ("debt repayment", r"karz|karza|purana loan|debt|emi bharn|credit card|bill"), ("emergency", r"emergency|zaroorat|jaruri|urgent|turant")):
                 if re.search(pat, low_p):
                     canon = word
                     break
-            if canon is None and yes_no(text) == "no" and len(_words(text)) <= 3:
-                canon = "not shared"
-            if canon is None and re.fullmatch(r"[a-z ]{3,40}", re.sub(r"[^a-z ]", " ", low_p).strip() or "-"):
-                canon = re.sub(r"[^a-z ]", " ", low_p).strip()[:40]
+            words_p = _words(text)
+            filler = {"main", "mujhe", "hoon", "raha", "rahi", "baat", "kar", "na", "hai", "to", "isse", "aap", "kya", "nahi", "haan", "ji", "ok", "abhi", "yeh", "ye", "woh", "mera", "meri", "mere", "se", "ko", "ka", "ki", "ke"}
+            if canon is None and not bank:
+                if yes_no(text) == "no" and len(words_p) <= 3:
+                    canon = "not shared"
+                elif re.fullmatch(r"[a-z ]{3,40}", re.sub(r"[^a-z ]", " ", low_p).strip() or "-") and len(words_p) <= 4 and not (set(words_p) & filler):
+                    canon = re.sub(r"[^a-z ]", " ", low_p).strip()[:40]          # a short noun phrase such as "car repair"; never a whole sentence
             if canon:
                 details["loan_purpose"] = canon
                 captured.append("loan_purpose")
@@ -615,6 +618,10 @@ class Flow:
                 else:
                     self.v[k] = details[k]
             self._sync_reason()
+
+        if asked in captured:                                            # the caller answered the question that was asked: only a strong, specific topic may still reply
+            bank = [m for m in bank if m["score"] >= 0.9]
+            ids = [m["id"] for m in bank]
 
         # --- the legacy assistant answers existing-customer / complaint / collections topics
         if any(i in LEGACY_IDS for i in ids) and not captured:
@@ -768,6 +775,9 @@ class Flow:
             return False
         if re.search(r"गारंटी|पक्का मंज़ूर|पक्का मंजूर|अप्रूव हो जाएगा|मंज़ूर हो जाएगा|मंजूर हो जाएगा|ज़रूर पास", answer):
             return False
+        for w in re.findall(r"[ऀ-ॿ]+", answer):                              # an amount or percentage said in words is invented unless the caller said it
+            if w in ("लाख", "हज़ार", "हजार", "करोड़", "करोड", "प्रतिशत", "परसेंट") and w not in question:
+                return False
         allowed = {n.replace(",", "") for n in re.findall(r"\d[\d,]*", knowledge + " " + question)}
         for n in re.findall(r"\d[\d,]*", answer):
             if n.replace(",", "").rstrip(".") not in allowed:
@@ -793,6 +803,10 @@ class Flow:
 
     def _free_raw(self, text: str):
         """A short grounded answer for anything the flow has no answer for (company, loan details, CIBIL, small talk). None on any problem."""
+        import os as _os2
+
+        if _os2.environ.get("FREE_LLM", "0") != "1":                       # default: only approved answers, otherwise the honest "not sure"
+            return UNSURE
         try:
             import brain
 

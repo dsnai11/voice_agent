@@ -129,8 +129,7 @@
     "kya ye real company hai",
     "ye genuine hai kya",
     "scam to nahi hai",
-    "pehle ye batao company asli hai",
-    "aapka office kahan hai"
+    "pehle ye batao company asli hai"
    ],
    "reply": "जी, मैं लक्ष्मी इंडिया फाइनेंस लिमिटेड से बोल रही हूँ, जयपुर की कंपनी। आप चाहें तो हमारे टोल-फ्री नंबर एक आठ शून्य शून्य, एक दो एक, सात सात चार सात पर कॉल करके पक्का कर सकते हैं।",
    "note": "Say the toll-free number as digits 18001217747 in Hindi words. Never ask for OTP, PIN or card details."
@@ -678,14 +677,20 @@
    "topic": "office, timings, toll-free",
    "examples": [
     "aapka office kahan hai",
-    "timing kya hai",
-    "toll free number kya hai",
-    "kab tak open rehta hai",
+    "aapka phone number kya hai",
+    "contact number do",
     "customer care number",
+    "customer care number kya hai",
+    "customer care se kaise baat karun",
+    "customer helpline number chahiye",
     "email id kya hai",
+    "helpline number batao",
+    "kab tak open hai",
+    "kab tak open rehta hai",
     "kitne baje tak khule rehte ho",
     "office kitne baje tak khula hai",
-    "kab tak open hai"
+    "timing kya hai",
+    "toll free number kya hai"
    ],
    "reply": "जी, हमारा टोल-फ्री नंबर एक आठ शून्य शून्य, एक दो एक, सात सात चार सात है। ऑफ़िस सोमवार से शनिवार, सुबह साढ़े नौ से शाम साढ़े छह तक खुला रहता है।"
   },
@@ -830,15 +835,29 @@
    "id": "office_address",
    "topic": "office address and branch",
    "examples": [
-    "office kahan hai",
-    "aapka address kya hai",
-    "branch kahan hai",
-    "office ka pata batao",
     "aap kahan se ho",
+    "aapka address batao",
+    "aapka address kya hai",
+    "aapke office ka address kahaan par hai",
+    "aapke office ka address kahan par hai",
+    "branch kahan hai",
     "head office kahan hai",
-    "jaipur me kahan hai office"
+    "jaipur me kahan hai office",
+    "office ka address kya hai",
+    "office ka pata batao",
+    "office ka pata kya hai",
+    "office kahan hai"
    ],
-   "reply": "जी, हमारा मुख्य ऑफिस जयपुर में एम आई रोड पर, गोपीनाथ मार्ग के पास है। आप टोल-फ्री नंबर 18001217747 पर भी बात कर सकते हैं।"
+   "reply": "जी, हमारा मुख्य ऑफिस जयपुर में एम आई रोड पर, गोपीनाथ मार्ग के पास है। आप टोल-फ्री नंबर 18001217747 पर भी बात कर सकते हैं।",
+   "require": [
+    "address",
+    "pata",
+    "office",
+    "branch",
+    "kaha par",
+    "kahan par",
+    "kahaan"
+   ]
   },
   {
    "id": "products_offered",
@@ -1484,28 +1503,239 @@
    "id": "company_facts_unknown",
    "topic": "company numbers the assistant does not know",
    "examples": [
-    "company ka turnover kitna hai",
-    "company ka profit kitna hai",
-    "company kitni purani hai",
-    "company ka malik kaun hai",
+    "aapke md kaun hain",
     "ceo kaun hai",
+    "chairman kaun hai",
+    "company ka director kaun hai",
+    "company ka founder kaun hai",
+    "company ka malik kaun hai",
+    "company ka profit kitna hai",
+    "company ka turnover kitna hai",
     "company kab se hai",
-    "company ke kitne employees hain"
+    "company ke kitne employees hain",
+    "company kitni purani hai",
+    "office ka md kaun hai"
    ],
    "require": [
-    "turnover",
-    "profit",
-    "revenue",
     "ceo",
-    "malik",
-    "owner",
-    "purani",
-    "kab se",
+    "chairman",
+    "director",
+    "directors",
     "employees",
+    "founder",
+    "kab se",
     "karmchari",
+    "malik",
+    "managing director",
+    "md",
+    "owner",
+    "profit",
+    "purani",
+    "revenue",
+    "turnover",
     "valuation"
    ],
    "reply": "जी, इस बारे में मुझे अभी पक्की जानकारी नहीं है, मैं इसे टीम से कन्फ़र्म करवा दूँगी।"
+  },
+  {
+   "id": "top_up",
+   "topic": "top-up loan",
+   "examples": [
+    "chal rahe loan ke oopar aur paisa chahiye",
+    "chal rahe loan par aur paisa mil sakta hai kya",
+    "isi loan ke upar top up chahiye",
+    "mujhe ek naya loan aur chahiye iske oopar top up",
+    "mujhe ek naya loan aur chahiye iske upar top up",
+    "top up chahiye",
+    "top up kya hota hai",
+    "top up loan ka process kya hoga",
+    "top up loan lena hai",
+    "top up loan milta hai kya"
+   ],
+   "require": [
+    "top up",
+    "topup",
+    "top-up",
+    "टॉप"
+   ],
+   "reply": "जी, टॉप-अप लोन यानी आपके चल रहे लोन के ऊपर और रकम। ये मिलेगा या नहीं और कितना, ये आपकी प्रोफ़ाइल और अब तक की रीपेमेंट देखकर टीम बताएगी।"
+  },
+  {
+   "id": "open_account",
+   "topic": "wants to open a bank account",
+   "examples": [
+    "mujhe bank mein khata khulwana hai",
+    "account kholna hai",
+    "saving account kaise khule",
+    "bank account khulwana hai mera",
+    "mujhe bank mein khaata khulvaana hai mera",
+    "zero balance account khulwana hai"
+   ],
+   "require": [
+    "khata",
+    "khaata",
+    "khulwa",
+    "khulva",
+    "khulwana",
+    "account khol",
+    "account open",
+    "open account",
+    "saving account",
+    "savings account"
+   ],
+   "reply": "जी, हम एनबीएफसी हैं, इसलिए सेविंग्स या करंट अकाउंट नहीं खोलते। बैंक अकाउंट के लिए आपको किसी बैंक की ब्रांच या उसके ऐप पर जाना होगा। लोन से जुड़ी बात में मैं आपकी पूरी मदद करूँगी।"
+  },
+  {
+   "id": "offers",
+   "topic": "is there any offer or discount",
+   "examples": [
+    "koi offer chal raha hai kya",
+    "company mein abhi koi offer hai",
+    "koi discount hai kya",
+    "processing fee mein chhoot milegi",
+    "festival offer hai kya",
+    "koi scheme chal rahi hai",
+    "aapke company mein abhi koi offer chal raha hai kya customers ko"
+   ],
+   "require": [
+    "offer",
+    "discount",
+    "chhoot",
+    "scheme",
+    "yojana",
+    "cashback"
+   ],
+   "reply": "जी, किसी खास ऑफ़र की पक्की जानकारी मेरे पास अभी नहीं है। आपकी प्रोफ़ाइल देखकर टीम बता पाएगी कि आपके लिए क्या ऑफ़र बन सकता है।"
+  },
+  {
+   "id": "my_credit_score",
+   "topic": "what is MY credit score",
+   "examples": [
+    "mera credit score kya hai",
+    "mera cibil kitna hai",
+    "meri cibil report batao",
+    "mera score check karo",
+    "mera civil score kitna hai",
+    "to mera abhi credit score kya hai yah batao"
+   ],
+   "require": [
+    "score",
+    "cibil",
+    "civil",
+    "credit"
+   ],
+   "reply": "जी, आपका सिबिल स्कोर मैं यहाँ से नहीं देख सकती। आप किसी भी क्रेडिट ब्यूरो से साल में एक बार अपनी पूरी रिपोर्ट मुफ़्त ले सकते हैं, और लोन के समय टीम भी आपकी रिपोर्ट देखेगी।",
+   "require2": [
+    "mera",
+    "meri",
+    "mere",
+    "my",
+    "apna",
+    "apni"
+   ]
+  },
+  {
+   "id": "file_clear",
+   "topic": "asks to clear / approve my file",
+   "examples": [
+    "meri file clear kar doge aap",
+    "meri file approve kar do",
+    "mera loan pass kar do",
+    "loan sanction kar do",
+    "meri file jaldi clear karo",
+    "loan approve kar dijiye",
+    "mera loan clear kar do"
+   ],
+   "require": [
+    "file",
+    "clear",
+    "pass",
+    "approve",
+    "sanction",
+    "manjoor",
+    "manzoor"
+   ],
+   "reply": "जी, फ़ाइल क्लियर या लोन मंज़ूर करना टीम और लेंडिंग सिस्टम का फ़ैसला होता है, इसलिए मैं पक्का वादा नहीं कर सकती। आपकी सारी जानकारी नोट हो गई है, और टीम जल्दी आपसे संपर्क करेगी।"
+  },
+  {
+   "id": "instant_loan",
+   "topic": "wants an instant loan",
+   "examples": [
+    "instant loan chahiye",
+    "mujhe turant loan chahiye",
+    "abhi paisa chahiye",
+    "aaj hi loan chahiye",
+    "same day loan milega kya",
+    "mujhe instant do laakh ka loan chaahie",
+    "jaldi loan chahiye urgent"
+   ],
+   "require": [
+    "instant",
+    "turant",
+    "aaj hi",
+    "same day",
+    "jaldi",
+    "urgent",
+    "abhi paisa"
+   ],
+   "reply": "जी, रकम और मंज़ूरी आपकी प्रोफ़ाइल देखकर टीम तय करती है, इसलिए मैं पक्का वादा नहीं कर सकती। आमतौर पर डॉक्यूमेंट पूरे होने के बाद चौबीस से अड़तालीस घंटे लगते हैं।"
+  },
+  {
+   "id": "account_statement",
+   "topic": "loan account statement",
+   "examples": [
+    "loan ka statement kaise milega",
+    "account statement chahiye",
+    "statement of account kaise nikale",
+    "mera loan statement chahiye"
+   ],
+   "require": [
+    "statement"
+   ],
+   "reply": "जी, लोन का अकाउंट स्टेटमेंट टीम से मिल सकता है। उसका तरीका और समय टीम आपको बता देगी।",
+   "require2": [
+    "loan",
+    "account",
+    "emi",
+    "payment"
+   ]
+  },
+  {
+   "id": "balance_transfer",
+   "topic": "balance transfer",
+   "examples": [
+    "balance transfer kya hota hai",
+    "dusre bank ka loan transfer karna hai",
+    "loan shift karna hai",
+    "balance transfer milta hai kya"
+   ],
+   "require": [
+    "balance transfer",
+    "loan transfer",
+    "loan shift",
+    "transfer karna"
+   ],
+   "reply": "जी, बैलेंस ट्रांसफ़र यानी दूसरी जगह के चल रहे लोन को नई जगह ले आना। हमारे यहाँ ये मिलता है या नहीं, टीम कन्फ़र्म करेगी।"
+  },
+  {
+   "id": "emi_date_change",
+   "topic": "change the EMI date",
+   "examples": [
+    "emi date badal sakte hain",
+    "emi ki tareekh change karni hai",
+    "emi ki date kaise badle",
+    "emi date change ho sakti hai kya"
+   ],
+   "require": [
+    "date",
+    "tareekh",
+    "tarikh"
+   ],
+   "reply": "जी, ईएमआई की तारीख़ बदली जा सकती है या नहीं, ये लोन की शर्तों पर निर्भर करता है, और टीम चेक करके बताएगी।",
+   "require2": [
+    "emi",
+    "kist"
+   ]
   }
  ]
 }

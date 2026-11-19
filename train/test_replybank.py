@@ -67,6 +67,14 @@ CASES = [   # (what the caller says, ids that must all be found; [] means nothin
     ("mutual fund me paisa lagana chahiye kya", ["invest_advice"]),
     ("RBI ne aaj repo rate kitna kiya", ["live_rates_unknown"]),
     ("itne documents kyun maangte ho", ["docs_why"]),
+    ("Meri file clear kar doge aap", ["file_clear"]),
+    ("mujhe bank mein khaata khulvaana hai", ["open_account"]),
+    ("top up loan ka process kya hoga", ["top_up"]),
+    ("koi offer chal raha hai kya", ["offers"]),
+    ("mera credit score kya hai", ["my_credit_score"]),
+    ("office ka MD kaun hai", ["company_facts_unknown"]),
+    ("mujhe instant loan chahiye", ["instant_loan"]),
+    ("customer helpline number chahiye", ["office_info"]),
     ("sun raha hoon thik hai", []),
 ]
 

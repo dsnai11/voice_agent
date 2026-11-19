@@ -16,14 +16,14 @@ MIN_SCORE = 0.45         # below this a chunk is treated as "no approved reply f
 MAX_REPLIES = 3
 
 _DEV = {}
-for _chars, _lat in (("कख", "k"), ("गघ", "g"), ("चछ", "c"), ("जझ", "j"), ("टठ", "t"), ("डढ", "d"), ("ण", "n"), ("तथ", "t"),
+for _chars, _lat in (("कख", "k"), ("गघ", "g"), ("चछ", "#"), ("जझ", "j"), ("टठ", "t"), ("डढ", "d"), ("ण", "n"), ("तथ", "t"),
                      ("दध", "d"), ("न", "n"), ("प", "p"), ("फ", "f"), ("बभ", "b"), ("म", "m"), ("य", "y"), ("र", "r"),
                      ("ल", "l"), ("व", "v"), ("शषस", "s"), ("ह", "h"), ("ंँ", "n"),
                      ("क़ख़", "k"), ("ग़", "g"), ("ज़", "j"), ("ड़ढ़", "r"), ("फ़", "f")):
     for _c in _chars:
         _DEV[_c] = _lat
 _NUKTA_R = ("ड़", "ढ़")                                   # ड़ and ढ़ written as base letter + nukta sound like r
-_NEGATIONS = {"nhi", "nhin", "mt", "n", "nt"}          # skeletons of nahi, nahin, mat, na, not: they flip a meaning, so they weigh more
+_NEGATIONS = {"nh", "nhi", "nhin", "mt", "n", "nt"}          # skeletons of nahi, nahin, mat, na, not: they flip a meaning, so they weigh more
 _SPLIT = re.compile(r"[?।!.;\n]+|,| (?:aur|lekin|par|magar|and|but|और|लेकिन|पर|मगर) ")
 
 
@@ -39,7 +39,7 @@ def _skeleton(word: str) -> str:
     return _ALIAS.get(w, w)
 
 
-_ALIAS = {"mn": "m", "mnn": "m", "hn": "h", "hnn": "h"}        # me / mein / mai, hai / hain
+_ALIAS = {"mn": "m", "mnn": "m", "hn": "h", "hnn": "h", "nhn": "nh"}        # me / mein / mai, hai / hain
 
 
 def tokens(text: str) -> list:
@@ -92,6 +92,8 @@ class _Bank:
         low = text.lower()
         for entry, ex in self.rows:
             if entry.get("require") and not _has_any(low, entry["require"]):      # "NACH kya hota hai" must not get the EMI answer
+                continue
+            if entry.get("require2") and not _has_any(low, entry["require2"]):      # a second word that must also be there ("mera" + "score")
                 continue
             if entry.get("forbid") and _has_any(low, entry["forbid"]):
                 continue
