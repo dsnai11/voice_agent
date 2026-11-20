@@ -469,7 +469,7 @@ class Flow:
         captured, ack = [], None
 
         # --- the caller wants to end the call: say one closing line; the server then plays the thank-you and the call ends
-        if re.search(END_NOW, low) or (self.done and re.search(END_DONE, low)):
+        if re.search(END_NOW, low) or (self.done and re.search(END_DONE, low) and not looks_like_question(text)):
             c.finished = True
             if self.done:
                 return "ठीक है जी, आपकी जानकारी नोट हो गई है और हमारी टीम जल्दी आपसे संपर्क करेगी।"
@@ -702,7 +702,7 @@ class Flow:
                 bank = []
             ids = [m["id"] for m in bank]
         if asked in captured:                                            # the caller answered the question that was asked: only a strong, specific topic may still reply
-            bank = [m for m in bank if m["score"] >= 0.9]
+            bank = [m for m in bank if m["score"] >= 0.9] if looks_like_question(text) else []      # "main business karta hoon" is an answer, not a question
             ids = [m["id"] for m in bank]
 
         # --- the legacy assistant answers existing-customer / complaint / collections topics
@@ -834,7 +834,15 @@ class Flow:
 
     def _alt(self, m: dict) -> str:
         """An approved answer, or the version written for this caller's work type."""
-        return ALT_REPLIES.get((m["id"], self.v.get("employment")), m["entry"]["reply"])
+        reply = ALT_REPLIES.get((m["id"], self.v.get("employment")), m["entry"]["reply"])
+        if "{DATE}" in reply:                                            # today's date from this PC's clock, spoken in words
+            import datetime
+            from voice import hindi_words
+            n = datetime.date.today()
+            months = ["जनवरी", "फ़रवरी", "मार्च", "अप्रैल", "मई", "जून", "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर"]
+            days = ["सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार", "रविवार"]
+            reply = reply.replace("{DATE}", f"{days[n.weekday()]}, {hindi_words(n.day)} {months[n.month - 1]} {hindi_words(n.year)}")
+        return reply
 
     def _next(self):
         for s in SLOTS:

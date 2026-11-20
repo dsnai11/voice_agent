@@ -641,7 +641,12 @@
     "thoda time do sochne ka"
    ],
    "reply": "बिल्कुल जी, आराम से सोचिए। मैं आपको बाद में कॉल कर लूँ? बताइए किस दिन और किस टाइम पर ठीक रहेगा?",
-   "note": "Offer callback, request_callback with the slot."
+   "note": "Offer callback, request_callback with the slot.",
+   "forbid": [
+    "kya hoga",
+    "kya karna",
+    "kya karun"
+   ]
   },
   {
    "id": "compare_lender",
@@ -830,22 +835,32 @@
    "id": "office_info",
    "topic": "office, timings, toll-free",
    "examples": [
+    "aapka number do",
     "aapka phone number kya hai",
+    "aapka toll free number kya hai",
+    "company ka mail id kya hai",
+    "contact details do",
     "contact number do",
     "customer care number",
     "customer care number kya hai",
     "customer care se kaise baat karun",
     "customer helpline number chahiye",
+    "email address batao",
     "email id kya hai",
+    "enquiry email kya hai",
     "helpline number batao",
     "kab tak open hai",
     "kab tak open rehta hai",
     "kitne baje tak khule rehte ho",
+    "mail kahan karun",
     "office kitne baje tak khula hai",
+    "sales ka email kya hai",
+    "sampark kaise karun",
     "timing kya hai",
-    "toll free number kya hai"
+    "toll free number kya hai",
+    "whatsapp number kya hai"
    ],
-   "reply": "जी, हमारा टोल-फ्री नंबर एक आठ शून्य शून्य, एक दो एक, सात सात चार सात है। ऑफ़िस सोमवार से शनिवार, सुबह साढ़े नौ से शाम साढ़े छह तक खुला रहता है।"
+   "reply": "जी, हमारा टोल-फ्री नंबर एक आठ शून्य शून्य, एक दो एक, सात सात चार सात है। ईमेल के लिए एनक्वायरी ऐट एल आई एफ सी डॉट इन पर लिख सकते हैं। ऑफ़िस सोमवार से शनिवार, सुबह साढ़े नौ से शाम साढ़े छह तक खुला रहता है।"
   },
   {
    "id": "language",
@@ -960,7 +975,6 @@
     "aaj ka mausam kaisa rahega",
     "aaj ka rashifal batao",
     "aaj ki news kya hai",
-    "aaj kya date hai",
     "aaj mausam kaisa hai",
     "aap ghar kitne baje jaate ho",
     "aap kahan rehte ho",
@@ -1244,12 +1258,16 @@
    "id": "more_to_discuss",
    "topic": "caller wants to talk about something else",
    "examples": [
+    "aap baat karo na mere se",
     "aur baat karni hai",
     "aur bhi kuch puchna tha",
+    "aur bhi savaal hai mere paas",
+    "baat karo mere se",
     "can i ask something else",
     "ek aur baat poochni thi",
     "ek aur cheez poochni hai",
     "ek aur sawal hai",
+    "ek baar mujhe kuch puchna hai",
     "ek baat poochni thi",
     "ek sawal aur hai",
     "i have another question",
@@ -1261,16 +1279,22 @@
     "kuch aur jaankari chahiye",
     "kuch aur poochna hai",
     "kuch aur poochna hai aapse",
+    "kuch aur sawal hain mere",
     "kuchh aur bhi baat karni hai",
+    "mujhe aapse aur bhi savaal poochhne hain",
     "mujhe aapse kuch aur baat karni hai",
+    "mujhe aapse kuch baat karni hai",
     "mujhe aapse kuchh aur bhi baat kar",
+    "mujhe aapse kuchh aur hi baat karni hai",
     "mujhe aur bhi baat karni hai",
     "mujhe ek aur cheez jaanni hai",
     "mujhe ek aur sawal poochna hai",
     "mujhe kuch aur baat karni hai",
     "mujhe kuch aur baat karni thi",
     "mujhe kuch aur jaanna hai",
-    "mujhe kuch aur puchna hai"
+    "mujhe kuch aur puchna hai",
+    "mujhe kuchh aur poochhana hai aapse",
+    "mujhse baat karo"
    ],
    "reply": "जी बिल्कुल, बताइए, आप क्या पूछना चाहते हैं?"
   },
@@ -1815,9 +1839,7 @@
     "company ka profit kitna hai",
     "company ka profit kitna hua is saal",
     "company ka turnover kitna hai",
-    "company ke kitne employees hain",
     "company ki credit rating kya hai",
-    "company mein kitne log kaam karte hain",
     "office ka md kaun hai"
    ],
    "require": [
@@ -1825,11 +1847,8 @@
     "chairman",
     "director",
     "directors",
-    "employees",
     "founder",
     "gnpa",
-    "karmchari",
-    "kitne log",
     "malik",
     "managing director",
     "md",
@@ -2124,7 +2143,7 @@
   {
    "id": "company_doing",
    "topic": "How is the company doing / is the company good / company news",
-   "reply": "जी, लक्ष्मी इंडिया फाइनेंस जयपुर की एनबीएफसी है, साल उन्नीस सौ छियानवे से काम कर रही है और राजस्थान, गुजरात, मध्य प्रदेश, छत्तीसगढ़, उत्तर प्रदेश और महाराष्ट्र में इसकी दो सौ से ज़्यादा ब्रांच हैं। कंपनी स्टॉक एक्सचेंज पर लिस्टेड भी है।",
+   "reply": "जी, लक्ष्मी इंडिया फाइनेंस जयपुर की एनबीएफसी है, साल उन्नीस सौ छियानवे से, यानी पच्चीस साल से ज़्यादा से काम कर रही है। छह राज्यों में दो सौ ग्यारह ब्रांच हैं और चालीस हज़ार से ज़्यादा ग्राहक जुड़े हैं। कंपनी स्टॉक एक्सचेंज पर लिस्टेड भी है।",
    "examples": [
     "aapki company bharosemand hai kya",
     "aapki company kaisi hai",
@@ -2190,7 +2209,7 @@
   {
    "id": "branch_near",
    "topic": "Is there a branch near me / nearest branch / how many branches",
-   "reply": "जी, राजस्थान, गुजरात, मध्य प्रदेश, छत्तीसगढ़, उत्तर प्रदेश और महाराष्ट्र में हमारी दो सौ से ज़्यादा ब्रांच हैं। आपके शहर की सबसे पास की ब्रांच की जानकारी टीम बता देगी। आप किस शहर में रहते हैं?",
+   "reply": "जी, हमारी दो सौ ग्यारह ब्रांच हैं, दो सौ ग्यारह शहरों में, छह राज्यों में: राजस्थान, गुजरात, मध्य प्रदेश, छत्तीसगढ़, उत्तर प्रदेश और महाराष्ट्र। आपके शहर की सबसे पास की ब्रांच की जानकारी टीम बता देगी। आप किस शहर में रहते हैं?",
    "require": [
     "branch",
     "office",
@@ -2200,14 +2219,22 @@
     "head office"
    ],
    "examples": [
+    "211 branches hain kya",
     "aapka agent ghar aayega kya",
+    "aapki branch kitne cities mein hain",
     "aapki kaun kaun si shehar mein branch hain",
     "aapki kitni branch hain",
+    "aapki kitni branches hain company ki",
     "branch jaipur mein kahan hai",
     "branch ka address batao",
     "branch visit karni hai",
     "indore mein aapka office hai kya",
     "jodhpur mein shakha kahan par hai",
+    "kitne cities mein office hai",
+    "kitne shehar mein aap hain",
+    "kitne shehron mein branch hain",
+    "kitni branch hain",
+    "kitni shakhayein hain",
     "kota mein office hai kya",
     "kya aapka office mere shehar mein hai",
     "kya branch mein aana padega",
@@ -2223,6 +2250,7 @@
     "nearest office kahan hai",
     "sabse paas ki branch kahan hai",
     "surat mein aapki shakha hai kya",
+    "total branches kitni hain",
     "udaipur mein branch kahan hai"
    ]
   },
@@ -2772,42 +2800,49 @@
   },
   {
    "id": "company_stats",
-   "topic": "Company size: AUM, customers, employees, turnover, how big is the company",
-   "reply": "जी, कंपनी की वेबसाइट के अनुसार साल दो हज़ार चौबीस में हमारा एयूएम, यानी मैनेज की जा रही रकम, एक हज़ार करोड़ रुपये पार कर गया था और ग्राहकों की संख्या पच्चीस हज़ार से ऊपर थी। ताज़ा सही आँकड़ा मैं टीम से कन्फ़र्म करवा दूँगी।",
+   "topic": "Company size: AUM, customers, team, branches, states, how big is the company",
+   "reply": "जी, कंपनी की वेबसाइट के अनुसार हमारा एयूएम, यानी मैनेज की जा रही रकम, एक हज़ार आठ सौ तैंतालीस करोड़ रुपये से ज़्यादा है। चालीस हज़ार से ज़्यादा ग्राहक हमसे जुड़े हैं, दो सौ ग्यारह ब्रांच हैं, छह राज्यों में, और दो हज़ार एक सौ से ज़्यादा टीम मेंबर हैं।",
    "examples": [
-    "company ka aum kitna hai",
-    "is company ka aum kitna hai",
-    "aum kitna hai aapki company ka",
-    "assets under management kitne hain",
-    "company ka size kitna hai",
-    "company kitni badi hai",
-    "company ke kitne customers hain",
-    "kitne grahak hain aapke",
-    "company ne ab tak kitna loan diya",
-    "portfolio size kitna hai",
-    "company ki total book kitni hai",
-    "company ka aum batao",
-    "aapki company ka loan book kitna hai",
-    "kitne logon ko loan diya hai",
-    "company ka business size kya hai",
     "a u m kitna hai",
+    "aapki company ka loan book kitna hai",
+    "assets under management kitne hain",
+    "aum batao company ka",
+    "aum kitna hai aapki company ka",
+    "company ka aum batao",
+    "company ka aum kitna hai",
+    "company ka business size kya hai",
+    "company ka size kitna hai",
+    "company ka total aum",
+    "company ke kitne customers hain",
+    "company ke paas kitne crore ka portfolio hai",
+    "company ki asset kitni hai",
+    "company ki asset under management kitni hai",
+    "company ki total book kitni hai",
     "company kitne crore manage karti hai",
-    "company ki asset kitni hai"
+    "company kitni badi hai",
+    "company ne ab tak kitna loan diya",
+    "india ka aum kitna hai",
+    "is company ka aum kitna hai",
+    "kitne grahak hain aapke",
+    "kitne logon ko loan diya hai",
+    "laxmi india ka aum kitna hai",
+    "portfolio size kitna hai"
    ],
    "require": [
-    "aum",
     "a u m",
     "assets under",
-    "size",
-    "portfolio",
-    "loan book",
+    "aum",
+    "ayum",
     "customers",
-    "grahak",
     "graahak",
-    "kitni badi",
-    "kitne logon",
+    "grahak",
     "kitne crore",
-    "manage"
+    "kitne logon",
+    "kitni badi",
+    "loan book",
+    "manage",
+    "portfolio",
+    "size"
    ]
   },
   {
@@ -2841,6 +2876,250 @@
     "job karti",
     "job hai",
     "job mein"
+   ]
+  },
+  {
+   "id": "company_customers",
+   "topic": "How many customers does the company have",
+   "reply": "जी, कंपनी की वेबसाइट के अनुसार चालीस हज़ार से ज़्यादा ग्राहक हमसे जुड़े हैं, और ये पच्चीस साल से ज़्यादा के भरोसे का नतीजा है।",
+   "examples": [
+    "company ke kitne customers hain",
+    "kitne customers hain aapke",
+    "kitne grahak jude hain company se",
+    "kitne log aapse loan le chuke hain",
+    "company ke happy customers kitne hain",
+    "aapke kitne clients hain",
+    "kitne customers ko loan diya hai",
+    "customers ki sankhya kitni hai",
+    "kitne logon ne aapse loan liya hai",
+    "total customers kitne hain"
+   ],
+   "require": [
+    "customers",
+    "customer ki",
+    "grahak",
+    "graahak",
+    "clients",
+    "logon ne",
+    "logon ko loan"
+   ],
+   "forbid": [
+    "customer care",
+    "customer helpline",
+    "customer service"
+   ]
+  },
+  {
+   "id": "company_team",
+   "topic": "How many employees / team members does the company have",
+   "reply": "जी, कंपनी की वेबसाइट के अनुसार हमारी टीम में दो हज़ार एक सौ से ज़्यादा लोग काम करते हैं, और दो सौ ग्यारह ब्रांच छह राज्यों में हैं।",
+   "examples": [
+    "company mein kitne employees hain",
+    "employees kitne hain lakshmi india ke andar",
+    "kitne log kaam karte hain company mein",
+    "team members kitne hain",
+    "staff kitna hai company ka",
+    "kitne karmchari hain",
+    "company mein kitne log hain",
+    "aapke yahan kitne employees kaam karte hain",
+    "total employees kitne hain",
+    "team kitni badi hai"
+   ],
+   "require": [
+    "employee",
+    "employees",
+    "karmchari",
+    "staff",
+    "team members",
+    "log kaam",
+    "kitne log",
+    "team kitni"
+   ]
+  },
+  {
+   "id": "her_name",
+   "topic": "What is your name (Ria's own name)",
+   "reply": "जी, मेरा नाम रिया है, और मैं लक्ष्मी इंडिया फाइनेंस की एआई असिस्टेंट हूँ। बताइए, मैं आपकी क्या मदद कर सकती हूँ?",
+   "examples": [
+    "aapka naam kya hai",
+    "tumhara naam kya hai",
+    "aap ka name kya hai",
+    "what is your name",
+    "apna naam batao",
+    "aapko kya kehkar bulaun",
+    "aapka shubh naam",
+    "madam aapka naam kya hai",
+    "aap ka naam batayiye"
+   ],
+   "require": [
+    "aapka naam",
+    "aap ka naam",
+    "tumhara naam",
+    "tera naam",
+    "your name",
+    "aapka name",
+    "aap ka name",
+    "apna naam",
+    "tumhara name",
+    "aapka nam",
+    "naam kya hai aapka",
+    "naam kya hai tumhara"
+   ],
+   "forbid": [
+    "mera naam"
+   ]
+  },
+  {
+   "id": "her_experience",
+   "topic": "How long have you worked here / are you experienced / how old are you at the company",
+   "reply": "जी, मैं एक एआई असिस्टेंट हूँ, इसलिए मेरा अनुभव सालों में नहीं गिना जाता। हाँ, कंपनी को पच्चीस साल से ज़्यादा हो गए हैं और मैं उसी की तरफ़ से आपकी मदद करती हूँ।",
+   "examples": [
+    "aap kab se is company mein ho",
+    "aap kitne saal se job kar rahi ho",
+    "aap kitne saal se yahan ho",
+    "aap kitne time se kaam kar rahi ho",
+    "aap yahan kitne time se ho",
+    "aapka kitna anubhav hai",
+    "aapko is company mein kaam karte hue kitna samay hua",
+    "aapko is company mein kitna samay ho gaya",
+    "aapko job karte hue kitne saal hue",
+    "aapko kaam karte hue kitna time hua",
+    "aapko kitna time ho gaya kaam karte hue",
+    "aapko yahan kitne din ho gaye",
+    "company mein kaam karte hue kitna time hua",
+    "india mein kaam karte hue kitna time ho gaya aapko",
+    "kitna experience hai aapka",
+    "kitna time ho gaya yahan kaam karte hue",
+    "kitne time se kaam karte ho aap yahan"
+   ],
+   "require": [
+    "kitne time se",
+    "kitna time",
+    "kitne saal se",
+    "kitne din",
+    "experience",
+    "anubhav",
+    "kab se",
+    "kitna samay"
+   ],
+   "forbid": [
+    "loan",
+    "emi",
+    "business",
+    "paisa"
+   ]
+  },
+  {
+   "id": "what_next",
+   "topic": "What do I do now / what happens next / what is the next step",
+   "reply": "जी, अब आपको कुछ करने की ज़रूरत नहीं है। आपकी जानकारी नोट हो गई है और हमारी टीम बताए गए समय पर आपको कॉल करेगी, आगे के डॉक्यूमेंट और प्रोसेस की जानकारी वो बताएगी। कुछ और पूछना हो तो बताइए।",
+   "examples": [
+    "ab kya karna hai",
+    "ab mujhe kya karna padega",
+    "ab aage kya hoga",
+    "uske baad kya hoga",
+    "next step kya hai",
+    "ab kya process hai",
+    "ab aage kya karna hai mujhe",
+    "aage kya hoga ab",
+    "ab main kya karun",
+    "iske baad kya karna hai",
+    "ab kya hota hai",
+    "aage ka process kya hai",
+    "phir ab kya",
+    "fir kya karna hai ab",
+    "ab agla kadam kya hai"
+   ],
+   "require": [
+    "ab kya",
+    "aage kya",
+    "next step",
+    "baad kya",
+    "agla",
+    "phir kya",
+    "fir kya",
+    "process kya",
+    "ab main kya",
+    "ab mujhe kya"
+   ],
+   "forbid": [
+    "loan lena",
+    "emi"
+   ]
+  },
+  {
+   "id": "today_date",
+   "topic": "What is today's date / day / month / year",
+   "reply": "जी, आज {DATE} है।",
+   "examples": [
+    "aaj kaun si date hai",
+    "aaj kya date hai",
+    "aaj ki tarikh kya hai",
+    "aaj kaun sa din hai",
+    "aaj kaun sa saal chal raha hai",
+    "abhi kaun sa year chal raha hai",
+    "kaun sa mahina chal raha hai",
+    "aaj kya vaar hai",
+    "aaj ki date batao",
+    "ye kaun sa saal hai",
+    "abhi kitni tarikh hai",
+    "aaj kaun si tarikh hai",
+    "what is today's date",
+    "which year is it",
+    "aaj kaun sa din hai batao",
+    "abhi saal kaun sa hai"
+   ],
+   "require": [
+    "date",
+    "tarikh",
+    "taarikh",
+    "kaun sa din",
+    "kaunsa din",
+    "kaun sa saal",
+    "kaunsa saal",
+    "kaun sa year",
+    "kaun sa mahina",
+    "vaar",
+    "which year",
+    "what year",
+    "kaun si date",
+    "kaun si tarikh",
+    "saal chal"
+   ]
+  },
+  {
+   "id": "company_states",
+   "topic": "Which states / how many states does the company work in",
+   "reply": "जी, हम छह राज्यों में काम करते हैं: राजस्थान, गुजरात, मध्य प्रदेश, छत्तीसगढ़, उत्तर प्रदेश और महाराष्ट्र। आप किस राज्य में रहते हैं?",
+   "examples": [
+    "kitne states mein company hai",
+    "kaun kaun se state mein aap kaam karte ho",
+    "kitne rajya mein company ki branch hai",
+    "aap kaun se rajyon mein ho",
+    "kya aap gujarat mein bhi ho",
+    "kya aapki company maharashtra mein hai",
+    "kya up mein aapki branch hai",
+    "aap kis kis state mein loan dete ho",
+    "delhi mein aapki branch hai kya",
+    "bihar mein loan milta hai kya",
+    "south india mein aapki branch hai kya",
+    "company kitne states mein faili hai"
+   ],
+   "require": [
+    "state",
+    "rajya",
+    "rajyon",
+    "gujarat",
+    "maharashtra",
+    "up mein",
+    "delhi",
+    "bihar",
+    "south"
+   ],
+   "forbid": [
+    "loan chahiye",
+    "emi",
+    "interest"
    ]
   }
  ]

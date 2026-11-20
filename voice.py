@@ -5,6 +5,7 @@ regenerating a sentence that has already been spoken; it never decides what is s
 """
 import hashlib
 import os
+import time
 import re
 
 import requests
@@ -148,9 +149,17 @@ def synth(sentence: str, fmt: str = "wav") -> bytes:
     body = {"model": "tts-1", "voice": VOICE_ID, "input": sentence, "language": VOICE_LANGUAGE, "speed": VOICE_SPEED, "response_format": fmt}
     if VOICE_NUM_STEP:
         body["num_step"] = VOICE_NUM_STEP                      # fewer steps = faster speech, slightly rougher
-    r = requests.post(TTS_URL, json=body, headers=auth_headers(), timeout=300)
-    r.raise_for_status()
-    return r.content
+    last = None
+    for attempt in range(3):                                   # a busy / briefly out-of-memory voice server often works on the second try
+        try:
+            r = requests.post(TTS_URL, json=body, headers=auth_headers(), timeout=300)
+            r.raise_for_status()
+            return r.content
+        except requests.RequestException as e:
+            last = e
+            print(f"  voice try {attempt + 1} failed: {type(e).__name__} {getattr(getattr(e, 'response', None), 'text', '')[:160]!r}", flush=True)
+            time.sleep(1.5 * (attempt + 1))
+    raise last
 
 
 def cache_path(sentence: str, fmt: str = "wav") -> str:

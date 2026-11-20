@@ -12,6 +12,13 @@ Last updated: 19 Nov 2026 (see section 0 for what changed). This replaces the 18
 - New tests: train/stress_test.py (`python train/stress_test.py 150 7`, ~100% per fact on seeds 4,5,7,8) and train/bank_holdout.py. All passing: test_replybank 69, check_examples 27, slot_tests 93, persona_tests, real_call_regression 1+2, call_test.
 - Still open: weakest hold-out topics (how_much_loan vs will_i_get_loan, hidden_charges, hardship); the user must delete the Ollama updates_v2 folder under AppData\Local\Ollama (1.7 GB).
 
+## 0e. Update 20 Nov 2026 (second live chat + website numbers)
+- Website home page numbers (user screenshots, 20 Nov 2026): 211 branches in 211 cities, 6 states, 40,000+ happy customers, AUM 1,843+ crore, 25+ years, 2,100+ team members; toll-free 18001217747, enquiry@lifc.in, 2 DFL Gopinath Marg, MI Road, Jaipur. Ria answers all of these (company_stats, company_customers, company_team, company_states, branch_near, office_info). Older text said 209 branches: replaced by 211.
+- Fixed from the pasted chat (train/chat_replay2.py replays it): "Ab kya karna hai" (what_next), "Aapka naam kya hai" (her_name: no "do minutes" question), "kitna time ho gaya kaam karte hue" (her_experience; "ho gaya" no longer ends the call when the caller asks a question), "mujhe kuch aur poochhana hai" / "aap baat karo na mere se" (more_to_discuss), "Main business karta hoon" is an answer (no eligibility lecture), AUM / employees / customers each get their own answer.
+- Today's date / year: topic today_date, filled from this PC's clock (placeholder {DATE} in flow._alt), spoken in Hindi words.
+- Voice robustness: voice.synth retries up to 3 times (the "Voice engine failed (HTTPError)" message came from a single failed request to VoiceStudio; the 8 GB GPU is nearly full, keep other GPU apps closed).
+- Bank: 138 topics / ~1,550 examples. Hold-out 1 81%, hold-out 2 71%.
+
 ## 0d. Optional online voice (20 Nov 2026)
 - voice.py has an opt-in ElevenLabs engine: `start_ria_monika.bat` (VOICE_ENGINE=elevenlabs, voice "Monika Sogam", model eleven_multilingual_v2). Default stays offline VoiceStudio (Hindi Narrator). Needs ELEVENLABS_API_KEY (setx) and a paid plan for Voice Library voices; ELEVENLABS_VOICE_ID skips the name search. Audio cache and recorded clips are keyed by voice id, so voices never mix; static prewarm is skipped online (billed per character); the stored greeting/closing clips are re-recorded with `python clips.py` once. Tested with a mocked API only (no key available): not yet heard live.
 - Privacy note: in this mode every spoken sentence (including the caller's first name) is sent to ElevenLabs.
