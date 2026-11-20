@@ -171,7 +171,17 @@ def parse_amount(text: str, minimum: int = 1000):
     A small number with no lakh / hazaar / crore after it ("ek taarikh") is not part of an amount."""
     if re.search(r"\d{9,}", text.replace(",", "").replace(" ", "")):          # a phone number, not an amount
         return None
+    text = re.sub(r"one and a half", "dedh", text, flags=re.I)
+    text = re.sub(r"two and a half", "dhai", text, flags=re.I)
     words = _words(text.replace(",", ""))
+    for size in (4, 3, 2):                                    # drop an immediately repeated phrase: "5 hazaar 5 hazaar" -> "5 hazaar"
+        i = 0
+        while i + 2 * size <= len(words):
+            if words[i:i + size] == words[i + size:i + 2 * size]:
+                del words[i + size:i + 2 * size]
+            else:
+                i += 1
+    words = [w for i, w in enumerate(words) if not (i and w == words[i - 1] and re.fullmatch(r"\d+(?:\.\d+)?", w) and float(w) >= minimum)]   # "5000 5000" said twice is 5000
     total, cur, found = 0.0, None, False
     for w in words:
         if re.fullmatch(r"\d+(?:\.\d+)?", w):
@@ -189,7 +199,7 @@ def parse_amount(text: str, minimum: int = 1000):
 
 def yes_no(text: str):
     w = set(_words(text))
-    if w & NO:
+    if w & NO or any(x.startswith(("nah", "nhi", "nhn")) for x in w):
         return "no"
     if w & YES:
         return "yes"
@@ -249,7 +259,22 @@ def parse_duration_years(text: str):
     return None
 
 
-def parse_city(text: str):
+CITY_ALIASES = {"dilli": "Delhi", "bombay": "Mumbai", "mumbay": "Mumbai", "lakhnau": "Lucknow", "luknow": "Lucknow", "banaras": "Varanasi", "kashi": "Varanasi", "calcutta": "Kolkata",
+                "madras": "Chennai", "poona": "Pune", "baroda": "Vadodara", "allahabad": "Prayagraj", "bangalore": "Bengaluru", "bengalooru": "Bengaluru", "gurgaon": "Gurugram",
+                "jaypur": "Jaipur", "jaipure": "Jaipur", "udaypur": "Udaipur", "udyapur": "Udaipur", "jodhapur": "Jodhpur", "bhopaal": "Bhopal", "indor": "Indore", "ahmedabad": "Ahmedabad", "amdavad": "Ahmedabad"}
+PLACE_FILLER = {"mujhe", "me", "mein", "main", "se", "hoon", "hu", "hun", "wo", "haan", "ji", "rehta", "rehti", "rahta", "rahti", "hai", "ka", "ki", "ke", "mera", "meri", "shahar", "sheher", "city", "bol", "raha", "rahi"}
+
+
+def clean_place(text: str) -> str:
+    """'Mujhe Lakhnau Lakhnau me' -> 'Lakhnau': filler words and repeats removed (for a city that is not in the list)."""
+    out = []
+    for w in re.findall(r"[a-z]+", text.lower()):
+        if w not in PLACE_FILLER and w not in out:
+            out.append(w)
+    return " ".join(out[:2]).title()
+
+
+def parse_city(text: str, fuzzy: bool = True):
     low = text.lower()
     import difflib
 
@@ -258,9 +283,17 @@ def parse_city(text: str):
             return c
     words = re.findall(r"[a-z]{4,}", low)
     for w in words:
+        if w in CITY_ALIASES:
+            return CITY_ALIASES[w]
+    if not fuzzy:
+        return None
+    for w in words:
         hit = difflib.get_close_matches(w.title(), forms.CITIES, n=1, cutoff=0.82)
         if hit:
             return hit[0]
+        hit = difflib.get_close_matches(w, list(CITY_ALIASES), n=1, cutoff=0.8)
+        if hit:
+            return CITY_ALIASES[hit[0]]
     return None
 
 
@@ -429,6 +462,8 @@ class Flow:
         if self.v.get("full_name") is None and c.form.get("full_name"):
             self.v["full_name"] = c.form["full_name"]
         text = (text or "").strip()
+        text = re.sub(r"one and a half", "dedh", text, flags=re.I)             # before the sentence is cut at "and"
+        text = re.sub(r"two and a half", "dhai", text, flags=re.I)
         low = text.lower()
         captured, ack = [], None
 
@@ -469,7 +504,7 @@ class Flow:
                 ack = "ठीक है, रकम पक्की कर दी।"
 
         # --- approved reply for a question or special request
-        bank = [m for m in replybank.match(text) if m["score"] >= (0.45 if m["id"] in ("more_to_discuss", "small_talk") else 0.5 if m["entry"].get("require") else 0.6) and m["id"] not in SKIP_IDS]
+        bank = [m for m in (replybank.match_hybrid(text) if looks_like_question(text) and not (parse_amount(text) and "?" not in text) and self.asked not in ("callback_time", "phone", "phone_confirm", "consent", "existing_loans", "full_name") else replybank.match(text)) if m["score"] >= (0.45 if m["id"] in ("more_to_discuss", "small_talk") else 0.5 if m["entry"].get("require") else 0.6) and m["id"] not in SKIP_IDS]
         if is_ack_only(text):
             bank = []
         bank = [m for m in bank if m["id"] not in LEGACY_IDS or m["score"] >= 0.72]
@@ -526,7 +561,7 @@ class Flow:
                         break
         income_re = r"salary|income|kamat|kamai|tankhw|mahin|monthly|महीने|सैलरी|कमाई"
         loan_re = r"loan|lakh|laakh|hazaar|rupe|rs\b|chahiye|chahie|paisa|paise|लोन"
-        for clause in re.split(r"[.;!?]|\b(?:aur|and|but|lekin|par)\b", text):
+        for clause in re.split(r"\.(?!\d)|[;!?]|\b(?:aur|and|but|lekin|par)\b", text):
             amt = None if asked == "existing_emi" else parse_amount(clause)
             if not amt:
                 continue
@@ -544,12 +579,12 @@ class Flow:
         if emp and ("employment" not in self.v or asked == "employment"):
             details["employment_type"] = emp
             captured.append("employment")
-        city = parse_city(text)
+        city = parse_city(text, fuzzy=(asked == "city"))
         if city and ("city" not in self.v or asked == "city"):
             details["city"] = city
             captured.append("city")
-        elif asked == "city" and not city and 0 < len(re.findall(r"[a-z]+", low)) <= 2 and not bank:
-            details["city"] = " ".join(re.findall(r"[a-z]+", low)).title()
+        elif asked == "city" and not city and 0 < len(re.findall(r"[a-z]+", low)) <= 6 and clean_place(low) and not bank and not looks_like_question(text) and not domain_like(text):
+            details["city"] = clean_place(low) or " ".join(re.findall(r"[a-z]+", low)).title()
             captured.append("city")
         if asked == "loan_purpose" and text:
             low_p = low
@@ -605,7 +640,7 @@ class Flow:
             if forms.clean("phone", self.phone_pending)[0]:
                 core["phone"] = self.phone_pending
                 captured.append("phone")
-        elif asked == "phone" or len(digits) >= 10:
+        elif asked == "phone" or (len(digits) >= 10 and digits[-10] in "6789" and digits[-10:-5] != digits[-5:]):
             buf = (self.phone_buf if asked == "phone" else "") + digits
             if asked == "phone" and digits and re.search(r"\b(galat|wrong|dobara|again|restart|phir\s*se|naya|naye|shuru)\b", low):
                 buf = digits                                              # the caller starts the number again

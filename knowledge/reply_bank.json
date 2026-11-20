@@ -19,11 +19,18 @@
    "id": "why_call",
    "topic": "why did you call",
    "examples": [
-    "mujhe kyun call kiya",
-    "kya kaam hai",
-    "kisliye call kiya",
+    "aapne mujhe phone kyun kiya",
+    "call karne ka kaaran kya hai",
     "kis baare mein call hai",
+    "kis liye call kiya hai",
+    "kis silsile mein call kiya",
+    "kis wajah se phone kiya aapne",
+    "kisliye call kiya",
+    "kya baat karni hai aapko",
+    "kya kaam hai",
+    "kya kaam hai aapko mujhse",
     "maine to koi apply nahi kiya",
+    "mujhe kyun call kiya",
     "what is this call about"
    ],
    "reply": "जी, आपके नंबर से हमारे पास लोन की पूछताछ आई थी, इसलिए कॉल किया। अगर आपको ज़रूरत नहीं है तो बता दीजिए, कोई बात नहीं।"
@@ -47,18 +54,24 @@
    "id": "busy_callback",
    "topic": "caller is busy, wants a later call",
    "examples": [
-    "abhi busy hoon",
-    "baad mein call karna",
-    "abhi time nahi hai",
-    "meeting mein hoon",
-    "shaam ko call karo",
-    "kal subah call karna",
     "6 baje ke baad call karo",
-    "call me later",
-    "main kaam pe hoon baad mein phone karo",
+    "abhi baat nahi kar sakta",
+    "abhi busy hoon",
     "abhi kaam pe hoon",
+    "abhi main driving kar raha hoon baad mein baat karte hain",
+    "abhi time nahi hai",
+    "abhi time nahi hai thodi der baad baat karte hain",
     "baad me phone karna",
-    "abhi baat nahi kar sakta"
+    "baad mein baat karna abhi meeting hai",
+    "baad mein call karna",
+    "call me later",
+    "kal call karo abhi free nahi hoon",
+    "kal subah call karna",
+    "main busy hoon",
+    "main drive kar raha hoon baad mein call karna",
+    "main kaam pe hoon baad mein phone karo",
+    "meeting mein hoon",
+    "shaam ko call karo"
    ],
    "reply": "कोई बात नहीं जी। आपको किस दिन और किस टाइम पर कॉल करूँ?",
    "note": "Ask the day and time, then call request_callback with that slot and confirm it back. Calling hours 8 AM to 7 PM."
@@ -76,7 +89,17 @@
     "mat karo call"
    ],
    "reply": "ठीक है जी, कोई बात नहीं। आपका टाइम देने के लिए शुक्रिया, आपका दिन अच्छा रहे।",
-   "note": "Accept politely, do not persuade, then call finish_call."
+   "note": "Accept politely, do not persuade, then call finish_call.",
+   "forbid": [
+    "milega",
+    "milegi",
+    "mil sakta",
+    "mil jayega",
+    "ya nahi",
+    "ki nahi",
+    "hua kya",
+    "hua ki"
+   ]
   },
   {
    "id": "stop_calling",
@@ -97,12 +120,18 @@
    "id": "wrong_number",
    "topic": "wrong number or not the person",
    "examples": [
-    "wrong number hai",
-    "ye mera number nahi hai",
     "aap galat number pe call kar rahe ho",
+    "aap kisi aur ko dhundh rahe ho",
+    "galat number laga hai",
     "is naam ka koi yahan nahi",
+    "maine koi loan liya hi nahi aapne galat number lagaya",
     "mere husband se baat karo",
-    "wo ghar pe nahi hain"
+    "wo ghar pe nahi hain",
+    "wrong number hai",
+    "wrong number lag gaya",
+    "yahan koi aisa nahi rehta",
+    "ye galat number hai",
+    "ye mera number nahi hai"
    ],
    "reply": "ओह सॉरी जी, परेशानी के लिए माफ़ कीजिए। मैं इस नंबर को नोट कर लेती हूँ।",
    "note": "Do not discuss any loan with someone who is not the borrower. Note the number and call finish_call."
@@ -125,11 +154,21 @@
    "id": "fraud_check",
    "topic": "is this a genuine call or fraud",
    "examples": [
-    "ye fraud call to nahi hai",
+    "aap sach mein lakshmi finance se ho na",
+    "apni pehchan batao",
+    "kaise maanu ki aap lakshmi finance se hi ho",
+    "kya aap sach mein company se ho",
+    "kya ye call asli hai",
+    "kya ye fraud call hai",
+    "kya ye fraud hai",
     "kya ye real company hai",
-    "ye genuine hai kya",
+    "mujhe vishwas nahi ho raha ye thagi to nahi",
+    "pehle ye batao company asli hai",
     "scam to nahi hai",
-    "pehle ye batao company asli hai"
+    "ye fake call to nahi hai",
+    "ye fraud call hai kya",
+    "ye fraud call to nahi hai",
+    "ye genuine hai kya"
    ],
    "reply": "जी, मैं लक्ष्मी इंडिया फाइनेंस लिमिटेड से बोल रही हूँ, जयपुर की कंपनी। आप चाहें तो हमारे टोल-फ्री नंबर एक आठ शून्य शून्य, एक दो एक, सात सात चार सात पर कॉल करके पक्का कर सकते हैं।",
    "note": "Say the toll-free number as digits 18001217747 in Hindi words. Never ask for OTP, PIN or card details."
@@ -138,13 +177,19 @@
    "id": "otp_safety",
    "topic": "caller offers or is asked for OTP, PIN, card or password",
    "examples": [
-    "main otp bata deta hoon",
-    "otp kya hai",
-    "pin bata dun",
-    "card number bolun",
     "aadhaar number abhi bol do",
+    "aap mujhse otp to nahi maangenge",
+    "aap otp maangoge kya",
+    "aapko otp batana hai kya",
+    "card number bolun",
+    "cvv bata dun",
+    "kya mujhe pin ya otp dena hoga",
+    "main otp bata deta hoon",
+    "otp bolna padega kya",
+    "otp kya hai",
+    "otp share karna safe hai kya",
     "password bata du",
-    "cvv bata dun"
+    "pin bata dun"
    ],
    "reply": "नहीं नहीं जी, कृपया ओटीपी, पिन, सीवीवी या पासवर्ड किसी को भी मत बताइए, हम कभी नहीं माँगते। आप बस अपनी बेसिक डिटेल्स बताइए।",
    "note": "Never ask for or accept these. Warn the caller kindly."
@@ -167,12 +212,20 @@
    "id": "will_i_get_loan",
    "topic": "will my loan be approved",
    "examples": [
-    "mujhe loan mil jayega",
     "approve ho jayega",
-    "pakka milega kya",
+    "kya loan sanction ho jayega",
+    "kya mera loan pass ho jayega",
+    "kya mujhe loan mil jayega",
     "loan guarantee milega",
-    "will i get the loan",
-    "reject to nahi hoga"
+    "loan mil jayega na",
+    "loan milega ya nahi ye batao",
+    "meri application pass hogi kya",
+    "mujhe loan ki approval milegi",
+    "mujhe loan mil jayega",
+    "mujhe loan milega ya nahi",
+    "pakka milega kya",
+    "reject to nahi hoga",
+    "will i get the loan"
    ],
    "reply": "जी, अप्रूवल कंपनी के चेक के बाद ही होता है, इसलिए मैं पहले से पक्का नहीं बोल सकती। आप डिटेल्स दे दीजिए तो प्रोसेस शुरू करवा देती हूँ।",
    "note": "Never promise approval."
@@ -208,12 +261,19 @@
    "id": "low_cibil",
    "topic": "bad credit score",
    "examples": [
-    "mera cibil kharab hai",
-    "cibil score kam hai",
-    "credit score low hai",
+    "bad credit hai milega kya",
     "cibil 600 hai",
+    "cibil kam hai fir bhi loan mil sakta hai kya",
+    "cibil score kam hai",
+    "credit score bahut kam hai to kya loan milega",
+    "credit score kharab hai loan ho sakta hai",
+    "credit score low hai",
+    "mera cibil bahut kam hai kya loan milega",
+    "mera cibil kharab hai",
+    "mera cibil score kharab hai",
+    "mera score 550 hai",
     "pehle default hua tha",
-    "bad credit hai milega kya"
+    "purana default hai score down hai"
    ],
    "reply": "जी, छह सौ पचास या उससे ऊपर का क्रेडिट स्कोर बेहतर माना जाता है, पर फ़ैसला टीम करती है। मैं पक्का नहीं बोल सकती, आप चाहें तो डिटेल्स लिखवा दीजिए।",
    "note": "Do not promise approval."
@@ -222,12 +282,18 @@
    "id": "self_employed",
    "topic": "self employed or business",
    "examples": [
-    "main self employed hoon",
-    "mera apna business hai",
-    "dukaan hai meri",
+    "apna dhandha hai loan mil jayega kya",
     "business karta hoon",
+    "dukaan chalata hoon kya loan le sakta hoon",
+    "dukaan hai meri",
     "freelancer hoon",
-    "kya business wale ko milta hai"
+    "kya business wale ko milta hai",
+    "main business karta hoon kya mujhe loan milega",
+    "main self employed hoon",
+    "main shop owner hoon",
+    "mera apna business hai",
+    "mera apna dhandha hai kya mujhe loan mil sakta hai",
+    "self employed ko loan milta hai kya"
    ],
    "reply": "जी, अपना काम करने वालों को भी मिल सकता है, उम्र इक्कीस से पैंसठ और कम से कम दो साल का बिज़नेस चाहिए। आपका बिज़नेस कितने साल से है?"
   },
@@ -259,14 +325,19 @@
    "id": "documents",
    "topic": "which documents are needed",
    "examples": [
-    "kaun se documents lagenge",
-    "kya kya document chahiye",
-    "documents kya dene honge",
-    "kyc ke liye kya lagta hai",
     "aadhaar pan kaafi hai",
-    "what documents",
     "document kya kya lagenge",
-    "documents kya chahiye"
+    "documents kya chahiye",
+    "documents kya dene honge",
+    "kaun se documents jama karne honge",
+    "kaun se documents lagenge",
+    "kya kya dena padega documents mein",
+    "kya kya document chahiye",
+    "kya kya kagaz chahiye apply karne ke liye",
+    "kyc ke liye kya lagta hai",
+    "loan ke liye kaun kaun se papers dene honge",
+    "paperwork kya hota hai",
+    "what documents"
    ],
    "reply": "जी, आधार या पैन जैसा आईडी प्रूफ, एड्रेस प्रूफ, पिछले तीन महीने की सैलरी स्लिप, छह महीने का बैंक स्टेटमेंट और जॉब का प्रूफ लगता है। क्या ये आपके पास हैं?"
   },
@@ -287,11 +358,15 @@
    "id": "processing_fee",
    "topic": "processing fee, login fee",
    "examples": [
-    "processing fee kitni hai",
-    "koi charges lagte hain",
-    "login fee kitni hai",
     "fees kitni lagegi",
+    "file charge kitna lagta hai",
+    "koi charges lagte hain",
     "kya kya charge hai",
+    "loan lene par kitna fee katta hai",
+    "login fee kitni hai",
+    "processing charge kitna hai",
+    "processing fee kitni hai",
+    "processing fees kitna katega",
     "zero processing fee hai kya"
    ],
    "reply": "जी, लॉगिन फ़ीस कुछ नहीं है, और प्रोसेसिंग फ़ीस चार परसेंट तक होती है, टैक्स अलग से। सही अमाउंट आपकी एप्लीकेशन के हिसाब से टीम बताएगी।"
@@ -361,16 +436,23 @@
    "id": "prepayment",
    "topic": "part payment or early closure charges",
    "examples": [
+    "agar main loan jaldi chuka du to kuch lagega kya",
     "foreclosure charge kitna hai",
+    "foreclosure charges kitne hain",
+    "foreclosure ka charge kitna hai",
     "foreclosure kya hota hai",
     "loan jaldi band kar sakta hoon",
     "loan jaldi band karna ho to kya karna padega",
     "loan jaldi khatam karna hai",
+    "loan pehle band kar du to charge lagega kya",
     "loan pehle close karna hai",
+    "loan time se pehle band karne par charge hai kya",
     "part payment kaise kare",
     "part payment kar sakta hoon",
+    "part payment kar sakta hoon kya",
     "pehle hi chuka du to penalty",
     "poora loan ek saath bhar du to",
+    "pre closure charges kya hain",
     "prepayment charges kya hain"
    ],
    "reply": "जी, लोन जल्दी बंद करने पर चार्ज लगता है, पर उसका सही अमाउंट टीम बताएगी। मैं कॉलबैक नोट कर लेती हूँ, किस टाइम पर करवाऊँ?",
@@ -381,9 +463,14 @@
    "topic": "effect on credit score",
    "examples": [
     "cibil pe asar padega kya",
-    "credit score kharab hoga kya",
     "cibil report mein jayega",
-    "credit bureau ko batate ho kya"
+    "credit bureau ko batate ho kya",
+    "credit score kharab hoga kya",
+    "enquiry se cibil gir jata hai kya",
+    "is loan se mere cibil par kya asar padega",
+    "kya loan lene se score kharab hota hai",
+    "loan ka cibil par kya effect hota hai",
+    "loan lene se mere cibil par asar padega kya"
    ],
    "reply": "जी, लोन की जानकारी क्रेडिट ब्यूरो के साथ शेयर की जाती है। टाइम पर ईएमआई भरेंगे तो स्कोर के लिए अच्छा रहता है।"
   },
@@ -391,11 +478,18 @@
    "id": "guarantor",
    "topic": "guarantor or collateral",
    "examples": [
-    "guarantor chahiye kya",
-    "kuch girvi rakhna padega",
+    "bina guarantor ke loan milega kya",
     "collateral lagega",
+    "guarantor chahiye kya",
+    "kisi ki guarantee chahiye",
+    "kisi ki guarantee lagegi kya",
+    "kisi ko zamanat deni hogi kya",
+    "kuch girvi rakhna padega",
+    "kya co applicant zaroori hai",
+    "kya guarantor dena padega",
+    "kya mujhe guarantor dena hoga",
     "security deni padegi",
-    "kisi ki guarantee chahiye"
+    "zamanatdar chahiye kya"
    ],
    "reply": "जी, पर्सनल लोन अनसिक्योर्ड होता है, यानी कुछ गिरवी नहीं रखना पड़ता। गारंटर की ज़रूरत टीम कन्फ़र्म करेगी।"
   },
@@ -424,15 +518,22 @@
    "id": "disbursal_time",
    "topic": "how long till money arrives",
    "examples": [
-    "paisa kitne din mein aayega",
-    "kitna time lagega",
     "aaj hi chahiye",
     "emergency hai jaldi chahiye",
-    "kab tak account mein aayega",
     "how fast",
+    "kab tak account mein aayega",
+    "kitna time lagega",
+    "kitne din me milega paisa",
+    "kitne ghante lagenge paisa aane mein",
+    "kitni der lagti hai paisa aane mein",
+    "loan kitne din mein milega",
+    "loan kitni jaldi mil jata hai",
+    "paisa kab tak aa jayega",
     "paisa kitne din me aa jayega",
+    "paisa kitne din mein aayega",
+    "paisa kitne ghante mein aata hai",
     "paise kab tak milenge",
-    "kitne din me milega paisa"
+    "paise kitne time mein account mein aate hain"
    ],
    "reply": "जी, डॉक्यूमेंट पूरे होने के बाद आमतौर पर चौबीस से अड़तालीस घंटे लगते हैं, पर मैं पक्का वादा नहीं कर सकती। आप जल्दी के लिए डॉक्यूमेंट तैयार रखिए।",
    "note": "Never promise a time."
@@ -468,11 +569,17 @@
    "id": "which_loan",
    "topic": "which loan is best",
    "examples": [
-    "kaunsa loan mere liye theek rahega",
-    "payday ya salary ya personal",
-    "teeno mein kya fark hai",
+    "difference kya hai",
+    "kaun si loan scheme sahi rahegi",
     "kaunsa loan lena chahiye",
-    "difference kya hai"
+    "kaunsa loan mere liye theek rahega",
+    "main kaun sa loan lun",
+    "mere liye kaun sa loan better hai",
+    "payday aur salary loan mein kya fark hai",
+    "payday ya salary ya personal",
+    "personal loan aur payday loan mein farak kya hai",
+    "personal loan aur payday loan mein kya antar hai",
+    "teeno mein kya fark hai"
    ],
    "reply": "जी, सही लोन आपकी ज़रूरत और सैलरी पर निर्भर करता है। आपको कितने पैसे चाहिए और कितने समय के लिए, बता दीजिए, टीम बेस्ट ऑप्शन बता देगी।"
   },
@@ -480,11 +587,17 @@
    "id": "data_safety",
    "topic": "is my data safe",
    "examples": [
-    "mera data safe rahega",
+    "aap meri information kisi ko dete ho kya",
+    "data kaun dekhega",
     "kisi ko share to nahi hoga",
+    "kya mera data secure hai",
+    "mera data safe rahega",
+    "mera data surakshit rahega",
     "meri details leak to nahi hongi",
-    "privacy ka kya",
-    "data kaun dekhega"
+    "meri jaankari leak to nahi hogi",
+    "meri jaankari safe rahegi na",
+    "meri personal details safe hain na",
+    "privacy ka kya"
    ],
    "reply": "जी, आपकी जानकारी सिर्फ़ लोन प्रोसेस के लिए इस्तेमाल होती है, और क्रेडिट ब्यूरो के साथ शेयर की जाती है। बाकी प्राइवेसी की डिटेल्स टीम बता देगी।"
   },
@@ -493,10 +606,16 @@
    "topic": "RBI registration, company credentials",
    "examples": [
     "aap rbi registered ho",
-    "rbi approved hai kya",
+    "aapki company rbi se approved hai kya",
     "company kab se hai",
+    "company registered nbfc hai kya",
     "kitni branches hain",
-    "license hai kya"
+    "kya aap rbi registered ho",
+    "kya aapki company rbi se registered hai",
+    "license hai kya",
+    "rbi approved hai kya",
+    "rbi ka registration number kya hai",
+    "rbi licence hai kya aapke paas"
    ],
    "reply": "जी, हम जयपुर की रजिस्टर्ड फाइनेंस कंपनी हैं। रजिस्ट्रेशन नंबर वगैरह की पूरी जानकारी टीम आपको दे देगी।",
    "note": "No registration number is approved; do not invent one."
@@ -505,11 +624,17 @@
    "id": "think_about_it",
    "topic": "wants time to think",
    "examples": [
-    "soch ke batata hoon",
-    "ghar waalon se pooch ke batata hoon",
+    "abhi decide nahi kar paaya baad mein batata hoon",
     "abhi decide nahi kiya",
     "baad mein sochta hoon",
-    "let me think"
+    "ghar waalon se pooch ke batata hoon",
+    "ghar walon se baat karke batata hoon",
+    "let me think",
+    "main ghar mein pooch kar batata hoon",
+    "mujhe sochne ka time chahiye",
+    "mujhe sochne ke liye time chahiye",
+    "soch ke batata hoon",
+    "thoda time do sochne ka"
    ],
    "reply": "बिल्कुल जी, आराम से सोचिए। मैं आपको बाद में कॉल कर लूँ? बताइए किस दिन और किस टाइम पर ठीक रहेगा?",
    "note": "Offer callback, request_callback with the slot."
@@ -542,15 +667,22 @@
    "id": "status_check",
    "topic": "application status or account balance",
    "examples": [
-    "mere loan ka status batao",
+    "application status batao",
     "approve hua ya reject",
-    "paise abhi tak nahi aaye",
     "documents upload hue kya",
-    "meri emi kitni hai",
-    "outstanding kitna hai",
     "emi ki date kab hai",
     "kitna baaki hai",
-    "loan account number kya hai"
+    "loan account number kya hai",
+    "loan kab tak approve hoga",
+    "mera loan approve hua ki nahi",
+    "mera loan approve hua kya",
+    "mera loan kahan tak pahuncha",
+    "mere loan ka status batao",
+    "meri application ka kya hua",
+    "meri emi kitni hai",
+    "meri file ka status kya hai",
+    "outstanding kitna hai",
+    "paise abhi tak nahi aaye"
    ],
    "reply": "जी, मैं देख देती हूँ, पहले पहचान कन्फ़र्म करनी होगी। आपका रजिस्टर्ड मोबाइल नंबर बता दीजिए।",
    "note": "Verify identity with find_customer then verify_identity before sharing any account data."
@@ -559,12 +691,19 @@
    "id": "payment_how",
    "topic": "how to pay, payment not updated",
    "examples": [
-    "payment kaise karun",
-    "upi se pay kar sakta hoon",
+    "auto debit band karna hai",
+    "emi ka payment kahan karun",
+    "emi ka payment karne ka tarika batao",
+    "emi kahan bharu",
+    "emi kaise bharni hai",
+    "emi kaise jama karni hai",
+    "emi online kaise bharte hain",
+    "kist kaise bharun",
     "maine payment kar diya update nahi hua",
-    "payment link bhejo",
     "online bhar sakta hoon",
-    "auto debit band karna hai"
+    "payment kaise karun",
+    "payment link bhejo",
+    "upi se pay kar sakta hoon"
    ],
    "reply": "जी, पेमेंट के तरीके और अपडेट के लिए टीम आपकी मदद करेगी। मैं कॉलबैक नोट कर लेती हूँ, आपको किस टाइम पर कॉल करवाऊँ?",
    "note": "No approved payment channels. Offer a scheduled callback."
@@ -573,20 +712,25 @@
    "id": "late_fee",
    "topic": "late fee, bounce charge, penalty",
    "examples": [
-    "late fee kitni hai",
-    "late payment pe kitna charge",
+    "bounce charge kya hai",
     "bounce charge kyon laga",
-    "penalty kitni lagegi",
-    "emi miss ho jaye to kya hoga",
-    "late fee waive kar do",
-    "charge zyada kat gaya",
-    "late fee maaf kar do",
-    "charges hata do",
-    "penalty maaf kar do",
     "bounce hua charge kyun laga",
-    "late fee lag gayi",
+    "charge zyada kat gaya",
+    "charges hata do",
+    "der se emi bharne par kitna fine hai",
+    "emi bounce hone par kitna charge hai",
+    "emi bounce hone par kitna charge lagta hai",
+    "emi miss ho jaye to kya hoga",
+    "late charge laga diya",
     "late fee bhi lag gayi",
-    "late charge laga diya"
+    "late fee kitni hai",
+    "late fee lag gayi",
+    "late fee maaf kar do",
+    "late fee waive kar do",
+    "late payment par kitna penalty lagti hai",
+    "late payment pe kitna charge",
+    "penalty kitni lagegi",
+    "penalty maaf kar do"
    ],
    "reply": "जी, इसके बारे में कलेक्शंस टीम आपसे बात करेगी, मैं यहाँ कुछ पक्का नहीं बोल सकती। आपको किस दिन और किस टाइम पर कॉल करवा दूँ?",
    "note": "Do not state any late fee or bounce amount. Ask for a day and time, call request_callback with it, confirm the slot."
@@ -661,13 +805,19 @@
    "id": "harassment",
    "topic": "threats, rude agents, calls to family or office, odd hours",
    "examples": [
-    "tum log dhamki de rahe ho",
+    "aap baar baar phone kyun kar rahe ho pareshan kar diya",
+    "aap log mujhe pareshan kar rahe ho",
     "agent ne badtameezi ki",
+    "bahut pareshan kar rahe ho",
+    "dhamki mat do",
     "ghar waalon ko call kiya",
+    "mujhe baar baar call karke pareshan mat karo",
+    "mujhe tang mat karo",
     "office mein call kiya gaya",
     "raat ko call aate hain",
-    "bahut pareshan kar rahe ho",
-    "recovery wale pareshan kar rahe hain"
+    "recovery wale pareshan kar rahe hain",
+    "roz roz call mat karo",
+    "tum log dhamki de rahe ho"
    ],
    "reply": "जी, आपको जो परेशानी हुई उसके लिए सॉरी। मैं इसे अभी नोट कर रही हूँ और सीनियर से आपको कॉलबैक करवाती हूँ।",
    "note": "Apologise, log with request_callback, escalate; never defend or argue."
@@ -781,12 +931,18 @@
    "id": "whatsapp_sms",
    "topic": "send details by WhatsApp or SMS",
    "examples": [
-    "whatsapp pe bhej do",
-    "sms kar do details",
+    "details message mein bhej do",
+    "documents whatsapp pe le lo",
     "link bhejo",
     "mail kar do",
+    "mail kar do mujhe information",
+    "message kar dijiye details",
+    "mujhe sms kar do",
+    "sms kar do details",
+    "sms mein bhej dijiye",
     "whatsapp pe baat karo",
-    "documents whatsapp pe le lo"
+    "whatsapp pe bhej do",
+    "whatsapp pe bhejo"
    ],
    "reply": "जी, इसके लिए टीम से पूछना पड़ेगा, मैं यहाँ कोई लिंक नहीं भेज सकती। मैं आपका कॉलबैक नोट कर लेती हूँ, किस टाइम पर करवाऊँ?",
    "note": "Do not promise any message or link. Never accept documents or ID over chat."
@@ -857,6 +1013,16 @@
     "kaha par",
     "kahan par",
     "kahaan"
+   ],
+   "require2": [
+    "kahan",
+    "kaha",
+    "kahaan",
+    "address",
+    "pata",
+    "kidhar",
+    "location",
+    "kaise pahunch"
    ]
   },
   {
@@ -967,9 +1133,11 @@
     "aur baat karni hai",
     "aur bhi kuch puchna tha",
     "can i ask something else",
+    "ek aur baat poochni thi",
     "ek aur cheez poochni hai",
     "ek aur sawal hai",
     "ek baat poochni thi",
+    "ek sawal aur hai",
     "i have another question",
     "i want to talk about something else",
     "kuch aur baat karni hai",
@@ -983,6 +1151,8 @@
     "mujhe aapse kuch aur baat karni hai",
     "mujhe aapse kuchh aur bhi baat kar",
     "mujhe aur bhi baat karni hai",
+    "mujhe ek aur cheez jaanni hai",
+    "mujhe ek aur sawal poochna hai",
     "mujhe kuch aur baat karni hai",
     "mujhe kuch aur baat karni thi",
     "mujhe kuch aur jaanna hai",
@@ -1099,11 +1269,16 @@
    "topic": "what happens if an EMI bounces or is missed",
    "examples": [
     "agar emi bounce ho jaye to kya hoga",
-    "emi nahi bhari to kya hoga",
-    "emi miss ho gayi to kya hoga",
-    "emi late hone par kya hota hai",
+    "agar emi miss ho gayi to kya hoga",
+    "agar emi time par na bhar paya to kya hoga",
     "emi bounce hone se kya hota hai",
-    "agar emi time par na bhar paya to kya hoga"
+    "emi late ho jaye to kya hota hai",
+    "emi late hone par kya hota hai",
+    "emi miss ho gayi to kya hoga",
+    "emi miss ho jaye to kya hoga",
+    "emi nahi bhari to kya hoga",
+    "emi time par nahi bhari to kya hoga",
+    "kist nahi di to kya hoga"
    ],
    "require": [
     "bounce",
@@ -1300,7 +1475,19 @@
     "dhokha",
     "dhoka"
    ],
-   "reply": "जी, ऑनलाइन फ़्रॉड हो जाए तो तुरंत अपने बैंक को बताइए और साइबर क्राइम हेल्पलाइन, एक नौ तीन शून्य, पर कॉल कीजिए। कभी भी ओटीपी या पिन किसी से साझा मत कीजिए।"
+   "reply": "जी, ऑनलाइन फ़्रॉड हो जाए तो तुरंत अपने बैंक को बताइए और साइबर क्राइम हेल्पलाइन, एक नौ तीन शून्य, पर कॉल कीजिए। कभी भी ओटीपी या पिन किसी से साझा मत कीजिए।",
+   "require2": [
+    "kahan",
+    "kaha",
+    "report",
+    "complaint",
+    "shikayat",
+    "kya kare",
+    "kya karun",
+    "kaise",
+    "kisko",
+    "kise"
+   ]
   },
   {
    "id": "deposit_safe",
@@ -1564,11 +1751,16 @@
    "id": "open_account",
    "topic": "wants to open a bank account",
    "examples": [
-    "mujhe bank mein khata khulwana hai",
     "account kholna hai",
-    "saving account kaise khule",
+    "account kholna hai mujhe",
+    "bank account kaise khulta hai",
     "bank account khulwana hai mera",
+    "khata khulwana hai",
+    "mujhe account kholna hai",
     "mujhe bank mein khaata khulvaana hai mera",
+    "mujhe bank mein khata khulwana hai",
+    "saving account kaise khule",
+    "savings account kholna hai",
     "zero balance account khulwana hai"
    ],
    "require": [
@@ -1661,13 +1853,18 @@
    "id": "instant_loan",
    "topic": "wants an instant loan",
    "examples": [
-    "instant loan chahiye",
-    "mujhe turant loan chahiye",
-    "abhi paisa chahiye",
     "aaj hi loan chahiye",
-    "same day loan milega kya",
+    "aaj hi paisa chahiye urgent hai",
+    "abhi paisa chahiye",
+    "emergency hai abhi loan do",
+    "instant loan chahiye",
+    "jaldi loan chahiye urgent",
+    "jaldi se loan chahiye aaj hi",
     "mujhe instant do laakh ka loan chaahie",
-    "jaldi loan chahiye urgent"
+    "mujhe turant loan chahiye",
+    "mujhe turant paisa chahiye",
+    "mujhe urgent paisa chahiye aaj hi",
+    "same day loan milega kya"
    ],
    "require": [
     "instant",

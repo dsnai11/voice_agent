@@ -42,8 +42,34 @@ def _skeleton(word: str) -> str:
 _ALIAS = {"mn": "m", "mnn": "m", "hn": "h", "hnn": "h", "nhn": "nh"}        # me / mein / mai, hai / hain
 
 
+# Different words that mean the same thing become one word before matching, for the stored examples and for the caller's sentence alike:
+# "kagaz", "papers", "docs" are all "document"; "zamanat" is "guarantor"; "byaaj" is "interest"; "kist" is "emi" ...
+_SYNONYMS = {
+    "document": "document documents docs doc kagaz kagzat kagaj papers paper paperwork dastavez दस्तावेज़ दस्तावेज डॉक्यूमेंट कागज़ कागज",
+    "interest": "interest byaaj byaj vyaj sood rate percent percentage ब्याज इंटरेस्ट रेट प्रतिशत",
+    "emi": "emi kist kisht instalment installment किस्त ईएमआई",
+    "guarantor": "guarantor gaurantor guarantee zamanat jamanat zamin jamin ज़मानत जमानत गारंटर",
+    "fraud": "fraud fraudulent scam thagi dhokha dhoka nakli fake फ्रॉड ठगी धोखा नकली",
+    "robot": "robot bot machine computer insaan human इंसान रोबोट मशीन",
+    "message": "sms whatsapp message msg text email mail मैसेज",
+    "quick": "jaldi turant urgent instant fast quick immediately tatkal तुरंत जल्दी",
+    "approve": "pass approve approved sanction manjoor manzoor clear मंज़ूर मंजूर",
+    "charge": "fee fees charge charges shulk kharcha katega katti कटेगा चार्ज फ़ीस फीस",
+    "complaint": "complaint complain shikayat grievance शिकायत",
+    "account": "account khata khaata khaate खाता अकाउंट",
+    "safe": "safe surakshit secure bharosa trust भरोसा सुरक्षित",
+    "pay": "bharni bharna bharu bharun pay payment jama deposit भरनी भरना",
+    "registered": "registered registration licence license रजिस्टर्ड",
+    "think": "soch sochna sochne think vichar",
+    "close": "band close closure foreclose foreclosure khatam",
+    "salary": "salary tankhwah tankhwa vetan सैलरी तनख्वाह वेतन",
+}
+_SYN = {w: canon for canon, words in _SYNONYMS.items() for w in words.split()}
+
+
 def tokens(text: str) -> list:
     words = re.findall(r"[\wऀ-ॿ]+", text.lower())
+    words = [_SYN.get(w, w) for w in words]
     out = ["NUM" if w.isdigit() else _skeleton(w) for w in words]       # any number counts as one word
     return [t for t in out if t]
 
@@ -153,3 +179,56 @@ if __name__ == "__main__":   # python replybank.py "your sentence"
     sys.stdout.reconfigure(encoding="utf-8")
     for m in match(" ".join(sys.argv[1:])):
         print(m["score"], m["id"], "<-", m["chunk"])
+
+
+# ---- hybrid: when the word-matcher is unsure, the local model only PICKS a topic number from the approved list (it never writes an answer) ----
+_cls_cache: dict = {}
+_cls_schema = None
+_cls_system = ""
+
+
+def classify_llm(text: str, timeout: float = 8.0):
+    """Entry the local model picks for this sentence, or None (NONE / model down / too slow). Offline: talks to the local Ollama only."""
+    global _cls_schema, _cls_system, _bank
+    if os.environ.get("CLASSIFIER", "1") != "1":
+        return None
+    if _bank is None:
+        load()
+    key = text.strip().lower()
+    if key in _cls_cache:
+        return _cls_cache[key]
+    entries = {e["id"]: e for e, _ in _bank.rows}
+    if _cls_schema is None:
+        _cls_schema = {"type": "object", "properties": {"topic": {"type": "string", "enum": list(entries) + ["NONE"]}}, "required": ["topic"]}
+        _cls_system = ("You route a customer's sentence from a loan phone call in India (Hinglish, Roman letters, often misspelled by a speech recogniser) to ONE topic of an approved-answer list. "
+                       "Choose the topic whose answer best responds to what the customer said. If the sentence is only an answer to a form question (name, amount, city, yes/no, a time) "
+                       "or matches no topic, answer NONE.\nTOPICS:\n" + "\n".join(f"{i}: {e.get('topic', i)}" for i, e in entries.items()))
+    try:
+        import requests
+        r = requests.post(os.environ.get("OLLAMA_URL", "http://localhost:11434") + "/api/chat",
+                          json={"model": os.environ.get("CLASSIFIER_MODEL", "qwen2.5:7b"), "stream": False, "format": _cls_schema, "keep_alive": "24h",
+                                "options": {"temperature": 0, "num_predict": 20}, "messages": [{"role": "system", "content": _cls_system}, {"role": "user", "content": text}]},
+                          timeout=timeout).json()
+        import json as _j
+        topic = _j.loads(r["message"]["content"])["topic"]
+    except Exception:
+        return None
+    got = entries.get(topic)
+    _cls_cache[key] = got
+    return got
+
+
+def match_hybrid(text: str, limit: int = MAX_REPLIES, sure: float = 0.8) -> list:
+    """match(), but when the best word-match is below `sure` the local model gets a vote; its pick wins only when it is a real topic."""
+    found = match(text, limit)
+    if found and found[0]["score"] >= sure:
+        return found
+    if len(text.split()) < 3 and not found:                                  # "ji haan", "do lakh": an answer, not a question
+        return found
+    pick = classify_llm(text)
+    if pick is None:
+        return found
+    if found and found[0]["id"] == pick["id"]:                               # both agree: now it is certain
+        found[0]["score"] = max(found[0]["score"], 0.9)
+        return found
+    return [{"id": pick["id"], "score": 0.9, "chunk": text, "entry": pick}]
