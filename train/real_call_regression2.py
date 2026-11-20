@@ -45,7 +45,7 @@ step("Mera koi loan nahin chal raha hai abhi.", ["मोबाइल"], ["कॉ
 assert c.flow.v.get("existing_loans") == "no"
 step("9 828273712.", ["9828273712"])
 step("Haan, yah sahi hai.", ["कॉल"], why="consent question")
-step("Thik hai, aap mere ko kal call karna.", ["कल", "सबमिट"], why="'call me tomorrow' is understood as consent and time")
+step("Thik hai, aap mere ko kal call karna.", ["कल", "और कुछ पूछना"], why="'call me tomorrow' is understood as consent and time")
 form = c.form
 assert form.get("consent_to_contact") == "yes", form.get("consent_to_contact")
 

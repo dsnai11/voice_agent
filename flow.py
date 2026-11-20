@@ -388,7 +388,7 @@ def static_sentences() -> list:
             "ठीक है जी, मैंने नोट कर लिया, हमारी टीम आपको उसी समय कॉल करेगी।",
             "ठीक है जी, आपकी जानकारी नोट हो गई है और हमारी टीम जल्दी आपसे संपर्क करेगी।", "ठीक है जी, जितनी जानकारी मिली है वो मैंने नोट कर ली है।", "जी, अगर आपको कुछ और पूछना हो तो बताइए, वरना आप कॉल खत्म कर सकते हैं।",
             "जी, मैं ठीक से समझ नहीं पाई। क्या आप अपनी बात एक बार फिर बता सकते हैं?",
-            "जी, आप चाहें तो स्क्रीन पर फ़ॉर्म सबमिट कर दीजिए, हमारी टीम जल्दी आपसे संपर्क करेगी।",
+            "जी, आपकी जानकारी नोट हो गई है और हमारी टीम जल्दी आपसे संपर्क करेगी।",
             "यह नंबर सही नहीं लग रहा, मोबाइल नंबर छह, सात, आठ या नौ से शुरू होता है। कृपया नंबर दोबारा बोलिए।"]
     out += [f"अभी तक {n} अंक मिले हैं, बाकी के अंक भी बता दीजिए।" for n in range(1, 10)]
     try:
@@ -659,7 +659,7 @@ class Flow:
                 self.phone_buf = buf                                      # keep what was said: the caller may be mid-number
                 return f"अभी तक {len(buf)} अंक मिले हैं, बाकी के अंक भी बता दीजिए।"
         when_said = speak_time(text)
-        if asked not in ("callback_time", "phone", "phone_confirm") and when_said and re.search(r"call|phone|baat", low) and "callback_time" not in self.v and not looks_like_question(text):
+        if asked not in ("callback_time", "phone", "phone_confirm") and when_said and re.search(r"call|phone|baat", low) and ("callback_time" not in self.v or self.done) and not looks_like_question(text):
             core["preferred_callback_time"] = " ".join(text.split())[:80]
             core["consent_to_contact"] = "yes"
             captured += ["callback_time", "consent"]
@@ -698,6 +698,8 @@ class Flow:
 
         if "callback_time" in captured:                                  # the time has been taken: no extra "busy, call later" answer on top
             bank = [m for m in bank if m["id"] != "busy_callback"]
+            if not looks_like_question(text):                            # "ek ghante baad call kar lena" is only a time, nothing else to answer
+                bank = []
             ids = [m["id"] for m in bank]
         if asked in captured:                                            # the caller answered the question that was asked: only a strong, specific topic may still reply
             bank = [m for m in bank if m["score"] >= 0.9]
@@ -722,7 +724,7 @@ class Flow:
             self.unclear_after_done += 1
             if self.unclear_after_done == 1:
                 return "जी, मैं ठीक से समझ नहीं पाई। क्या आप अपनी बात एक बार फिर बता सकते हैं?"
-            return "जी, आप चाहें तो स्क्रीन पर फ़ॉर्म सबमिट कर दीजिए, हमारी टीम जल्दी आपसे संपर्क करेगी।"
+            return "जी, आपकी जानकारी नोट हो गई है और हमारी टीम जल्दी आपसे संपर्क करेगी।"
 
         parts = []
         if "callback_time" in captured and not ack:
@@ -794,12 +796,12 @@ class Flow:
         if nxt is None:
             if not self.done:
                 self.done = True
-                parts.append(f"ठीक है {self._name()} जी, आपकी सारी जानकारी नोट हो गई है। और कुछ पूछना हो तो पूछ लीजिए, वरना आप स्क्रीन पर फ़ॉर्म देखकर सबमिट कर दीजिए।")
+                parts.append(f"ठीक है {self._name()} जी, आपकी सारी जानकारी नोट हो गई है। और कुछ पूछना हो तो पूछ लीजिए।")
             elif not parts:                                              # everything is collected and the caller said something we cannot place
                 self.unclear_after_done += 1
                 if self.unclear_after_done == 1:
                     return "जी, मैं ठीक से समझ नहीं पाई। क्या आप अपनी बात एक बार फिर बता सकते हैं?"
-                return "जी, आप चाहें तो स्क्रीन पर फ़ॉर्म सबमिट कर दीजिए, हमारी टीम जल्दी आपसे संपर्क करेगी।"
+                return "जी, आपकी जानकारी नोट हो गई है और हमारी टीम जल्दी आपसे संपर्क करेगी।"
             self.asked = None
             return " ".join(parts)
         if asked_question and nxt == self.asked:

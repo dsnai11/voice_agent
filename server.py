@@ -24,7 +24,7 @@ import numpy as np
 import requests
 import uvicorn
 from fastapi import FastAPI, WebSocket
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 
 # ------------------------------ SETTINGS ------------------------------
 # Same names and defaults as agent.py; override with environment variables.
@@ -162,6 +162,12 @@ def transcribe(audio: np.ndarray) -> str:
 @app.get("/")
 def index():
     return FileResponse(os.path.join(WEB_DIR, "index.html"))
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#6d5efc"/><text x="16" y="22" font-size="18" text-anchor="middle" fill="#fff" font-family="Arial" font-weight="700">R</text></svg>'
+    return Response(content=svg, media_type="image/svg+xml")
 
 
 @app.get("/api/form")
