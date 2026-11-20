@@ -2,6 +2,16 @@
 
 Last updated: 19 Nov 2026 (see section 0 for what changed). This replaces the 18 Nov 2026 version. Read this file first, then `KAGGLE.md` (how to run on Kaggle's free GPU).
 
+## 0a. Update 20 Nov 2026: data/training work (read this first)
+- **Voice**: original Hindi Narrator (VOICE_ID=507e7da2) restored; "Ria Natural" (ebf5ee9d) is saved for later. Start everything with `start_all.bat` (VoiceStudio, Ollama with D: settings, listener, Ria). D: must be connected.
+- **Question matching is now hybrid** (replybank.match_hybrid): the word-matcher goes first; if its score is below 0.8 the local qwen2.5:7b only *picks a topic id* from the approved list (enum-constrained JSON, never writes an answer). If both agree the score is raised to 0.9. flow.py uses it only for real questions (looks_like_question, no plain amount, not during phone/consent/time/name steps). Off with `CLASSIFIER=0`. If Ollama is down it falls back to word-matching (hold-out then ~57%).
+- **Honest hold-out** (`python train/bank_holdout.py`, 130 questions never used for training): 59% -> 82%. The older dev set (bank_eval.py, 95%) is leaked, so ignore it for quality claims.
+- Tried and rejected: merging LLM-generated paraphrases into the bank (hold-out 59 -> 58%, one test regressed).
+- `_SYNONYMS` in replybank.py unify words (kagaz/papers/docs, byaaj/interest, ...).
+- Fixed: "5000 5000" said twice was summed. Tests need `LLM_BASE_URL=http://localhost:11434/v1` in the environment.
+- New tests: train/stress_test.py (`python train/stress_test.py 150 7`, ~100% per fact on seeds 4,5,7,8) and train/bank_holdout.py. All passing: test_replybank 69, check_examples 27, slot_tests 93, persona_tests, real_call_regression 1+2, call_test.
+- Still open: weakest hold-out topics (how_much_loan vs will_i_get_loan, hidden_charges, hardship); the user must delete the Ollama updates_v2 folder under AppData\Local\Ollama (1.7 GB).
+
 ## 0. Update 19 Nov 2026: what is new and how to run it on the laptop (RTX 5060, 8 GB)
 **Why:** the stock listening model wrote Urdu script for Hindi (or translated wrongly in English mode), and the 7B model could not run a call by itself. Both are fixed.
 - **Hinglish listening service** (`asr_server.py`, `asr_start.bat`): runs `Oriserve/Whisper-Hindi2Hinglish-Apex` (Apache-2.0, ~1.6 GB, Roman Hinglish output, ~0.3 s per sentence) on port 3950, using VoiceStudio's Python (it already has PyTorch + CUDA + transformers). Model files live in `D:sr_models\Whisper-Hindi2Hinglish-Apex` (download with `huggingface_hub.snapshot_download`; not in git). Boosts quiet audio before listening. Ria uses it with `STT_ENGINE=hinglish`. `stt.py` has `transcribe_hinglish` plus `fix_terms` (e.g. "pay day launch" -> "payday loan") and a filter for Whisper's phantom words on silence. The old Hindi hint prompt was removed: it turned correct audio into garbage.
