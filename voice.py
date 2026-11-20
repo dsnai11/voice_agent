@@ -22,6 +22,66 @@ TTS_URL = VOICESTUDIO_URL.rstrip("/") + "/v1/audio/speech"
 def auth_headers() -> dict:
     """Bearer key for a remote VoiceStudio; empty for the local one."""
     return {"Authorization": f"Bearer {VOICESTUDIO_API_KEY}"} if VOICESTUDIO_API_KEY else {}
+
+# ---- optional online voice: ElevenLabs (off by default; Ria stays fully offline unless VOICE_ENGINE=elevenlabs) ----
+ENGINE = os.environ.get("VOICE_ENGINE", "voicestudio").strip().lower()
+ELEVEN_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
+ELEVEN_VOICE_NAME = os.environ.get("ELEVENLABS_VOICE_NAME", "Monika Sogam")        # looked up by name when no id is given
+ELEVEN_MODEL = os.environ.get("ELEVENLABS_MODEL", "eleven_multilingual_v2")          # eleven_flash_v2_5 is faster, slightly less natural
+_ELEVEN = "https://api.elevenlabs.io"
+
+
+def _eleven_headers() -> dict:
+    return {"xi-api-key": ELEVEN_KEY}
+
+
+def _eleven_resolve_voice() -> str:
+    """Voice id of the wanted ElevenLabs voice: ELEVENLABS_VOICE_ID, else search the account, else the public Voice Library (and add it to the account)."""
+    vid = os.environ.get("ELEVENLABS_VOICE_ID", "").strip()
+    if vid:
+        return vid
+    if not ELEVEN_KEY:
+        raise RuntimeError("ELEVENLABS_API_KEY is not set")
+    want = ELEVEN_VOICE_NAME.lower()
+    r = requests.get(_ELEVEN + "/v1/voices", headers=_eleven_headers(), timeout=30)
+    r.raise_for_status()
+    for v in r.json().get("voices", []):
+        if want in v.get("name", "").lower():
+            return v["voice_id"]
+    r = requests.get(_ELEVEN + "/v1/shared-voices", params={"search": ELEVEN_VOICE_NAME, "page_size": 20}, headers=_eleven_headers(), timeout=30)
+    r.raise_for_status()
+    for v in r.json().get("voices", []):
+        if want in v.get("name", "").lower():
+            a = requests.post(f"{_ELEVEN}/v1/voices/add/{v['public_owner_id']}/{v['voice_id']}", json={"new_name": v["name"]}, headers=_eleven_headers(), timeout=30)
+            a.raise_for_status()
+            return a.json().get("voice_id", v["voice_id"])
+    raise RuntimeError(f"ElevenLabs voice '{ELEVEN_VOICE_NAME}' not found: set ELEVENLABS_VOICE_ID (copy it from the voice's page)")
+
+
+if ENGINE == "elevenlabs":
+    VOICE_ID = "eleven:" + _eleven_resolve_voice()                                  # also keeps this voice's audio cache and clips apart from every other voice
+
+
+def _eleven_synth(sentence: str, fmt: str) -> bytes:
+    pcm = fmt == "wav"                                                              # the recorded clips are .wav: ask for raw PCM and wrap it
+    body = {"text": sentence, "model_id": ELEVEN_MODEL, "language_code": VOICE_LANGUAGE,
+            "voice_settings": {"stability": 0.5, "similarity_boost": 0.8, "speed": max(0.7, min(1.2, VOICE_SPEED))}}
+    r = requests.post(f"{_ELEVEN}/v1/text-to-speech/{VOICE_ID.split(':', 1)[1]}", params={"output_format": "pcm_24000" if pcm else "mp3_44100_128"},
+                      json=body, headers=_eleven_headers(), timeout=60)
+    r.raise_for_status()
+    if not pcm:
+        return r.content
+    import io
+    import wave
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(24000)
+        w.writeframes(r.content)
+    return buf.getvalue()
+
+
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "audio_cache")
 
 COMPANY = "लक्ष्मी इंडिया फाइनेंस लिमिटेड"
@@ -83,6 +143,8 @@ def split_sentences(text: str):
 
 
 def synth(sentence: str, fmt: str = "wav") -> bytes:
+    if ENGINE == "elevenlabs":
+        return _eleven_synth(sentence, fmt)
     body = {"model": "tts-1", "voice": VOICE_ID, "input": sentence, "language": VOICE_LANGUAGE, "speed": VOICE_SPEED, "response_format": fmt}
     if VOICE_NUM_STEP:
         body["num_step"] = VOICE_NUM_STEP                      # fewer steps = faster speech, slightly rougher

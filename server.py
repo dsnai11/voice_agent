@@ -86,12 +86,14 @@ def _prewarm_voice():
     """Generate Ria's common sentences once, in the background, so they play with no wait during calls (new ones are cached as they are spoken)."""
     try:
         import flow
-        todo = [x for x in flow.static_sentences() if not os.path.exists(voice.cache_path(voice.speakable(x), voice.LIVE_FORMAT))]
+        todo = [] if voice.ENGINE == "elevenlabs" else [x for x in flow.static_sentences() if not os.path.exists(voice.cache_path(voice.speakable(x), voice.LIVE_FORMAT))]
         print(f"voice cache: {len(todo)} common sentences to prepare in the background", flush=True)
         for x in todo:
             voice.audio_for(voice.speakable(x), voice.LIVE_FORMAT)
         print("voice cache ready", flush=True)
         try:
+            if voice.ENGINE != "voicestudio":
+                return
             requests.post(VOICESTUDIO_URL.rstrip("/") + "/system/flush-memory", headers=voice.auth_headers(), timeout=60)
             print("voice server GPU memory flushed", flush=True)
         except requests.RequestException:
@@ -177,10 +179,13 @@ def api_form():
 
 @app.get("/api/health")
 def api_health():
-    try:
-        voicestudio = requests.get(VOICESTUDIO_URL.rstrip("/") + "/v1/audio/voices", headers=voice.auth_headers(), timeout=3).ok
-    except requests.RequestException:
-        voicestudio = False
+    if voice.ENGINE == "elevenlabs":
+        voicestudio = bool(voice.ELEVEN_KEY)                       # the online voice needs no local voice server
+    else:
+        try:
+            voicestudio = requests.get(VOICESTUDIO_URL.rstrip("/") + "/v1/audio/voices", headers=voice.auth_headers(), timeout=3).ok
+        except requests.RequestException:
+            voicestudio = False
     return {"voicestudio": voicestudio, "whisper": STT_ENGINE in ("gemini", "api", "hinglish") or _stt_ready.is_set(),
             "stt_engine": STT_ENGINE, "llm_model": LLM_MODEL,
             "data_backend": DATA_BACKEND}
