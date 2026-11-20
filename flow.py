@@ -43,7 +43,7 @@ try:
         GENERAL_FINANCE = _f.read().strip()
 except OSError:
     pass
-OFF_LINE = "जी, मैं सिर्फ़ लोन और फाइनेंस से जुड़ी बातों में मदद कर सकती हूँ।"
+OFF_LINE = "जी, मैं सिर्फ़ लक्ष्मी इंडिया फाइनेंस और लोन-बैंकिंग से जुड़ी बातें करती हूँ। इससे जुड़ा कोई काम हो तो बताइए, मैं ज़रूर मदद करूँगी। बाकी बातों के लिए आप हमारे कस्टमर हेल्पलाइन नंबर एक आठ शून्य शून्य, एक दो एक, सात सात चार सात पर बात कर सकते हैं।"
 UNSURE = "इसके बारे में मुझे अभी पक्का नहीं पता, मैं इसे टीम से कन्फ़र्म करवा दूँगी।"
 
 SLOTS = ["full_name", "loan_type", "loan_amount", "loan_purpose", "employment", "monthly_income", "work_tenure", "city", "existing_loans", "existing_emi", "phone", "consent", "callback_time"]
@@ -422,6 +422,7 @@ def _drop_trailing_questions(text: str) -> str:
 
 class Flow:
     def __init__(self, call):
+        self._off_hit = False
         self.call = call
         self.asked = "full_name"          # the slot the last question was about
         self.v = {}                       # captured values
@@ -504,7 +505,9 @@ class Flow:
                 ack = "ठीक है, रकम पक्की कर दी।"
 
         # --- approved reply for a question or special request
-        bank = [m for m in (replybank.match_hybrid(text) if looks_like_question(text) and not (parse_amount(text) and "?" not in text) and self.asked not in ("callback_time", "phone", "phone_confirm", "consent", "existing_loans", "full_name") else replybank.match(text)) if m["score"] >= (0.45 if m["id"] in ("more_to_discuss", "small_talk") else 0.5 if m["entry"].get("require") else 0.6) and m["id"] not in SKIP_IDS]
+        raw_bank = (replybank.match_hybrid(text) if looks_like_question(text) and not (parse_amount(text) and "?" not in text) and self.asked not in ("callback_time", "phone", "phone_confirm", "consent", "existing_loans", "full_name") else replybank.match(text))
+        self._off_hit = any(m["id"] == "off_topic" and m["score"] >= 0.7 for m in raw_bank)
+        bank = [m for m in raw_bank if m["score"] >= (0.45 if m["id"] in ("more_to_discuss", "small_talk") else 0.5 if m["entry"].get("require") else 0.6) and m["id"] not in SKIP_IDS]
         if is_ack_only(text):
             bank = []
         bank = [m for m in bank if m["id"] not in LEGACY_IDS or m["score"] >= 0.72]
@@ -711,7 +714,7 @@ class Flow:
             approved = [self._alt(m) for m in bank if m["id"] not in LEGACY_IDS][:2]
             if approved:
                 return " ".join(approved)
-            if offtopic_like(text):
+            if offtopic_like(text) or self._off_hit or (looks_like_question(text) and not domain_like(text) and not self._unsure_ok(text)):
                 return OFF_LINE
             answer = self._free(text) if (domain_like(text) or "?" in text) else None
             if answer:
@@ -757,7 +760,7 @@ class Flow:
             if is_ack_only(text):                                        # "ok", "chalo": agreement, not a failure; carry on with the same question
                 self.fails[asked] = -1
                 parts.append(random.choice(ACKS))
-            elif not bank and offtopic_like(text) and asked not in (None, "phone", "phone_confirm"):
+            elif not bank and (offtopic_like(text) or self._off_hit) and asked not in (None, "phone", "phone_confirm"):
                 parts.append(OFF_LINE)                                   # then the form question continues
                 self.fails[asked] = -1
             elif not bank and asked not in (None, "phone", "phone_confirm") and domain_like(text) and looks_like_question(text):
@@ -863,6 +866,10 @@ class Flow:
             if n.replace(",", "").rstrip(".") not in allowed:
                 return False                                                      # a number that is in neither the approved facts nor the caller's own words
         return True
+
+    def _unsure_ok(self, text: str) -> bool:
+        """True when a question sounds like finance even without a keyword (then the honest 'team will confirm' answer is better than the off-topic line)."""
+        return bool(re.search(r"(paisa|paise|rupay|rupaye|byaaj|bank|loan|lon|emi|kist|account|khata|fund|money|tax|insurance|scheme|rate|charge|fees?)", text.lower()))
 
     def _free(self, text: str):
         """_free_raw, plus a local note of every question she could not answer, for the team to review (calls/unanswered.jsonl; nothing leaves this PC)."""

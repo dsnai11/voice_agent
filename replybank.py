@@ -202,7 +202,7 @@ def classify_llm(text: str, timeout: float = 8.0):
         _cls_schema = {"type": "object", "properties": {"topic": {"type": "string", "enum": list(entries) + ["NONE"]}}, "required": ["topic"]}
         _cls_system = ("You route a customer's sentence from a loan phone call in India (Hinglish, Roman letters, often misspelled by a speech recogniser) to ONE topic of an approved-answer list. "
                        "Choose the topic whose answer best responds to what the customer said. If the sentence is only an answer to a form question (name, amount, city, yes/no, a time) "
-                       "or matches no topic, answer NONE.\nTOPICS:\n" + "\n".join(f"{i}: {e.get('topic', i)}" for i, e in entries.items()))
+                       "or matches no topic, answer NONE.\nTOPICS:\n" + "\n".join(f"{i}: {e.get('topic', i)[:70]} (e.g. \"{min(e['examples'], key=lambda x: abs(len(x) - 28))}\")" for i, e in entries.items()))
     try:
         import requests
         r = requests.post(os.environ.get("OLLAMA_URL", "http://localhost:11434") + "/api/chat",
