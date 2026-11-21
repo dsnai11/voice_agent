@@ -41,6 +41,9 @@ def transcribe_hinglish(audio: np.ndarray, rate: int = 16000) -> str:
     """Listen with the local Hinglish model (asr_server.py): the caller's own words in Roman letters, no hint prompt, quiet audio boosted."""
     import requests
 
+    if len(audio) < rate * 1.5:                                  # a single word is heard much better with a little silence around it
+        pad = np.zeros(int(rate * 0.5), dtype=audio.dtype)
+        audio = np.concatenate([pad, audio, pad])
     buf = io.BytesIO()
     sf.write(buf, audio, rate, format="WAV", subtype="PCM_16")
     r = requests.post(ASR_URL.rstrip("/") + "/transcribe", files={"file": ("audio.wav", buf.getvalue(), "audio/wav")}, timeout=60)
@@ -48,7 +51,24 @@ def transcribe_hinglish(audio: np.ndarray, rate: int = 16000) -> str:
     text = fix_terms((r.json().get("text") or "").strip())
     if text.lower().strip(" .!?,") in _PHANTOM:
         return ""
-    return text
+    return _drop_loops(text)
+
+
+def _drop_loops(text: str) -> str:
+    """The recogniser sometimes loops on noise or a very short sound ("जा जा जा जा ..."): a word repeated 4+ times in a row is never real speech."""
+    words = text.split()
+    run, best = 1, 1
+    for i in range(1, len(words)):
+        run = run + 1 if words[i].strip(".,!?") == words[i - 1].strip(".,!?") else 1
+        best = max(best, run)
+    if best < 4:
+        return text
+    kept = []
+    for w in words:
+        if kept and w.strip(".,!?") == kept[-1].strip(".,!?"):
+            continue
+        kept.append(w)
+    return "" if len(kept) <= 1 and len(words) >= 6 else " ".join(kept)
 
 
 # Business words this model is known to mishear (it was not trained on loan vocabulary). Only exact, unambiguous slips are fixed here.
@@ -63,7 +83,7 @@ _TERM_FIXES = [
 ]
 
 
-_PHANTOM = {"nan", "none", "null", "[silence]", "you", "thanks for watching", "thank you for watching", "subscribe", "music", "bye", "mm", "hmm", "uh", "um", "subtitles by the amara.org community"}
+_PHANTOM = {"nan", "none", "null", "[silence]", "you", "thanks for watching", "thank you for watching", "subscribe", "music", "mm", "hmm", "uh", "um", "subtitles by the amara.org community"}
 
 
 def fix_terms(text: str) -> str:

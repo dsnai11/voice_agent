@@ -14,6 +14,7 @@ import base64
 import contextlib
 import json
 import os
+import re
 import threading
 import time
 import uuid
@@ -235,6 +236,24 @@ async def api_submit(payload: dict):
 
 
 # ------------------------------ one call = one session ------------------------------
+# A sound shorter than 0.4 s is only taken as speech when it is one of these everyday short answers (clicks and coughs are not)
+SHORT_OK = {"haan", "han", "ha", "haa", "haanji", "haan ji", "ji", "ji haan", "ji nahi", "nahi", "nahin", "nhi", "nahi ji", "na", "no", "yes", "yeah", "yep", "ok", "okay", "o k", "theek", "thik", "theek hai", "thik hai",
+            "sahi", "sahi hai", "hello", "hi", "hey", "bye", "bas", "acha", "accha", "achha", "achcha", "bilkul", "sure", "done", "ruko", "ruk", "stop", "bolo", "boliye", "sunao", "kya", "kaun", "ji sir", "ji madam",
+            "namaste", "namaskar", "thanks", "thank you", "shukriya", "dhanyavad", "kal", "aaj", "abhi", "baad mein", "zero", "one", "do", "teen", "char", "paanch", "chhe", "saat", "aath", "nau", "ek", "shunya", "double"}
+
+
+def _short_answer(text: str) -> bool:
+    """A sound under 0.4 s counts as speech only if it is an everyday short answer, a city, a work type or a number (not a click or a cough)."""
+    t = re.sub(r"[^a-z ]", "", text.lower()).strip()
+    if t in SHORT_OK:
+        return True
+    try:
+        import flow
+        return bool(flow.parse_city(text, True) or flow.parse_employment(text, None) or flow.digits_from_speech(text))
+    except Exception:
+        return False
+
+
 class CallSession:
     def __init__(self, ws: WebSocket, loop: asyncio.AbstractEventLoop):
         self.ws, self.loop = ws, loop
@@ -427,6 +446,9 @@ class CallSession:
         t = time.time()
         text = await asyncio.to_thread(transcribe, audio)
         print(f"  chunk {part}: heard in {time.time() - t:.1f}s ({len(audio) / listen.RATE:.1f}s of speech): {text!r}", flush=True)
+        if text and len(audio) / listen.RATE < 0.4 and not _short_answer(text):
+            print("    (a very short sound that is not a short answer: treated as noise)", flush=True)
+            text = ""
         if STT_DEBUG and _STT_DEBUG_LAST[0]:
             try:
                 with open(os.path.join(STT_DEBUG_DIR, _STT_DEBUG_LAST[0] + ".txt"), "w", encoding="utf-8") as _f:
@@ -493,7 +515,7 @@ class CallSession:
         self._reset_turn()
         if not texts:                                                          # nothing clear was heard
             self.not_heard_streak += 1
-            if audio_s < 0.6 or self.not_heard_streak > 3:                     # a short noise, or already asked twice: keep quiet and keep listening
+            if audio_s < 0.25 or self.not_heard_streak > 3:                     # a short noise, or already asked twice: keep quiet and keep listening
                 self.playback_done()
                 return
             if await self.play_clip("not_heard"):
@@ -532,7 +554,7 @@ class CallSession:
                     # The greeting may already be playing during this second: use the quietest part, not the median,
                     # and cap the result so Ria's own voice can never push the threshold above normal speech.
                     thr = min(0.04, max(0.012, float(np.percentile(self.noise, 20)) * 4.0))
-                    self.seg = listen.Segmenter(thr, end_silence_s=CHUNK_SILENCE_S)
+                    self.seg = listen.Segmenter(thr, end_silence_s=CHUNK_SILENCE_S, min_speech_s=0.12)     # even a single short word ("haan", "ji") counts
                     print(f"  mic threshold {thr:.4f} (median noise {float(np.median(self.noise)):.4f}, peak {max(self.noise):.4f})", flush=True)
             elif self.listening:
                 self.peak = max(getattr(self, "peak", 0.0), listen.rms(block))

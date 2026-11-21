@@ -12,6 +12,12 @@ Last updated: 19 Nov 2026 (see section 0 for what changed). This replaces the 18
 - New tests: train/stress_test.py (`python train/stress_test.py 150 7`, ~100% per fact on seeds 4,5,7,8) and train/bank_holdout.py. All passing: test_replybank 69, check_examples 27, slot_tests 93, persona_tests, real_call_regression 1+2, call_test.
 - Still open: weakest hold-out topics (how_much_loan vs will_i_get_loan, hidden_charges, hardship); the user must delete the Ollama updates_v2 folder under AppData\Local\Ollama (1.7 GB).
 
+## 0f. Update 21 Nov 2026: single spoken words are now heard
+- Cause: listen.Segmenter threw away any sound under 0.4 s, which dropped "haan", "nahi", "ji", "theek", "ok", "hello", "sahi", "bye". Also the recogniser mishears very short clips, and "bye" was in the noise filter (stt._PHANTOM).
+- Fixes: server.py builds the Segmenter with min_speech_s=0.12; stt.transcribe_hinglish pads clips under 1.5 s with 0.5 s of silence each side (also fixes "Chalary" -> "Salary"); "bye" removed from _PHANTOM; stt._drop_loops removes looped hallucinations ("जा जा जा ..."); a sound under 0.4 s is kept only if it is an everyday short answer (server.SHORT_OK), a city, a work type or a number (server._short_answer), so clicks and coughs are still ignored; "not heard" prompts only for sounds of 0.25 s or more.
+- Test: train/single_word_check.py (TTS words through segmenter + recogniser; needs VoiceStudio and the listener running; 15 of 17 or better passes, the synthetic clips vary).
+- Also: flow no longer ends the call on "ho gaya" when it is a question.
+
 ## 0e. Update 20 Nov 2026 (second live chat + website numbers)
 - Website home page numbers (user screenshots, 20 Nov 2026): 211 branches in 211 cities, 6 states, 40,000+ happy customers, AUM 1,843+ crore, 25+ years, 2,100+ team members; toll-free 18001217747, enquiry@lifc.in, 2 DFL Gopinath Marg, MI Road, Jaipur. Ria answers all of these (company_stats, company_customers, company_team, company_states, branch_near, office_info). Older text said 209 branches: replaced by 211.
 - Fixed from the pasted chat (train/chat_replay2.py replays it): "Ab kya karna hai" (what_next), "Aapka naam kya hai" (her_name: no "do minutes" question), "kitna time ho gaya kaam karte hue" (her_experience; "ho gaya" no longer ends the call when the caller asks a question), "mujhe kuch aur poochhana hai" / "aap baat karo na mere se" (more_to_discuss), "Main business karta hoon" is an answer (no eligibility lecture), AUM / employees / customers each get their own answer.
