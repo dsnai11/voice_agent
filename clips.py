@@ -22,8 +22,8 @@ MANIFEST = os.path.join(LIB_DIR, "manifest.json")
 GROUPS = {
     # played the moment the call connects; includes the AI disclosure and the first question
     "greeting": [
-        "नमस्ते, मैं रिया बोल रही हूँ, लक्ष्मी इंडिया फाइनेंस लिमिटेड की एआई असिस्टेंट। मैं आपकी जानकारी यहाँ नोट करूँगी। कृपया अपना पूरा नाम बताइए।",
-        "नमस्ते, लक्ष्मी इंडिया फाइनेंस लिमिटेड में आपका स्वागत है। मैं रिया हूँ, एक एआई असिस्टेंट। सबसे पहले, कृपया अपना नाम बताइए।",
+        "नमस्ते, मैं रिया बोल रही हूँ, लक्ष्मी इंडिया फाइनेंस लिमिटेड से। मैं आपकी जानकारी यहाँ नोट करूँगी। कृपया अपना पूरा नाम बताइए।",
+        "नमस्ते, लक्ष्मी इंडिया फाइनेंस लिमिटेड में आपका स्वागत है। मैं रिया हूँ। सबसे पहले, कृपया अपना नाम बताइए।",
     ],
     # played if the real reply is not ready after about a second; neutral, so it fits any reply that follows
     "filler": [

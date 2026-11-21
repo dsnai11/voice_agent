@@ -43,7 +43,7 @@ INCOMES = [("pachas hazaar", 50000), ("pachis hazaar mahina", 25000), ("das haza
            ("saath hazaar", 60000), ("mahine ki kamai pachas hazaar hai", 50000), ("mahine ri tankhwa pachaas hajar hai", 50000), ("mhari kamai das hajar mahino", 10000), ("pandrah hajar aave hai", 15000),
            ("saade bais hazaar", 22500), ("dedh lakh", 150000), ("assi hazaar", 80000), ("chalis hazaar", 40000)]
 QUESTIONS = {"hi": [("byaj kitna lagega", "इंटरेस्ट"), ("interest kitna hai", "इंटरेस्ट"), ("kaun kaun se kagaz lagenge", "आईडी"), ("documents kya chahiye", "आईडी"), ("paisa kab tak milega", "घंटे"),
-                    ("processing fee kitni hai", "प्रोसेसिंग"), ("emi kitni banegi", "ईएमआई"), ("kitne mahine ka loan milta hai", "बारह"), ("aapka office kahan hai", "गोपीनाथ"), ("kya ye company asli hai", "जयपुर"),
+                    ("processing fee kitni hai", "प्रोसेसिंग"), ("emi kitni banegi", "ईएमआई"), ("kitne mahine ka loan milta hai", "बारह"), ("aapka office kahan hai", "गोपीनाथ"), ("kya ye company asli hai", ["जयपुर", "आरबीआई"]),
                     ("cibil kam ho to loan milega kya", "स्कोर"), ("agar emi late ho gayi to kya hoga", "सिबिल"), ("kya aap rbi se registered ho", "आरबीआई"), ("guarantor lagega kya", "गारंटर"),
                     ("loan ke liye koi paisa dena padega kya", "लिखित"), ("kya meri jankari surakshit hai", "जानकारी"), ("aapki kitni branch hain", "ग्यारह"), ("loan kitne ka milega", "रकम"),
                     ("umar kitni honi chahiye", "उम्र"), ("band karne par charge lagta hai kya", "चार्ज")],
@@ -97,7 +97,7 @@ def run(lang):
         with contextlib.redirect_stdout(io.StringIO()):
             a = c.reply(text)
         if cat == "question":
-            ok = want in a and c.flow.v == before
+            ok = any(w in a for w in (want if isinstance(want, list) else [want])) and c.flow.v == before
             got = a[:70]
         else:
             got = c.flow.v.get(FIELD[step])

@@ -11,13 +11,13 @@ STEPS = ["Mera naam gaurav sharma hai.", "Mujhe personal loan chaahie.", "Mujhe 
 for t in STEPS:
     last = c.reply(t)
 CHECKS = [("Mujhe aapse kuchh aur hi baat karni hai.", None, ["स्क्रीन", "फ़ॉर्म"]),
-          ("Abhi kya karte ho aap?", "एआई असिस्टेंट", ["स्क्रीन"]),
-          ("Aapka kaam kya hai? Kya aap job profile par ho aap?", "एआई असिस्टेंट", ["नोट कर लेती"]),
+          ("Abhi kya karte ho aap?", "रिया", ["स्क्रीन"]),
+          ("Aapka kaam kya hai? Kya aap job profile par ho aap?", "रिया", ["नोट कर लेती"]),
           ("Aapka office kahaan par hai?", "गोपीनाथ", []),
           ("Office ki location.", "गोपीनाथ", ["पक्का नहीं"]),
           ("Aapne khaana khaa liya kya?", "लक्ष्मी इंडिया फाइनेंस और लोन-बैंकिंग", []),
           ("Aapka aap ghar kitne baje jaate ho aap?", "लक्ष्मी इंडिया फाइनेंस और लोन-बैंकिंग", ["आठ बजे"]),
-          ("Ek ghante baad call kar lena mujhe.", "एक घंटे", ["एआई असिस्टेंट"]),
+          ("Ek ghante baad call kar lena mujhe.", "एक घंटे", ["रिया बोल रही"]),
           ("Aapki company ka naam kya hai?", "जयपुर", []),
           ("Is company ka AUM kitna hai?", "एयूएम", ["पक्की जानकारी नहीं है, मैं इसे टीम से कन्फ़र्म करवा दूँगी।"]),
           ("Aapka loan ka interest kya hai?", "इंटरेस्ट", []),

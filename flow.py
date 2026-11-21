@@ -112,7 +112,7 @@ NUM = {"ek": 1, "do": 2, "teen": 3, "char": 4, "chaar": 4, "paanch": 5, "panch":
        "paintalis": 45, "pachas": 50, "pachaas": 50, "saath": 60, "sattar": 70, "pachhattar": 75, "assi": 80, "nabbe": 90,
        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10, "twenty": 20,
        "thirty": 30, "forty": 40, "fifty": 50, "dedh": 1.5, "dhai": 2.5, "adhai": 2.5, "sava": 1.25, "aadha": 0.5, "half": 0.5}
-NUM.update({"be": 2, "bey": 2, "dho": 2, "dhoy": 2, "tran": 3, "traan": 3, "pach": 5, "pandar": 15, "vees": 20, "pachis": 25, "pachees": 25, "pachchis": 25, "tris": 30, "doda": 1.5, "dhedh": 1.5})
+NUM.update({"ikkis": 21, "ikis": 21, "bais": 22, "baais": 22, "baees": 22, "baaees": 22, "teis": 23, "teees": 23, "teyis": 23, "chaubis": 24, "chaubees": 24, "chobis": 24, "chhabbis": 26, "chhabbees": 26, "chabbis": 26, "sattais": 27, "sataais": 27, "sattaees": 27, "satais": 27, "atthais": 28, "athaais": 28, "athais": 28, "atthaees": 28, "unatis": 29, "unnatees": 29, "untees": 29, "unattis": 29, "ikatis": 31, "ikattis": 31, "battis": 32, "batis": 32, "battees": 32, "taintis": 33, "tentis": 33, "taintees": 33, "chauntis": 34, "chautis": 34, "chauntees": 34, "paintis": 35, "paitis": 35, "paintees": 35, "chhattis": 36, "chhatis": 36, "chhattees": 36, "saintis": 37, "saitis": 37, "saintees": 37, "adtis": 38, "adtees": 38, "atrtis": 38, "untalis": 39, "unchalis": 39, "untalees": 39, "iktalis": 41, "iktaalis": 41, "bayalis": 42, "byalis": 42, "bayaalis": 42, "taintalis": 43, "tentalis": 43, "taitalis": 43, "chauvalis": 44, "chavalis": 44, "chaualis": 44, "chhiyalis": 46, "chhyalis": 46, "chhiyaalis": 46, "saintalis": 47, "saitalis": 47, "adtalis": 48, "adtalees": 48, "unchas": 49, "unanchas": 49, "unaas": 49, "ikyavan": 51, "ikyaavan": 51, "baavan": 52, "bawan": 52, "bavan": 52, "tirpan": 53, "tirpun": 53, "tirpan": 53, "chauvan": 54, "chavan": 54, "chauwan": 54, "pachpan": 55, "pachpun": 55, "pachapan": 55, "chhappan": 56, "chhapan": 56, "sattavan": 57, "satavan": 57, "sattaawan": 57, "atthavan": 58, "athavan": 58, "atthaawan": 58, "unsath": 59, "unsaath": 59, "iksath": 61, "iksaath": 61, "baasath": 62, "basath": 62, "bausath": 62, "tirsath": 63, "tirsaath": 63, "chausath": 64, "chaunsath": 64, "painsath": 65, "painsat": 65, "paisath": 65, "chhiyasath": 66, "chhiyaasath": 66, "sadsath": 67, "sadsaath": 67, "adsath": 68, "adsaath": 68, "unhattar": 69, "unahattar": 69, "ikhattar": 71, "ikahattar": 71, "bahattar": 72, "bahatar": 72, "tihattar": 73, "tihatar": 73, "chauhattar": 74, "chauhatar": 74, "chhihattar": 76, "chhihatar": 76, "satahattar": 77, "satahtar": 77, "athahattar": 78, "athahtar": 78, "unnasi": 79, "unasi": 79, "unyasi": 79, "ikyasi": 81, "ikyaasi": 81, "bayasi": 82, "byaasi": 82, "tirasi": 83, "tiraasi": 83, "chaurasi": 84, "chauraasi": 84, "pachasi": 85, "pachaasi": 85, "chhiyasi": 86, "chhiyaasi": 86, "sattasi": 87, "sataasi": 87, "atthasi": 88, "athaasi": 88, "navasi": 89, "nawasi": 89, "ikyanve": 91, "ikyaanve": 91, "bayanve": 92, "byaanve": 92, "tiranve": 93, "tiraanve": 93, "chauranve": 94, "chauraanve": 94, "pachanve": 95, "pachaanve": 95, "chhiyanve": 96, "chhiyaanve": 96, "sattanve": 97, "sataanve": 97, "atthanve": 98, "athaanve": 98, "ninyanve": 99, "ninanve": 99, "ninyaanve": 99, "be": 2, "bey": 2, "dho": 2, "dhoy": 2, "tran": 3, "traan": 3, "pach": 5, "pandar": 15, "vees": 20, "pachis": 25, "pachees": 25, "pachchis": 25, "tris": 30, "doda": 1.5, "dhedh": 1.5})
 MULT = {"sau": 100, "hundred": 100, "hazaar": 1000, "hazar": 1000, "hajar": 1000, "thousand": 1000, "k": 1000, "lakh": 100000, "laakh": 100000,
         "lac": 100000, "lacs": 100000, "lakhs": 100000, "laakhon": 100000, "crore": 10_000_000, "karod": 10_000_000, "cr": 10_000_000}
 YES = {"haan", "han", "ha", "haa", "hanji", "haanji", "haji", "ji", "yes", "yeah", "yep", "theek", "thik", "sahi", "bilkul", "correct", "right", "ok", "okay", "okey",
@@ -170,21 +170,21 @@ def domain_like(text: str) -> bool:
 
 def asks_something(text: str) -> bool:
     """A real question: a question mark or a question word (not just a finance keyword such as 'company' or 'score')."""
-    return "?" in text or bool(re.search(r"\b(kya|kaise|kyun|kyu|kab|kitna|kitni|kitne|kaun|kahan|kaha|what|how|why|when|which|who|where|can you|could you|do you|is there|are there)\b", text.lower()))
+    return "?" in text or bool(re.search(r"\b(kya|kaise|kyun|kyu|kab|kitna|kitni|kitne|kaun|kahan|kaha|what|how|why|when|which|who|where|can you|could you|do you|is there|are there)\b|\b(?:to|toh)\s+nahi\s+(?:lagega|lagegi|hoga|hogi|katega|kategi|milega|milegi)\b", text.lower()))
 
 
 def looks_like_question(text: str) -> bool:
     low = text.lower()
-    return "?" in text or bool(re.search(r"\b(kya|kaise|kyun|kyu|kab|kitna|kitni|kitne|kaun|kahan|kaha|what|how|why|when|which|who|where|can|could|batao|bataiye|bataye|bhej|bhejo|bhejna|whatsapp|sms|link|samjhao|samjhaiye|matlab|explain|details?|jankari|jaankari|baare|bare|baat|poochna|puchna|company|civil|cibil|score)\b", low))
+    return "?" in text or bool(re.search(r"\b(kya|kaise|kyun|kyu|kab|kitna|kitni|kitne|kaun|kahan|kaha|what|how|why|when|which|who|where|can|could|batao|bataiye|bataye|bhej|bhejo|bhejna|whatsapp|sms|link|samjhao|samjhaiye|matlab|explain|details?|jankari|jaankari|baare|bare|baat|poochna|puchna|company|civil|cibil|score)\b", low) or re.search(r"\b(?:to|toh)\s+nahi\s+(?:lagega|lagegi|hoga|hogi|katega|kategi|milega|milegi)\b", low))
 
 
-STOP = {"mera", "meraa", "naam", "name", "nam", "is", "hai", "hain", "main", "mai", "my", "the", "ji", "sir", "madam", "full", "i", "am", "hu", "hoon", "hun",
+STOP = {"mhe", "mhane", "maaro", "maro", "mharo", "mhaaro", "maharo", "mahaaron", "mahaaro", "maru", "mari", "mera", "meraa", "naam", "name", "nam", "is", "hai", "hain", "main", "mai", "my", "the", "ji", "sir", "madam", "full", "i", "am", "hu", "hoon", "hun",
         "bol", "raha", "rahi", "rha", "rhi", "se", "ka", "ki", "toh", "to", "haan", "han", "ha", "yes", "sorry", "bhai", "aur", "and", "please", "plz", "mujhe", "hello", "namaste"}
 LOAN_WORDS = [("payday", r"pay\s*-?\s*day|pe\s*day|पेडे|पे डे|\bp\.?\s?d\.?\s+loan|paid\s+loan|\bpedey?\b|\bpayd\b"), ("salary", r"salary\s+(?:loan|advance)|advance\s+salary|सैलरी\s+लोन"),
               ("personal", r"personal|पर्सनल"), ("home", r"home\s+loan|\bghar\b|property|makaan|मकान|होम"), ("business", r"business\s+loan|\bvyapar|vyapaar|\bdhandh|बिज़नेस\s+लोन"),
               ("vehicle", r"vehicle|\bcar\b|\bbike\b|gaadi|gadi|auto loan"), ("gold", r"\bgold\b|\bsona\b|सोना|गोल्ड")]
-SALARIED = r"salar|naukri|nokri|service|sarvice|employed|\bjob\b|employee|private|sarkari|government|company|नौकरी|सैलरी"
-SELF = r"dhandh|dhando|kheti|\bkhet\b|mazdoor|majdoor|majdur|mazdur|mazduri|mazdoori|majdoori|majduri|labou?r|dihadi|daily\s*wage|pashu|dairy|doodh|gaay|bhains|bakri|driver|chalak|truck|tempo|rickshaw|taxi|mistri|mistry|darji|carpenter|plumber|electrician|painter|tailor|potano|business|dukaan|dukan|shop|self\s*-?\s*employ|vyapar|vyapaar|dhandha|dhanda|apna\s+kaam|freelanc|दुकान|बिज़नेस|व्यापार"
+SALARIED = r"factory|fectory|\bmill\b|school|teacher|techer|mastar|master\b|\bnurse|police|sipahi|clerk|\bpeon\b|chaprasi|\bguard\b|security|engineer|manager|accountant|executive|officer|adhyapak|shikshak|padha(?:ta|ti)\b|\barmy\b|fauji|railway|salar|naukri|nokri|service|sarvice|employed|\bjob\b|employee|private|sarkari|government|company|नौकरी|सैलरी"
+SELF = r"\bauto\b|autorickshaw|medical\s+store|\bstore\b|kirana|\bhotel\b|dhaba|salon|parlou?r|garage|workshop|bakery|halwai|\bphal|sabzi|thela|rehdi|dhandh|dhando|kheti|\bkhet\b|mazdoor|majdoor|majdur|mazdur|mazduri|mazdoori|majdoori|majduri|labou?r|dihadi|daily\s*wage|pashu|dairy|doodh|gaay|bhains|bakri|driver|chalak|truck|tempo|rickshaw|taxi|mistri|mistry|darji|carpenter|plumber|electrician|painter|tailor|potano|business|dukaan|dukan|shop|self\s*-?\s*employ|vyapar|vyapaar|dhandha|dhanda|apna\s+kaam|freelanc|दुकान|बिज़नेस|व्यापार"
 
 
 def _words(text: str) -> list:
@@ -199,6 +199,22 @@ def digits_from_speech(text: str) -> str:
 
     t = re.sub(r"\b(double|dabal|dubal|triple|treble)\s+(\w+)", rep, text, flags=re.I)
     return re.sub(r"\D", "", db.spoken_digits(t))
+
+
+def hindi_fraction_numbers(text: str) -> str:
+    """'saade teen lakh' -> '3.5 lakh', 'paune do lakh' -> '1.75 lakh', 'sava do lakh' -> '2.25 lakh' ('saade bais hazaar' -> '22.5 hazaar')."""
+    def n(w):
+        w = w.lower()
+        return float(w) if re.fullmatch(r"\d+(?:\.\d+)?", w) else NUM.get(w)
+
+    def sub(delta):
+        def f(m):
+            v = n(m.group(2))
+            return m.group(0) if v is None else f"{v + delta:g}"
+        return f
+    text = re.sub(r"\b(saade|sade|sadhe|साढ़े)\s+(\w+)", sub(0.5), text, flags=re.I)
+    text = re.sub(r"\b(paune|paun|पौने)\s+(\w+)", sub(-0.25), text, flags=re.I)
+    return re.sub(r"\b(sava|सवा)\s+(\w+)", lambda m: m.group(0) if n(m.group(2)) is None else f"{n(m.group(2)) + 0.25:g}", text, flags=re.I)
 
 
 def english_big_numbers(text: str) -> str:
@@ -223,7 +239,7 @@ def parse_amount(text: str, minimum: int = 1000):
         return None
     text = re.sub(r"one and a half", "dedh", text, flags=re.I)
     text = re.sub(r"two and a half", "dhai", text, flags=re.I)
-    text = english_big_numbers(text)
+    text = english_big_numbers(hindi_fraction_numbers(text))
     words = _words(text.replace(",", ""))
     for size in (4, 3, 2):                                    # drop an immediately repeated phrase: "5 hazaar 5 hazaar" -> "5 hazaar"
         i = 0
@@ -284,7 +300,7 @@ def parse_name(text: str, strict: bool):
          or re.search(r"(?:naam|name)\s+([a-z .]{2,30})", t))
     cand = m.group(1) if m else (t if strict and len(t.split()) <= 5 else "")
     end = {"hai", "hain", "hu", "hoon", "hun", "aur", "and", "mujhe", "loan", "chahiye", "chahie", "kya", "kaise", "kitna", "ka", "ki", "ko", "se", "mein", "me",
-           "ye", "yeh", "bol", "salary", "personal", "payday", "business", "job"}
+           "ye", "yeh", "bol", "salary", "personal", "payday", "business", "job", "chhe", "chhu", "chho", "chhai", "bolu", "bolun", "kehve", "kehwe", "kahe", "kehte", "kahte", "bolte"}
     toks = []
     for w in re.findall(r"[a-z]+", cand):                         # the name ends at the first filler word after it ("priya hai aur mujhe ...")
         if w in end and toks:
@@ -302,7 +318,7 @@ def parse_employment(text: str, asked):
     low = re.sub(r"(salary|sailri|salry|सैलरी)\s*(loan|advance|lone)|advance\s*salary|payday|pay\s*day", " ", text.lower())      # a loan type, not a job
     if re.search(r"pension|retired|retire\b|sevanivrit|रिटायर|सेवानिवृत्त", low):
         return "pensioner"
-    if re.search(r"housewife|house wife|homemaker|grihini|gruhini|grahini|gharelu|ghar\s+(?:ro|ka|ki|nu)\s+kaam|ghar\s+sambhal|student|padhai|studying|unemployed|berozgar|berojgar|not working|naukri nahi|job nahi|kaam nahi|बेरोज़गार|बेरोजगार", low):
+    if re.search(r"housewife|house wife|homemaker|kuch\s+nahi\s+kar|kuch\s+kono|ghar\s+baith|baith[ia]\s+hoon|khali\s+hoon|jobless|no\s+job|bekar|grihini|gruhini|grahini|gharelu|ghar\s+(?:ro|ka|ki|nu)\s+kaam|ghar\s+sambhal|student|padhai|studying|unemployed|berozgar|berojgar|not working|naukri nahi|job nahi|kaam nahi|बेरोज़गार|बेरोजगार", low):
         return "not-earning"
     selfish = re.search(SELF + r"|farmer|kisan|kheti|farming|doctor|lawyer|advocate|\bca\b|professional|freelanc|consultant|contractor|trader|vyapari|shopkeeper|dukandar|self\s*-?\s*employed", low)
     if selfish and not re.search(r"business\s+loan", low):
@@ -311,6 +327,8 @@ def parse_employment(text: str, asked):
             return "salaried"
         return "self-employed"
     if re.search(SALARIED, re.sub(r"self\s*-?\s*employed", " ", low)):
+        return "salaried"
+    if asked == "employment" and re.search(r"\bk[ao]m\s+kar(?:ta|ti|u|oon|raha|rahi)|\bkam\s+karu", low):
         return "salaried"
     if re.search(r"\bwork(?:ing)?\s+(?:at|for|in|with)\b|\bemployed\b|\bemployee\b|\bi\s+am\s+(?:an?\s+)?(?:engineer|manager|teacher|clerk|executive|accountant|nurse|driver|officer)\b", re.sub(r"self\s*-?\s*employed", " ", low)):
         return "salaried"
@@ -674,6 +692,8 @@ class Flow:
             strong = None
         if not strong:
             bank = [m for m in bank if m["id"] not in ("stop_calling", "not_interested")]
+        if self.asked == "city" and not asks_something(text):
+            bank = []                                                   # at the city step the caller names a place
         if self.asked in ("callback_time", "phone", "phone_confirm", "consent", "existing_loans") and not strong and not question_here:
             bank = []                                                   # in these steps the caller's words are the answer, unless they clearly ask something
         ids = [m["id"] for m in bank]
@@ -744,7 +764,7 @@ class Flow:
         if emp and ("employment" not in self.v or asked == "employment"):
             details["employment_type"] = emp
             captured.append("employment")
-        city = parse_city(text, fuzzy=(asked == "city"))
+        city = parse_city(text, fuzzy=(asked == "city")) if not asks_something(text) else None
         if city and ("city" not in self.v or asked == "city"):
             details["city"] = city
             captured.append("city")

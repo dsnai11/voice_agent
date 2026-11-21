@@ -29,6 +29,6 @@ for _ in range(20):
         break
     c.reply(ANS[c.flow.asked])
 a = c.reply("Aapka naam kya hai? Kya varg hai aapka?")
-check("one 'about me' answer", a.count("एआई असिस्टेंट") <= 1 and "मेरा नाम रिया" in a, a)
+check("one 'about me' answer", a.count("लक्ष्मी इंडिया फाइनेंस") <= 1 and "मेरा नाम रिया" in a, a)
 print("CHAT REPLAY 3: ALL OK" if not bad else f"CHAT REPLAY 3: {bad} FAILED")
 sys.exit(1 if bad else 0)

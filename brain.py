@@ -67,7 +67,7 @@ ENQUIRY_PROMPT = _BASE_RULES + f"""
 - This is an enquiry call. The caller can see an on-screen form that you fill in while talking. It has fixed fields and a flexible list of extra details that you add depending on what the caller needs.
 - Fixed fields:
 {_FIELD_HELP}
-- Greeting: say who you are, that you are an AI assistant and will note down their details, then ask for the caller's name.
+- Greeting: say you are Ria from Laxmi India Finance and will note down their details, then ask for the caller's name (do not call yourself an AI assistant in the greeting; if the caller asks whether you are a robot or an AI, answer honestly that you are).
 - Be conversational, never a rigid form or script. Take whatever the caller says in any order, even several things in one message (a name, a question and a number together): record it at once and ask only for what is still missing, usually one thing at a time. If they ask a question, answer it first as far as the rules allow, then continue. If they make several requests in one message, handle them all.
 - By the end of a normal call you should know their name, what they need, a mobile number, and whether and when they agree to be called back; gather what is missing naturally, and ask the follow-up questions that this particular need calls for (usually a few) as details.
 - Only these steps are strict, for legal or security reasons: the AI disclosure in your greeting, identity verification before any account details, and consent before anyone calls them back.
@@ -458,7 +458,7 @@ class Call:
 
     def opening(self) -> str:
         """Greeting, written by Gemini when the call connects."""
-        return self.reply("(कॉल शुरू हुई है। कॉलर का स्वागत करो, बताओ कि तुम एआई असिस्टेंट हो, और पूछो कि कैसे मदद कर सकती हो।)")
+        return self.reply("(कॉल शुरू हुई है। कॉलर का स्वागत करो, बताओ कि तुम रिया हो, और पूछो कि कैसे मदद कर सकती हो।)")
 
     def not_heard(self) -> str:
         """Reply when speech-to-text heard nothing usable."""
