@@ -46,6 +46,13 @@ LLM_MODEL = _setting("LLM_MODEL", "gemini-3.5-flash-lite")
 DATA_BACKEND = _setting("DATA_BACKEND", "excel")
 CHUNK_SILENCE_S = float(_setting("CHUNK_SILENCE_S", "0.45"))                # a pause this long ends a chunk of the caller's speech
 TURN_SILENCE_S = float(_setting("TURN_SILENCE_S", "1.0"))                  # quiet this long ends the caller's turn: the replies are spoken
+IDLE_PROMPT_S = float(_setting("IDLE_PROMPT_S", "12"))                      # nobody speaks for this long: Ria asks "are you on the line?" (0 = never)
+CONTINUATION_EXTRA_S = float(_setting("CONTINUATION_EXTRA_S", "0.8"))      # the caller trailed off on "aur", "ki", "matlab" ...: wait this much longer before answering
+IDLE_LINES = ["जी, क्या आप लाइन पर हैं? आप आराम से बोलिए, मैं सुन रही हूँ।",
+              "लगता है अभी आप बात नहीं कर पा रहे हैं। कोई बात नहीं, हमारी टीम आपको बाद में कॉल कर लेगी।"]
+# a sentence that ends on one of these words is not finished yet
+CONTINUATION_WORDS = {"aur", "ki", "ke", "ka", "ko", "mein", "se", "toh", "to", "matlab", "jaise", "mera", "meri", "mere", "woh", "yeh", "phir", "lekin", "par", "kyunki", "isliye", "agar", "ya", "aap", "main", "bas",
+                      "and", "but", "because", "so", "the", "my", "um", "umm", "hmm", "wo", "ye", "jo", "jab", "tab", "kuch", "koi", "ek", "do", "teen", "char", "paanch", "chhe", "saat", "aath", "nau"}
 PHONE_SILENCE_S = float(_setting("PHONE_SILENCE_S", "3.5"))              # while a phone number is half said, wait this long before answering
 HOST = _setting("HOST", "127.0.0.1")                                     # keep local; see notes before exposing
 PORT = int(_setting("PORT", "8000"))
@@ -87,7 +94,7 @@ def _prewarm_voice():
     """Generate Ria's common sentences once, in the background, so they play with no wait during calls (new ones are cached as they are spoken)."""
     try:
         import flow
-        todo = [] if voice.ENGINE == "elevenlabs" else [x for x in flow.static_sentences() if not os.path.exists(voice.cache_path(voice.speakable(x), voice.LIVE_FORMAT))]
+        todo = [] if voice.ENGINE == "elevenlabs" else [x for x in flow.static_sentences() + IDLE_LINES if not os.path.exists(voice.cache_path(voice.speakable(x), voice.LIVE_FORMAT))]
         print(f"voice cache: {len(todo)} common sentences to prepare in the background", flush=True)
         for x in todo:
             voice.audio_for(voice.speakable(x), voice.LIVE_FORMAT)
@@ -275,6 +282,12 @@ class CallSession:
         self.worker = None
         self.chunk_idx = 0
         self.silent_s = 0.0             # how long the caller has been quiet
+        self.idle_s = 0.0               # how long nobody has said anything since Ria stopped speaking
+        self.idle_prompts = 0           # 'are you there?' prompts in a row
+        self.turn_metrics = []          # one row per turn: heard / reply / first-audio timing, saved with the call
+        self.cur_metrics = {}
+        self._stt_times = []
+        self._turn_t0 = 0.0
         self.turn_has_audio = False
         self.turn_ending = False
         self.turn_audio_s = 0.0
@@ -357,7 +370,7 @@ class CallSession:
         self.ticket = info
         record["ticket_id"] = info["id"] or ""
         full = {**record, "details": details, "ticket": info, "crm_access": self.call.audit,
-                "transcript_turns": [{"role": r, "text": t} for r, t in self.transcript]}
+                "transcript_turns": [{"role": r, "text": t} for r, t in self.transcript], "turn_metrics": self.turn_metrics}
         await asyncio.to_thread(db.save_call_json, full)
         enquiry = await asyncio.to_thread(db.save_enquiry, record, COLUMNS)
         return {"enquiry": enquiry, "ticket": info}
@@ -424,6 +437,8 @@ class CallSession:
                 shown = True
                 await self.send(type="transcript", role="agent", text=text)
                 print(f"  voice: first audio ready {time.time() - t0:.1f}s after the reply was written", flush=True)
+                if self._turn_t0 and "first_audio_s" not in self.cur_metrics:
+                    self.cur_metrics["first_audio_s"] = round(time.time() - self._turn_t0, 2)      # from the end of the caller's turn to the first sound
             await self.send(type="agent_audio", text=sentence, data=base64.b64encode(wav).decode())
         if not shown:
             await self.send(type="transcript", role="agent", text=text)
@@ -445,6 +460,7 @@ class CallSession:
         """Transcribe one chunk and show it at once, without waiting for the replies to earlier chunks."""
         t = time.time()
         text = await asyncio.to_thread(transcribe, audio)
+        self._stt_times.append(time.time() - t)
         print(f"  chunk {part}: heard in {time.time() - t:.1f}s ({len(audio) / listen.RATE:.1f}s of speech): {text!r}", flush=True)
         if text and len(audio) / listen.RATE < 0.4 and not _short_answer(text):
             print("    (a very short sound that is not a short answer: treated as noise)", flush=True)
@@ -494,15 +510,34 @@ class CallSession:
             have = len(fl.phone_buf) + len(_flow.digits_from_speech(" ".join(self.turn_texts)))
             if 0 < have < 10 or not self.turn_texts:
                 return PHONE_SILENCE_S
+        if self.turn_texts:                                                        # the last words say whether the caller is finished
+            last = re.findall(r"[a-z]+", self.turn_texts[-1].lower())
+            if last and last[-1] in CONTINUATION_WORDS and not self.turn_texts[-1].rstrip().endswith((".", "?", "!")):
+                return TURN_SILENCE_S + CONTINUATION_EXTRA_S
         return TURN_SILENCE_S
+
+    async def idle_prompt(self):
+        """Nobody has spoken for a while. First time: ask if they are still on the line. Second time: say goodbye politely and end the call."""
+        self.idle_prompts += 1
+        if self.idle_prompts == 1:
+            await self.speak(IDLE_LINES[0])                                    # the browser answers with playback_done and listening resumes
+        else:
+            await self.speak(IDLE_LINES[1], end_turn=False)
+            self.call.finished = True
+            await self.finish()
 
     async def end_turn(self):
         """The caller has been quiet long enough: finish the pending chunks, then speak the replies in order."""
         await self.send(type="status", state="thinking")
+        self._turn_t0 = time.time()
+        self.cur_metrics = {}
         filler = asyncio.create_task(self._filler_after(FILLER_DELAY_S))      # covers a slow reply with a short phrase
         await self.chunk_q.join()
         texts, audio_s, replies = list(self.turn_texts), self.turn_audio_s, []
-        if texts:                                                              # everything said in this turn, merged, answered once
+        stt_s = round(sum(self._stt_times), 2)
+        self._stt_times = []
+        if texts:
+            self.idle_prompts = 0                                                              # everything said in this turn, merged, answered once
             self.call.more_coming = False
             t = time.time()
             try:
@@ -510,6 +545,7 @@ class CallSession:
             except Exception as e:
                 print(f"  reply failed: {type(e).__name__}: {e}", flush=True)
                 replies = [None]
+            self.cur_metrics.update(heard=" | ".join(texts)[:120], audio_s=round(audio_s, 1), stt_s=stt_s, reply_s=round(time.time() - t, 2))
             print(f"  turn heard: {' | '.join(texts)!r} -> reply written in {time.time() - t:.1f}s", flush=True)
         filler.cancel()
         self._reset_turn()
@@ -534,6 +570,9 @@ class CallSession:
         for reply in spoken[:-1]:
             await self.speak(reply, end_turn=False)
         await self.speak(spoken[-1], end_turn=not self.call.finished)
+        if self.cur_metrics.get("heard"):
+            self.cur_metrics["total_s"] = round(time.time() - self._turn_t0, 2)
+            self.turn_metrics.append({"turn": len(self.turn_metrics) + 1, **self.cur_metrics})
         if self.call.finished:
             await self.finish()
         elif self.has_content():                                               # save after every turn: nothing is lost if the call drops
@@ -563,6 +602,13 @@ class CallSession:
                     print(f"  mic level peak {self.peak:.4f} vs threshold {self.seg.thr:.4f}", flush=True)
                     self.peak = 0.0
                 self.silent_s = 0.0 if listen.rms(block) > self.seg.thr else self.silent_s + listen.BLOCK_S
+                if self.seg.speaking or self.turn_has_audio or listen.rms(block) > self.seg.thr:
+                    self.idle_s = 0.0
+                else:
+                    self.idle_s += listen.BLOCK_S
+                    if IDLE_PROMPT_S and self.idle_s >= IDLE_PROMPT_S and not self.turn_ending and not self.complete:
+                        self.idle_s, self.listening = 0.0, False
+                        self.spawn(self.idle_prompt())
                 chunk = self.seg.feed(block)
                 if chunk is not None:                             # a chunk of speech just ended: transcribe it right away
                     self.turn_has_audio = True
