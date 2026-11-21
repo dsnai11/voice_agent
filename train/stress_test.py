@@ -135,7 +135,7 @@ for n in range(N):
             q = rng.choice(QUESTIONS)
             said.append(q)
             reply = c.reply(q)
-            unclear_total += "समझ नहीं पाई" in reply
+            unclear_total += ("समझ नहीं पाई" in reply or "समझ नहीं आया" in reply)
             continue
         text = answer(asked, t) if asked else None
         if text is None:
@@ -143,7 +143,7 @@ for n in range(N):
         said.append(f"[{asked}] {text}")
         reply = c.reply(text)
         turns_total += 1
-        unclear_total += "समझ नहीं पाई" in reply
+        unclear_total += ("समझ नहीं पाई" in reply or "समझ नहीं आया" in reply)
     form, d = c.form, c.form.get("details") or {}
     et = t["employment"]
     expect = {"name": (form.get("full_name", "").lower(), t["name"].lower()), "loan_type": (d.get("loan_type"), t["loan_type"]), "amount": (d.get("loan_amount"), str(t["amount"])),

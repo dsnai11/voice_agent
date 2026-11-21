@@ -43,6 +43,17 @@ try:
         GENERAL_FINANCE = _f.read().strip()
 except OSError:
     pass
+NOT_UNDERSTOOD = "माफ़ कीजिए, मुझे ठीक से समझ नहीं आया। क्या आप फिर से बोल सकते हैं?"
+NOT_UNDERSTOOD_AGAIN = ["माफ़ कीजिए, मुझे ठीक से समझ नहीं आया कि आपने क्या कहा। क्या आप फिर से बोल सकते हैं?",
+                        "माफ़ कीजिए, अभी भी साफ़ समझ नहीं आया। क्या आप थोड़ा धीरे और दूसरे शब्दों में बता सकते हैं?",
+                        "माफ़ कीजिए, शायद आवाज़ साफ़ नहीं आ रही। आप अपना सवाल एक बार फिर पूछिए, मैं ध्यान से सुन रही हूँ।"]
+HOLD_LINE = "जी, ज़रूर, कोई बात नहीं। मैं लाइन पर हूँ, आप आराम से बताइए।"
+LISTENING_LINE = "जी, बोलिए, मैं सुन रही हूँ।"
+# "ek minute", "ruko", "hold karo": the caller needs a moment; nothing they said is an answer
+HOLD_RE = r"\b(?:ek|1)\s*(?:minute|minat|min|second|sec|sekand|pal)\b|\bruk(?:o|iye|ie|na|jao|jaiye|iyega)?\b|\bhold\b|\bwait\b|\babhi\s+aa(?:ta|ti|ya)\b|\bthoda\s+time\s+do\b|\bek\s+sec\b"
+# words that carry no meaning on their own ("hmm wo kya hai na"): the caller is thinking aloud
+FILLER_WORDS = {"hmm", "hm", "hmmm", "umm", "um", "uh", "uhh", "aa", "aaa", "ah", "eh", "wo", "woh", "vo", "kya", "hai", "na", "naa", "ki", "ke", "toh", "to", "matlab", "yaar", "bhai",
+                "sir", "madam", "ma'am", "mam", "wala", "wali", "jo", "ye", "yeh", "kuch", "aisa", "waisa", "haina", "basically", "actually", "like", "you", "know", "so", "the", "mera", "mere", "main", "hoon"}
 OFF_LINE = "जी, मैं सिर्फ़ लक्ष्मी इंडिया फाइनेंस और लोन-बैंकिंग से जुड़ी बातें करती हूँ। इससे जुड़ा कोई काम हो तो बताइए, मैं ज़रूर मदद करूँगी। बाकी बातों के लिए आप हमारे कस्टमर हेल्पलाइन नंबर एक आठ शून्य शून्य, एक दो एक, सात सात चार सात पर बात कर सकते हैं।"
 UNSURE = "इसके बारे में मुझे अभी पक्का नहीं पता, मैं इसे टीम से कन्फ़र्म करवा दूँगी।"
 
@@ -107,6 +118,22 @@ YES = {"haan", "han", "ha", "haa", "hanji", "haanji", "haji", "ji", "yes", "yeah
 ACK_WORDS = YES | {"hai", "to", "toh", "bhai", "abhi", "bas", "thanks", "thank", "you", "fine", "good", "great", "perfect", "nice", "badhiya", "mera", "meri",
                    "taraf", "se", "aap", "chalu", "karein", "karte", "hain", "chal", "ahead", "go", "next", "phir", "fir"}
 NO = {"nahi", "nahin", "nhi", "nai", "no", "mat", "na", "galat", "wrong", "incorrect", "nope"}
+
+
+def is_hold(text: str) -> bool:
+    """The caller asks Ria to wait a moment."""
+    return len(_words(text)) <= 7 and bool(re.search(HOLD_RE, text.lower())) and not re.search(r"\b(?:loan|emi|interest|cibil|kitna|kitni|kitne|kaise|kab|kyun)\b", text.lower())
+
+
+def is_filler(text: str) -> bool:
+    """Only thinking-aloud words ("hmm wo kya hai na"): nothing to answer and nothing to save."""
+    w = _words(text)
+    return 0 < len(w) <= 7 and all(x in FILLER_WORDS for x in w)
+
+
+def answerish(text: str) -> bool:
+    """The sentence contains an answer to a short form question: digits, a yes / no, or a time."""
+    return bool(digits_from_speech(text) or yes_no(text) or speak_time(text))
 
 
 def is_ack_only(text: str) -> bool:
@@ -381,6 +408,7 @@ def static_sentences() -> list:
         out += qs
     out += list(ALT_REPLIES.values())
     out.append(OFF_LINE)
+    out += [NOT_UNDERSTOOD, HOLD_LINE, LISTENING_LINE] + NOT_UNDERSTOOD_AGAIN
     out += ["ठीक है, रकम पक्की कर दी।", "ठीक है जी, कोई बात नहीं। आप रकम एक बार फिर बोलिए, जैसे पाँच लाख।"]
     out += ["धन्यवाद, नंबर कन्फ़र्म हो गया।", "ठीक है जी, कोई बात नहीं। कृपया अपना मोबाइल नंबर एक बार फिर, धीरे-धीरे बोलिए।",
             "माफ़ कीजिए, मैं ठीक से समझ नहीं पाई।", "जी, लोन के बारे में मैं आपकी पूरी मदद करूँगी।",
@@ -480,6 +508,12 @@ class Flow:
                 return "ठीक है जी, आपकी जानकारी नोट हो गई है और हमारी टीम जल्दी आपसे संपर्क करेगी।"
             return "ठीक है जी, जितनी जानकारी मिली है वो मैंने नोट कर ली है।"
 
+        # --- "ek minute ruko": wait without saving anything; "hmm wo kya hai na": invite the caller to go on
+        if is_hold(text):
+            return HOLD_LINE
+        if is_filler(text) and not is_ack_only(text) and (len(_words(text)) >= 3 or not yes_no(text)):      # "kya hai na": that "na" is not a no
+            return LISTENING_LINE
+
         # --- phone read-back answer
         if self.asked == "phone_confirm" and self.phone_pending:
             yn = yes_no(text)
@@ -510,7 +544,8 @@ class Flow:
                 ack = "ठीक है, रकम पक्की कर दी।"
 
         # --- approved reply for a question or special request
-        raw_bank = (replybank.match_hybrid(text) if looks_like_question(text) and not (parse_amount(text) and "?" not in text) and self.asked not in ("callback_time", "phone", "phone_confirm", "consent", "existing_loans", "full_name") else replybank.match(text))
+        question_here = looks_like_question(text) and not (self.asked in ("callback_time", "phone", "phone_confirm", "consent", "existing_loans") and answerish(text))      # a real question, not the answer to the form question
+        raw_bank = (replybank.match_hybrid(text) if question_here and not (parse_amount(text) and "?" not in text) else replybank.match(text))
         self._off_hit = any(m["id"] == "off_topic" and m["score"] >= 0.7 for m in raw_bank)
         bank = [m for m in raw_bank if m["score"] >= (0.45 if m["id"] in ("more_to_discuss", "small_talk") else 0.5 if m["entry"].get("require") else 0.6) and m["id"] not in SKIP_IDS]
         if is_ack_only(text):
@@ -532,8 +567,8 @@ class Flow:
             strong = None
         if not strong:
             bank = [m for m in bank if m["id"] not in ("stop_calling", "not_interested")]
-        if self.asked in ("callback_time", "phone", "phone_confirm", "consent", "existing_loans") and not strong:
-            bank = []                                                   # in these steps the caller's words are the answer, not a question
+        if self.asked in ("callback_time", "phone", "phone_confirm", "consent", "existing_loans") and not strong and not question_here:
+            bank = []                                                   # in these steps the caller's words are the answer, unless they clearly ask something
         ids = [m["id"] for m in bank]
         if "stop_calling" in ids or "not_interested" in ids:
             entry = next(m for m in bank if m["id"] in ("stop_calling", "not_interested"))["entry"]
@@ -549,8 +584,10 @@ class Flow:
         # --- extraction: only when the value is clearly present or the question asked for it
         asked = self.asked
         core, details = {}, {}
+        # "hmm", "haan", "na", "ok": an acknowledgement or a yes/no, never a name, a city, a purpose or a time
+        trivial = is_ack_only(text) or (len(_words(text)) <= 2 and (bool(yes_no(text)) or all(w in FILLER_WORDS for w in _words(text))))
         # the name is asked for in the greeting: always try it until captured
-        if "full_name" not in self.v:
+        if "full_name" not in self.v and not trivial:
             n = parse_name(text, strict=(asked == "full_name" and not bank))
             if n is None and re.search(r"[ऀ-ॿ]", text) and asked == "full_name":
                 n = self._llm_name(text)
@@ -573,8 +610,9 @@ class Flow:
                 known = {"personal": "personal", "parsanal": "personal", "payday": "payday", "pede": "payday", "salary": "salary", "saalari": "salary", "sailri": "salary", "salri": "salary",
                          "chalie": "salary", "chalari": "salary", "chaleri": "salary", "chalary": "salary", "saturday": "salary", "satarday": "salary", "sataday": "salary", "salaary": "salary",
                          "persnal": "personal", "pursonal": "personal", "pesonal": "personal", "peyday": "payday", "pedey": "payday"}
-                for w in re.findall(r"[a-z]{4,}", low):
-                    hit = difflib.get_close_matches(w, list(known), n=1, cutoff=0.68)          # "chalary" ~ "salary"
+                fuzzy_ok = not looks_like_question(text) and len(_words(text)) <= 4
+                for w in (re.findall(r"[a-z]{4,}", low) if fuzzy_ok else []):
+                    hit = [w] if w in known else difflib.get_close_matches(w, [k for k in known if k not in ("chalie",)], n=1, cutoff=0.68)          # "chalary" ~ "salary"
                     if hit:
                         details["loan_type"] = known[hit[0]]
                         captured.append("loan_type")
@@ -603,7 +641,7 @@ class Flow:
         if city and ("city" not in self.v or asked == "city"):
             details["city"] = city
             captured.append("city")
-        elif asked == "city" and not city and 0 < len(re.findall(r"[a-z]+", low)) <= 6 and clean_place(low) and not bank and not looks_like_question(text) and not domain_like(text):
+        elif asked == "city" and not city and not trivial and 0 < len(re.findall(r"[a-z]+", low)) <= 6 and clean_place(low) and not bank and not looks_like_question(text) and not domain_like(text):
             details["city"] = clean_place(low) or " ".join(re.findall(r"[a-z]+", low)).title()
             captured.append("city")
         if asked == "loan_purpose" and text:
@@ -621,9 +659,9 @@ class Flow:
             if canon is None and not bank:
                 if yes_no(text) == "no" and len(words_p) <= 3:
                     canon = "not shared"
-                elif re.fullmatch(r"[a-z ]{3,40}", re.sub(r"[^a-z ]", " ", low_p).strip() or "-") and len(words_p) <= 4 and not (set(words_p) & filler):
+                elif not trivial and re.fullmatch(r"[a-z ]{3,40}", re.sub(r"[^a-z ]", " ", low_p).strip() or "-") and len(words_p) <= 4 and not (set(words_p) & filler):
                     canon = re.sub(r"[^a-z ]", " ", low_p).strip()[:40]          # a short noun phrase such as "car repair"; never a whole sentence
-                elif len(words_p) <= 6 and not looks_like_question(text):                  # "personal kaam se", "ghar ke liye": keep the meaningful words
+                elif not trivial and len(words_p) <= 6 and not looks_like_question(text):                  # "personal kaam se", "ghar ke liye": keep the meaningful words
                     drop = filler | {"kaam", "liye", "lie", "hain", "kar", "karna", "chahiye", "chahie", "lena", "leni", "liya", "pata", "pta", "samajh", "bolna", "bata", "batao", "karta", "karti", "job", "business"}
                     rem = [w for w in re.findall(r"[a-z]+", low_p) if w not in drop]
                     if 1 <= len(rem) <= 3 and not (set(rem) & {"loan", "lakh", "laakh", "hazaar", "rupe", "rupees"}):
@@ -687,13 +725,13 @@ class Flow:
             core["preferred_callback_time"] = " ".join(text.split())[:80]
             core["consent_to_contact"] = "yes"
             captured += ["callback_time", "consent"]
-        if asked == "consent" and "consent" not in captured:
+        if asked == "consent" and "consent" not in captured and not (bank and question_here):
             yn = yes_no(text)
             if yn:
                 core["consent_to_contact"] = yn
                 captured.append("consent")
-        if asked == "callback_time" and text and not bank:
-            core["preferred_callback_time"] = "any time" if (yes_no(text) == "no" and len(_words(text)) <= 2) else re.sub(r"\s+", " ", text)[:80]
+        if asked == "callback_time" and text and not bank and (speak_time(text) or not looks_like_question(text)):
+            core["preferred_callback_time"] = "any time" if trivial else re.sub(r"\s+", " ", text)[:80]      # "haan" / "nahi" / "hmm" to "when?" means any time
             captured.append("callback_time")
 
         # --- apply what was captured
@@ -746,9 +784,7 @@ class Flow:
             if answer:
                 return answer
             self.unclear_after_done += 1
-            if self.unclear_after_done == 1:
-                return "जी, मैं ठीक से समझ नहीं पाई। क्या आप अपनी बात एक बार फिर बता सकते हैं?"
-            return "जी, आपकी जानकारी नोट हो गई है और हमारी टीम जल्दी आपसे संपर्क करेगी।"
+            return NOT_UNDERSTOOD_AGAIN[min(self.unclear_after_done, len(NOT_UNDERSTOOD_AGAIN)) - 1]
 
         parts = []
         if "callback_time" in captured and not ack:
@@ -772,14 +808,16 @@ class Flow:
             parts.append("जी, लोन के बारे में मैं आपकी पूरी मदद करूँगी।")
             self.fails[asked] = -1                                  # not a failure: the caller just has not said which kind yet
         asked_question = False
+        answered = False
         for m in bank[:2]:
-            if m["id"] in LEGACY_IDS or m["id"] in self.told:            # an approved answer is given once per call: never repeat it
+            if m["id"] in LEGACY_IDS or (m["id"] in self.told and not question_here):      # repeat an answer only when the caller asks for it again
                 continue
             self.told.add(m["id"])
             reply = self._alt(m)
             if self._next() is not None:
                 reply = _drop_trailing_questions(reply)
             parts.append(reply)
+            answered = True
             asked_question = asked_question or reply.rstrip().endswith("?")
 
         if not captured and not parts:
@@ -823,14 +861,12 @@ class Flow:
                 parts.append(f"ठीक है {self._name()} जी, आपकी सारी जानकारी नोट हो गई है। और कुछ पूछना हो तो पूछ लीजिए।")
             elif not parts:                                              # everything is collected and the caller said something we cannot place
                 self.unclear_after_done += 1
-                if self.unclear_after_done == 1:
-                    return "जी, मैं ठीक से समझ नहीं पाई। क्या आप अपनी बात एक बार फिर बता सकते हैं?"
-                return "जी, आपकी जानकारी नोट हो गई है और हमारी टीम जल्दी आपसे संपर्क करेगी।"
+                return NOT_UNDERSTOOD_AGAIN[min(self.unclear_after_done, len(NOT_UNDERSTOOD_AGAIN)) - 1]
             self.asked = None
             return " ".join(parts)
         if asked_question and nxt == self.asked:
             return " ".join(parts)                                      # the approved answer already ends with a question
-        self.fails[nxt] = self.fails.get(nxt, 0) + (1 if (nxt == self.asked and not captured) else 0)
+        self.fails[nxt] = self.fails.get(nxt, 0) + (1 if (nxt == self.asked and not captured and not answered and not parts) else 0)      # answering a question is not a failure
         if self.fails.get(nxt, 0) >= 6:                                  # the caller really cannot or will not answer this one: move on
             self.skipped.add(nxt)
             nxt = self._next()
@@ -838,8 +874,8 @@ class Flow:
                 return " ".join(parts) or random.choice(ACKS)
         self.asked = nxt
         question = self._question(nxt)
-        if nxt == self.asked and not captured and not bank and self.fails.get(nxt, 0) >= 1:
-            parts.append("माफ़ कीजिए, मैं ठीक से समझ नहीं पाई।")
+        if nxt == self.asked and not captured and not parts and self.fails.get(nxt, 0) >= 1:
+            parts.append(NOT_UNDERSTOOD)
         if self.fails.get(nxt, 0) >= 2 and nxt in EXAMPLES:               # noise or a hard-to-hear answer: show what a good answer sounds like
             question += " " + EXAMPLES[nxt]
         if nxt == "consent":
@@ -903,7 +939,7 @@ class Flow:
 
     def _unsure_ok(self, text: str) -> bool:
         """True when a question sounds like finance even without a keyword (then the honest 'team will confirm' answer is better than the off-topic line)."""
-        return bool(re.search(r"(paisa|paise|rupay|rupaye|byaaj|bank|loan|lon|emi|kist|account|khata|fund|money|tax|insurance|scheme|rate|charge|fees?)", text.lower()))
+        return bool(re.search(r"\b(paisa|paise|rupay|rupaye|byaaj|bank|loan|lon|emi|kist|account|khata|fund|money|tax|insurance|scheme|rate|charge|fees?)\b", text.lower()))
 
     def _free(self, text: str):
         """_free_raw, plus a local note of every question she could not answer, for the team to review (calls/unanswered.jsonl; nothing leaves this PC)."""
