@@ -86,8 +86,41 @@ _TERM_FIXES = [
 _PHANTOM = {"nan", "none", "null", "[silence]", "you", "thanks for watching", "thank you for watching", "subscribe", "music", "mm", "hmm", "uh", "um", "subtitles by the amara.org community"}
 
 
+_CITY_FIX = None
+
+
+def _fix_cities(text: str) -> str:
+    """Show well-known cities in their usual spelling ("Jaypur" -> "Jaipur"): known spelling variants, plus a close match for longer words."""
+    global _CITY_FIX
+    import difflib
+    import re
+
+    import flow
+    import forms
+
+    if _CITY_FIX is None:
+        _CITY_FIX = {k: v for k, v in flow.CITY_ALIASES.items() if len(k) >= 4}
+    def one(m):
+        w = m.group(0)
+        lw = w.lower()
+        if lw in _CITY_FIX:
+            return _CITY_FIX[lw]
+        if len(lw) >= 6:
+            hit = difflib.get_close_matches(w.title(), forms.CITIES, n=1, cutoff=0.86)
+            if hit and hit[0].lower() != lw:
+                return hit[0]
+        return w
+    return re.sub(r"[A-Za-z]{4,}", one, text)
+
+
 def fix_terms(text: str) -> str:
     import re
+
+    try:
+        import spelling
+        text = spelling.normalize(text)
+    except Exception:
+        pass
 
     for pattern, good in _TERM_FIXES:
         text = re.sub(pattern, good, text, flags=re.I)

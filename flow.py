@@ -261,7 +261,7 @@ def parse_duration_years(text: str):
 
 CITY_ALIASES = {"dilli": "Delhi", "bombay": "Mumbai", "mumbay": "Mumbai", "lakhnau": "Lucknow", "luknow": "Lucknow", "banaras": "Varanasi", "kashi": "Varanasi", "calcutta": "Kolkata",
                 "madras": "Chennai", "poona": "Pune", "baroda": "Vadodara", "allahabad": "Prayagraj", "bangalore": "Bengaluru", "bengalooru": "Bengaluru", "gurgaon": "Gurugram",
-                "jaypur": "Jaipur", "jaipure": "Jaipur", "udaypur": "Udaipur", "udyapur": "Udaipur", "jodhapur": "Jodhpur", "bhopaal": "Bhopal", "indor": "Indore", "ahmedabad": "Ahmedabad", "amdavad": "Ahmedabad"}
+                "ahmadabad": "Ahmedabad", "ahmadaabaad": "Ahmedabad", "ahmedabaad": "Ahmedabad", "ahemdabad": "Ahmedabad", "ahmdabad": "Ahmedabad", "ahmadabaad": "Ahmedabad", "banglore": "Bengaluru", "bangalor": "Bengaluru", "hyderabaad": "Hyderabad", "haidrabad": "Hyderabad", "kolkatta": "Kolkata", "calcuta": "Kolkata", "vadodra": "Vadodara", "chandigad": "Chandigarh", "chandigarah": "Chandigarh", "mumbei": "Mumbai", "nagpure": "Nagpur", "raipure": "Raipur", "kanpoor": "Kanpur", "lakhnow": "Lucknow", "ajmeer": "Ajmer", "bikaaner": "Bikaner", "jodhpoor": "Jodhpur", "gwaliyar": "Gwalior", "bhopaal": "Bhopal", "nasik": "Nashik", "patana": "Patna", "agara": "Agra", "jaypur": "Jaipur", "jaipure": "Jaipur", "udaypur": "Udaipur", "udyapur": "Udaipur", "jodhapur": "Jodhpur", "bhopaal": "Bhopal", "indor": "Indore", "ahmedabad": "Ahmedabad", "amdavad": "Ahmedabad"}
 PLACE_FILLER = {"mujhe", "me", "mein", "main", "se", "hoon", "hu", "hun", "wo", "haan", "ji", "rehta", "rehti", "rahta", "rahti", "hai", "ka", "ki", "ke", "mera", "meri", "shahar", "sheher", "city", "bol", "raha", "rahi"}
 
 
@@ -304,7 +304,7 @@ _V = {"aa": "ा", "ai": "ै", "au": "ौ", "ee": "ी", "oo": "ू", "a": "", 
 _VI = {"aa": "आ", "ai": "ऐ", "au": "औ", "ee": "ई", "oo": "ऊ", "a": "अ", "i": "इ", "u": "उ", "e": "ए", "o": "ओ"}
 
 
-_KNOWN = {"verma": "वर्मा", "singh": "सिंह", "kumar": "कुमार", "patel": "पटेल", "yadav": "यादव", "sharma": "शर्मा", "gupta": "गुप्ता", "khan": "खान",
+_KNOWN = {"ram": "राम", "shyam": "श्याम", "mohan": "मोहन", "sohan": "सोहन", "krishna": "कृष्ण", "ganesh": "गणेश", "dinesh": "दिनेश", "naresh": "नरेश", "vikram": "विक्रम", "ashok": "अशोक", "vishal": "विशाल", "sachin": "सचिन", "verma": "वर्मा", "singh": "सिंह", "kumar": "कुमार", "patel": "पटेल", "yadav": "यादव", "sharma": "शर्मा", "gupta": "गुप्ता", "khan": "खान",
           "rahul": "राहुल", "priya": "प्रिया", "amit": "अमित", "ajay": "अजय", "vijay": "विजय", "sanjay": "संजय", "ramesh": "रमेश", "suresh": "सुरेश",
           "mahesh": "महेश", "rakesh": "राकेश", "mukesh": "मुकेश", "deepak": "दीपक", "anil": "अनिल", "sunil": "सुनील", "rajesh": "राजेश", "manoj": "मनोज",
           "pooja": "पूजा", "neha": "नेहा", "sunita": "सुनीता", "anita": "अनीता", "kavita": "कविता", "sita": "सीता", "ravi": "रवि", "rohan": "रोहन",
@@ -463,6 +463,11 @@ class Flow:
         if self.v.get("full_name") is None and c.form.get("full_name"):
             self.v["full_name"] = c.form["full_name"]
         text = (text or "").strip()
+        try:
+            import spelling
+            text = spelling.normalize(text)                                    # everyday spelling first ("nahin" -> "nahi", "Jaypur" -> "Jaipur")
+        except Exception:
+            pass
         text = re.sub(r"one and a half", "dedh", text, flags=re.I)             # before the sentence is cut at "and"
         text = re.sub(r"two and a half", "dhai", text, flags=re.I)
         low = text.lower()
@@ -510,6 +515,16 @@ class Flow:
         bank = [m for m in raw_bank if m["score"] >= (0.45 if m["id"] in ("more_to_discuss", "small_talk") else 0.5 if m["entry"].get("require") else 0.6) and m["id"] not in SKIP_IDS]
         if is_ack_only(text):
             bank = []
+        _ident = {"her_name", "what_is_ai", "what_doing", "who_are_you", "her_experience", "small_talk", "are_you_robot"}      # one "about me" answer per turn is enough
+        _seen = False
+        _keep = []
+        for m in bank:
+            if m["id"] in _ident:
+                if _seen:
+                    continue
+                _seen = True
+            _keep.append(m)
+        bank = _keep
         bank = [m for m in bank if m["id"] not in LEGACY_IDS or m["score"] >= 0.72]
         # "call me in half an hour" must never be mistaken for "do not call me": stopping needs an explicit refusal word
         strong = re.search(r"\b(mat|band|stop|dnd|do\s+not|don't|dont|not\s+interested|nahin\s+chahiye|nahi\s+chahiye|nhi\s+chahiye)\b", low)
@@ -555,7 +570,9 @@ class Flow:
             elif asked == "loan_type":
                 import difflib
 
-                known = {"personal": "personal", "parsanal": "personal", "payday": "payday", "pede": "payday", "salary": "salary", "saalari": "salary", "sailri": "salary", "salri": "salary"}
+                known = {"personal": "personal", "parsanal": "personal", "payday": "payday", "pede": "payday", "salary": "salary", "saalari": "salary", "sailri": "salary", "salri": "salary",
+                         "chalie": "salary", "chalari": "salary", "chaleri": "salary", "chalary": "salary", "saturday": "salary", "satarday": "salary", "sataday": "salary", "salaary": "salary",
+                         "persnal": "personal", "pursonal": "personal", "pesonal": "personal", "peyday": "payday", "pedey": "payday"}
                 for w in re.findall(r"[a-z]{4,}", low):
                     hit = difflib.get_close_matches(w, list(known), n=1, cutoff=0.68)          # "chalary" ~ "salary"
                     if hit:
@@ -593,7 +610,7 @@ class Flow:
             low_p = low
             canon = None
             for word, pat in (("medical", r"medical|ilaj|ilaaj|hospital|dawai|bimar|operation|treatment|doctor"), ("wedding", r"shaadi|shadi|shaaadi|wedding|vivah|marriage|byah"),
-                              ("home repair", r"ghar|makaan|repair|renovation|marammat|construction"), ("education", r"education|padhai|padai|fees|school|college|course|study"),
+                              ("home repair", r"ghar|makaan|repair|renovation|marammat|construction"), ("education", r"education|padhai|padai|padhe|padhne|padhna|padh|fees|school|college|course|study"),
                               ("business", r"business|dukaan|dukan|vyapar|vyapaar|dhandha|stock|machine"), ("travel", r"travel|ghumn|trip|yatra|vacation|holiday"),
                               ("debt repayment", r"karz|karza|purana loan|debt|emi bharn|credit card|bill"), ("emergency", r"emergency|zaroorat|jaruri|urgent|turant")):
                 if re.search(pat, low_p):
@@ -606,6 +623,13 @@ class Flow:
                     canon = "not shared"
                 elif re.fullmatch(r"[a-z ]{3,40}", re.sub(r"[^a-z ]", " ", low_p).strip() or "-") and len(words_p) <= 4 and not (set(words_p) & filler):
                     canon = re.sub(r"[^a-z ]", " ", low_p).strip()[:40]          # a short noun phrase such as "car repair"; never a whole sentence
+                elif len(words_p) <= 6 and not looks_like_question(text):                  # "personal kaam se", "ghar ke liye": keep the meaningful words
+                    drop = filler | {"kaam", "liye", "lie", "hain", "kar", "karna", "chahiye", "chahie", "lena", "leni", "liya", "pata", "pta", "samajh", "bolna", "bata", "batao", "karta", "karti", "job", "business"}
+                    rem = [w for w in re.findall(r"[a-z]+", low_p) if w not in drop]
+                    if 1 <= len(rem) <= 3 and not (set(rem) & {"loan", "lakh", "laakh", "hazaar", "rupe", "rupees"}):
+                        canon = " ".join(rem)[:40]
+                        if canon == "personal":
+                            canon = "personal use"
             if canon:
                 details["loan_purpose"] = canon
                 captured.append("loan_purpose")
