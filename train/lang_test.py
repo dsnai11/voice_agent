@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.stdout.reconfigure(encoding="utf-8")
 import lang
 
-DETECT = [("Maanoo naam raahul mehtaachhe", "gu"), ("Byaj dar ketloche", "gu"), ("Maine baya lakh rupya nahi personal loan jo yeh chhe", "gu"), ("Maaro naam raahul mehta hai", None), ("Byaj ki to lakh si", None), ("mhaaro naam rahul mehta hai", "mwr"), ("Maine do lakh rupyaari loan chaizi", "mwr"), ("mane doo lakh ni personal loan joiye chhe", "gu"), ("vyaj dar ketlo chhe", "gu"), ("maru naam rahul mehta chhe", "gu"), ("mari pagar pachas hajar chhe", "gu"), ("tamari office kya aavi chhe", "gu"),
+DETECT = [("Mahaaron naam arjun singh chhe", "mwr"), ("mharo naam arjun singh chhe", "mwr"), ("maru naam arjun singh chhe", "gu"), ("Maanoo naam raahul mehtaachhe", "gu"), ("Byaj dar ketloche", "gu"), ("Maine baya lakh rupya nahi personal loan jo yeh chhe", "gu"), ("Maaro naam raahul mehta hai", None), ("Byaj ki to lakh si", None), ("mhaaro naam rahul mehta hai", "mwr"), ("Maine do lakh rupyaari loan chaizi", "mwr"), ("mane doo lakh ni personal loan joiye chhe", "gu"), ("vyaj dar ketlo chhe", "gu"), ("maru naam rahul mehta chhe", "gu"), ("mari pagar pachas hajar chhe", "gu"), ("tamari office kya aavi chhe", "gu"),
           ("tame mane paisa kyare aapso", "gu"), ("મને બે લાખ રૂપિયાની લોન જોઈએ છે", "gu"), ("mhane do lakh ri loan chaije", "mwr"), ("byaj kito lagsi", "mwr"), ("mharo naam rahul mehta hai", "mwr"),
           ("mhari tankhwa pachaas hajar hai", "mwr"), ("thaaro office kathe hai", "mwr"), ("thane kai chaije ghano paisa kito milsi", "mwr"), ("What is the interest rate?", "en"),
           ("I need a personal loan of two lakh rupees", "en"), ("My monthly salary is fifty thousand", "en"), ("how much loan can I get", "en"), ("can you tell me the documents required", "en"),
@@ -12,7 +12,7 @@ DETECT = [("Maanoo naam raahul mehtaachhe", "gu"), ("Byaj dar ketloche", "gu"), 
           ("personal loan", None), ("salary 50000 per month", None), ("personal loan chahiye", None), ("my name is Rahul Mehta", "en"), ("I am salaried", "en"), ("haan", None), ("ok", None), ("do lakh", None), ("Jaipur", None), ("pachas hazaar", None)]
 SWITCH = [("English mein baat karo", "en"), ("can you speak in english", "en"), ("gujarati ma vaat karo", "gu"), ("marwadi mein bolo", "mwr"), ("rajasthani boli mein baat karo", "mwr"),
           ("hindi mein bolo", "hi"), ("mujhe loan chahiye", None), ("shekhawati me baat kar", "mwr"), ("mewari bolo", "mwr"), ("Gujarati bhasha ma samjavo", "gu")]
-HINGLISH = [("mane doo lakh ni personal loan joiye chhe", "gu", "mujhe do lakh ki personal loan chahiye hai"), ("vyaj dar ketlo chhe", "gu", "byaj dar kitna hai"),
+HINGLISH = [("Mahaaron naam arjun singh chhe", "mwr", "mera naam arjun singh hai"), ("mane doo lakh ni personal loan joiye chhe", "gu", "mujhe do lakh ki personal loan chahiye hai"), ("vyaj dar ketlo chhe", "gu", "byaj dar kitna hai"),
             ("mari pagar pachas hajar chhe", "gu", "meri salary pachas hazaar hai"), ("મને બે લાખ રૂપિયાની લોન જોઈએ છે", "gu", "mujhe do lakh rupaye ki loan"), ("mhane do lakh ri loan chaije", "mwr", "mujhe do lakh ki loan chahiye"),
             ("byaj kito lagsi", "mwr", "byaj kitna lagega"), ("mhari tankhwa pachaas hajar hai", "mwr", "meri salary pachas hazaar hai"), ("thaaro office kathe hai", "mwr", "aapka office kahan hai")]
 bad = 0

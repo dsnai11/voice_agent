@@ -46,7 +46,10 @@ def _words(text: str):
 
 # Soft markers: the listener often glues or bends dialect words ("mehtaachhe", "ketloche", "mharo" -> "maro"), so the endings and stems count too
 _GU_SOFT = re.compile(r"ketl[oai]|kitl[oai]|joiy?e|chh?e$|chh?u$|chh?o$|nathi|tamar[ui]|tamn[ae]|tamaro|mane$|kyare|vyaj")
-_MWR_SOFT = re.compile(r"^mh[aeo]+r|^mh[aeo]+n|^thar[eoi]|^thaar|^than[ne]|chaij[eoi]|chaiz|chaaij|lagsi|hosi\b|milsi|ghan[oi]\b|^kitt?o$|^kath[ae]|^kiy[aa]n|hukam")
+_MWR_SOFT = re.compile(r"^ma+h+a+r[oiae]n?$|^mah[aeo]+r|^mh[aeo]+r|^mh[aeo]+n|^thar[eoi]|^thaar|^than[ne]|chaij[eoi]|chaiz|chaaij|lagsi|hosi\b|milsi|ghan[oi]\b|^kitt?o$|^kath[ae]|^kiy[aa]n|hukam")
+
+
+_GU_SOFT_NOAMB = re.compile(r"ketl[oai]|kitl[oai]|joiy?e|nathi|tamar[ui]|tamn[ae]|tamaro|mane$|kyare|vyaj")
 
 
 def _soft(words, rx):
@@ -67,8 +70,13 @@ def detect(text: str):
     hi = sum(1 for x in w if x in HI_MARKERS)
     en = sum(1 for x in w if x in EN_WORDS)
     hi_only = sum(1 for x in w if x in HI_ONLY)
-    gs = max(sum(1 for x in w if x in GU_STRONG), _soft(w, _GU_SOFT))
+    amb = sum(1 for x in w if x in ("chhe", "chhu", "chho", "chhai") or (len(x) > 5 and re.search(r"chh?[eu]$", x)))      # shared by Gujarati and Marwari, also glued to a word
+    gs = max(sum(1 for x in w if x in GU_STRONG and x not in ("chhe", "chhu")), _soft(w, _GU_SOFT_NOAMB))
     ms = max(sum(1 for x in w if x in MWR_STRONG), _soft(w, _MWR_SOFT))
+    if ms > gs:
+        ms += amb                                                            # "mahaaron naam arjun singh chhe": the "chhe" is Marwari here
+    else:
+        gs += amb
     if (gs or ms) and hi_only <= 2:
         return "gu" if gs > ms else "mwr"                      # one unmistakable dialect word is enough ("mhane do lakh ri loan chaije")
     ef = sum(1 for x in w if x in EN_FUNC)
@@ -96,10 +104,13 @@ _SWITCH = [
 def is_strong(text: str, code: str) -> bool:
     """Enough evidence to change the call's language on the very first sentence (otherwise two sentences in a row are needed)."""
     w = _words(text)
+    amb = sum(1 for x in w if x in ("chhe", "chhu", "chho", "chhai") or (len(x) > 5 and re.search(r"chh?[eu]$", x)))      # shared by Gujarati and Marwari, also glued to a word
+    gs = max(sum(1 for x in w if x in GU_STRONG and x not in ("chhe", "chhu")), _soft(w, _GU_SOFT_NOAMB))
+    ms = max(sum(1 for x in w if x in MWR_STRONG), _soft(w, _MWR_SOFT))
     if code == "gu":
-        return bool(_GU_SCRIPT.search(text)) or max(sum(1 for x in w if x in GU_STRONG), _soft(w, _GU_SOFT)) >= 2
+        return bool(_GU_SCRIPT.search(text)) or gs + (amb if gs >= ms else 0) >= 2 or any(x in GU_STRONG and x not in ("chhe", "chhu") for x in w)
     if code == "mwr":
-        return max(sum(1 for x in w if x in MWR_STRONG), _soft(w, _MWR_SOFT)) >= 2
+        return ms + (amb if ms > gs else 0) >= 2 or any(x in MWR_STRONG for x in w)         # one unmistakable word (mharo, mhane, thane, chaije ...) is enough
     if code == "en":
         return len(w) >= 4 and sum(1 for x in w if x in EN_FUNC) >= 2 and not any(x in HI_ONLY for x in w)
     if code == "hi":
@@ -154,6 +165,7 @@ GU_NUM = {"ek": "ek", "be": "do", "bey": "do", "tran": "teen", "traan": "teen", 
 
 # Marwari / Rajasthani village forms -> Hinglish
 MWR = {
+    "mahaaron": "mera", "mahaaro": "mera", "mahaaran": "mere", "mahaari": "meri", "mahro": "mera", "mahri": "meri", "chhe": "hai", "chhai": "hai", "chhu": "hoon", "chho": "ho", "chhaa": "hain",
     "kono": "nahi", "kono_hai": "nahi hai", "kanai": "nahi", "dujo": "doosra", "duji": "doosri", "duja": "doosre", "su": "se", "sun": "se", "sursi": "se", "sarun": "ke liye", "sarau": "ke liye", "saaru": "ke liye", "sarus": "ke liye",
     "mhe": "main", "mhaan": "main", "karu": "karta hoon", "kar_sako": "kar sakte", "sako": "sakte", "sakoo": "sakte", "ho_ji": "ji", "marammat": "marammat", "ghar_ri": "ghar ki", "ri_marammat": "ki marammat", "kaal": "kal", "das": "das", "bajyo": "baje", "baje": "baje",
     "mhare": "mere", "mhaare": "mere", "mharo": "mera", "mhaaro": "mera", "mhari": "meri", "mhaari": "meri", "mhara": "mere", "mhaara": "mere", "maaro": "mera", "maari": "meri", "mari": "meri", "maro": "mera", "maru": "mera", "doo": "do", "lon": "loan", "lone": "loan", "loon": "loan", "mhane": "mujhe", "mhanne": "mujhe",
@@ -176,7 +188,7 @@ MWR = {
     "ajkal": "aajkal", "aaj": "aaj", "kaal": "kal", "parsu": "parso", "parsaa": "parso", "ek_ghanto": "ek ghanta", "ghanto": "ghanta", "aadho": "aadha", "dedh": "dedh", "dhai": "dhai", "sunyo": "suna", "samjhyo": "samjha",
     "samjhi": "samjhi", "samjhyaa": "samjha", "samjhaayo": "samjhaya", "bolo": "bolo", "bolyo": "bola", "bataavo": "bataiye", "batavo": "bataiye", "batao": "bataiye", "bataadyo": "bata do", "dekho": "dekhiye", "dekhyo": "dekha",
 }
-MWR_NUM = {"ek": "ek", "do": "do", "dho": "do", "teen": "teen", "tin": "teen", "chaar": "char", "char": "char", "paanch": "paanch", "panch": "paanch", "chhah": "chhe", "chhe": "chhe", "chha": "chhe", "saat": "saat", "aath": "aath",
+MWR_NUM = {"ek": "ek", "do": "do", "dho": "do", "teen": "teen", "tin": "teen", "chaar": "char", "char": "char", "paanch": "paanch", "panch": "paanch", "chhah": "chhe", "chha": "chhe", "saat": "saat", "aath": "aath",
            "nau": "nau", "das": "das", "gyaarah": "gyarah", "baarah": "barah", "pachaas": "pachas", "pachas": "pachas", "saath": "saath", "sau": "sau", "hajar": "hazaar", "hajaar": "hazaar", "lakh": "lakh", "laakh": "lakh"}
 
 _GU_ALL = {**GU, **GU_NUM}
