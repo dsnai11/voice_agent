@@ -41,7 +41,11 @@ CITIES = ["Delhi", "New Delhi", "Mumbai", "Pune", "Nagpur", "Nashik", "Thane", "
           "Prayagraj", "Meerut", "Noida", "Ghaziabad", "Gurugram", "Gurgaon", "Faridabad", "Chandigarh", "Ludhiana",
           "Amritsar", "Jalandhar", "Dehradun", "Haridwar", "Bhopal", "Indore", "Gwalior", "Jabalpur", "Patna",
           "Gaya", "Ranchi", "Jamshedpur", "Bhubaneswar", "Cuttack", "Raipur", "Guwahati", "Kochi", "Thiruvananthapuram",
-          "Kozhikode", "Visakhapatnam", "Vijayawada", "Madurai", "Mangaluru", "Hubballi", "Goa", "Panaji"]
+          "Kozhikode", "Visakhapatnam", "Vijayawada", "Madurai", "Mangaluru", "Hubballi", "Goa", "Panaji",
+          "Nagaur", "Jaisalmer", "Barmer", "Pali", "Sikar", "Jhunjhunu", "Churu", "Hanumangarh", "Sri Ganganagar", "Alwar", "Bharatpur", "Dausa", "Tonk", "Bhilwara", "Chittorgarh", "Rajsamand",
+          "Sirohi", "Jalore", "Banswara", "Dungarpur", "Pratapgarh", "Karauli", "Dholpur", "Sawai Madhopur", "Baran", "Bundi", "Jhalawar", "Beawar", "Kishangarh", "Bhiwadi", "Mount Abu",
+          "Mehsana", "Palanpur", "Anand", "Nadiad", "Bharuch", "Valsad", "Navsari", "Jamnagar", "Junagadh", "Porbandar", "Amreli", "Surendranagar", "Gandhinagar", "Morbi", "Bhuj",
+          "Gandhidham", "Patan", "Himmatnagar", "Godhra", "Vapi", "Bhavnagar", "Ankleshwar", "Deesa", "Unjha", "Sanand"]
 # Loan account number format: letters/digits, 5 to 20 characters. Set ACCOUNT_REGEX to your real format, e.g. ^LIF[0-9]{8}$
 ACCOUNT_REGEX = re.compile(os.environ.get("ACCOUNT_REGEX", r"^[A-Z0-9]{5,20}$"))
 # Plausible rupee ranges (min, max). Values outside are kept but flagged for the caller to confirm.

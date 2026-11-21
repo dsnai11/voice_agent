@@ -132,6 +132,7 @@ def switch_request(text: str):
 # ---------------------------------------------------------------------------------------------------------------- dialect -> Hinglish
 # Gujarati (Roman, loose spelling) -> the Hinglish word the flow knows
 GU = {
+    "kamau": "kamata", "kamavu": "kamata", "bhanvva": "padhai", "bhanvu": "padhai", "dava": "dawai", "lagn": "shaadi", "dikri": "beti", "dikra": "beta", "potano": "apna", "potani": "apni", "pase": "paas",
     "kyan_chhe": "kahan hai", "tamaro": "aapka", "tamaro_naam": "aapka naam", "ketlu": "kitna", "kaay": "kya", "kasu": "kuch", "bija": "doosra", "biju": "doosra", "biji": "doosri", "koi_nathi": "koi nahi",
     "nokri_karu": "naukri karta", "karu": "karta", "chhu_hu": "hoon", "dasa": "das", "dash": "das", "varsh_thi": "saal se", "thi": "se", "thii": "se", "mate_": "ke liye", "lagn": "shaadi", "lagna": "shaadi", "lagan": "shaadi",
     "mane": "mujhe", "mare": "mujhe", "maru": "mera", "maaru": "mera", "mari": "meri", "mara": "mere", "maraa": "mere", "doo": "do", "lon": "loan", "lone": "loan", "loon": "loan", "tamaru": "aapka", "tamari": "aapki", "tamara": "aapke", "tame": "aap", "tamne": "aapko",
@@ -165,6 +166,7 @@ GU_NUM = {"ek": "ek", "be": "do", "bey": "do", "tran": "teen", "traan": "teen", 
 
 # Marwari / Rajasthani village forms -> Hinglish
 MWR = {
+    "paiso": "paisa", "paisa": "paisa", "kad": "kab", "kaad": "kab", "kayan": "kab", "milsi": "milega", "kamai": "kamai", "ri": "ki", "sarun": "ke liye", "bayaav": "shaadi", "byaav": "shaadi", "byav": "shaadi",
     "mahaaron": "mera", "mahaaro": "mera", "mahaaran": "mere", "mahaari": "meri", "mahro": "mera", "mahri": "meri", "chhe": "hai", "chhai": "hai", "chhu": "hoon", "chho": "ho", "chhaa": "hain",
     "kono": "nahi", "kono_hai": "nahi hai", "kanai": "nahi", "dujo": "doosra", "duji": "doosri", "duja": "doosre", "su": "se", "sun": "se", "sursi": "se", "sarun": "ke liye", "sarau": "ke liye", "saaru": "ke liye", "sarus": "ke liye",
     "mhe": "main", "mhaan": "main", "karu": "karta hoon", "kar_sako": "kar sakte", "sako": "sakte", "sakoo": "sakte", "ho_ji": "ji", "marammat": "marammat", "ghar_ri": "ghar ki", "ri_marammat": "ki marammat", "kaal": "kal", "das": "das", "bajyo": "baje", "baje": "baje",

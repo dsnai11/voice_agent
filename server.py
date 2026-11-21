@@ -277,7 +277,8 @@ def _short_answer(text: str) -> bool:
         return True
     try:
         import flow
-        return bool(flow.parse_city(text, True) or flow.parse_employment(text, None) or flow.digits_from_speech(text))
+        return bool(flow.parse_city(text, True) or flow.parse_employment(text, None) or flow.digits_from_speech(text) or flow.parse_duration_years(text) is not None
+                    or flow.parse_amount(text, minimum=100) or flow.speak_time(text))
     except Exception:
         return False
 

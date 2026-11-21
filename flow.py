@@ -112,6 +112,7 @@ NUM = {"ek": 1, "do": 2, "teen": 3, "char": 4, "chaar": 4, "paanch": 5, "panch":
        "paintalis": 45, "pachas": 50, "pachaas": 50, "saath": 60, "sattar": 70, "pachhattar": 75, "assi": 80, "nabbe": 90,
        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10, "twenty": 20,
        "thirty": 30, "forty": 40, "fifty": 50, "dedh": 1.5, "dhai": 2.5, "adhai": 2.5, "sava": 1.25, "aadha": 0.5, "half": 0.5}
+NUM.update({"be": 2, "bey": 2, "dho": 2, "dhoy": 2, "tran": 3, "traan": 3, "pach": 5, "pandar": 15, "vees": 20, "pachis": 25, "pachees": 25, "pachchis": 25, "tris": 30, "doda": 1.5, "dhedh": 1.5})
 MULT = {"sau": 100, "hundred": 100, "hazaar": 1000, "hazar": 1000, "hajar": 1000, "thousand": 1000, "k": 1000, "lakh": 100000, "laakh": 100000,
         "lac": 100000, "lacs": 100000, "lakhs": 100000, "laakhon": 100000, "crore": 10_000_000, "karod": 10_000_000, "cr": 10_000_000}
 YES = {"haan", "han", "ha", "haa", "hanji", "haanji", "haji", "ji", "yes", "yeah", "yep", "theek", "thik", "sahi", "bilkul", "correct", "right", "ok", "okay", "okey",
@@ -167,9 +168,14 @@ def domain_like(text: str) -> bool:
     return bool(set(_words(text)) & DOMAIN)
 
 
+def asks_something(text: str) -> bool:
+    """A real question: a question mark or a question word (not just a finance keyword such as 'company' or 'score')."""
+    return "?" in text or bool(re.search(r"\b(kya|kaise|kyun|kyu|kab|kitna|kitni|kitne|kaun|kahan|kaha|what|how|why|when|which|who|where|can you|could you|do you|is there|are there)\b", text.lower()))
+
+
 def looks_like_question(text: str) -> bool:
     low = text.lower()
-    return "?" in text or bool(re.search(r"\b(kya|kaise|kyun|kyu|kab|kitna|kitni|kitne|kaun|kahan|kaha|what|how|why|when|which|who|where|can|could|batao|bataiye|bataye|samjhao|samjhaiye|matlab|explain|details?|jankari|jaankari|baare|bare|baat|poochna|puchna|company|civil|cibil|score)\b", low))
+    return "?" in text or bool(re.search(r"\b(kya|kaise|kyun|kyu|kab|kitna|kitni|kitne|kaun|kahan|kaha|what|how|why|when|which|who|where|can|could|batao|bataiye|bataye|bhej|bhejo|bhejna|whatsapp|sms|link|samjhao|samjhaiye|matlab|explain|details?|jankari|jaankari|baare|bare|baat|poochna|puchna|company|civil|cibil|score)\b", low))
 
 
 STOP = {"mera", "meraa", "naam", "name", "nam", "is", "hai", "hain", "main", "mai", "my", "the", "ji", "sir", "madam", "full", "i", "am", "hu", "hoon", "hun",
@@ -178,7 +184,7 @@ LOAN_WORDS = [("payday", r"pay\s*-?\s*day|pe\s*day|पेडे|पे डे|\b
               ("personal", r"personal|पर्सनल"), ("home", r"home\s+loan|\bghar\b|property|makaan|मकान|होम"), ("business", r"business\s+loan|\bvyapar|vyapaar|\bdhandh|बिज़नेस\s+लोन"),
               ("vehicle", r"vehicle|\bcar\b|\bbike\b|gaadi|gadi|auto loan"), ("gold", r"\bgold\b|\bsona\b|सोना|गोल्ड")]
 SALARIED = r"salar|naukri|nokri|service|sarvice|employed|\bjob\b|employee|private|sarkari|government|company|नौकरी|सैलरी"
-SELF = r"business|dukaan|dukan|shop|self\s*-?\s*employ|vyapar|vyapaar|dhandha|dhanda|apna\s+kaam|freelanc|दुकान|बिज़नेस|व्यापार"
+SELF = r"dhandh|dhando|kheti|\bkhet\b|mazdoor|majdoor|majdur|mazdur|mazduri|mazdoori|majdoori|majduri|labou?r|dihadi|daily\s*wage|pashu|dairy|doodh|gaay|bhains|bakri|driver|chalak|truck|tempo|rickshaw|taxi|mistri|mistry|darji|carpenter|plumber|electrician|painter|tailor|potano|business|dukaan|dukan|shop|self\s*-?\s*employ|vyapar|vyapaar|dhandha|dhanda|apna\s+kaam|freelanc|दुकान|बिज़नेस|व्यापार"
 
 
 def _words(text: str) -> list:
@@ -242,6 +248,22 @@ def parse_amount(text: str, minimum: int = 1000):
     return int(total) if found and total >= minimum else None
 
 
+PURPOSE_PATTERNS = (
+    ("medical", r"medical|ilaj|ilaaj|hospital|dawai|davai|\bdava\b|\bdawa\b|bimar|bimari|operation|treatment|doctor|dawakhana|aspatal|dava\s+mate"),
+    ("wedding", r"shaadi|shadi|shaaadi|wedding|vivah|marriage|byah|byaav|bayaav|byav|biyav|byaao|lagn|lagan|sagai|nikah"),
+    ("home repair", r"\bghar|makaan|makan|repair|renovation|marammat|construction|chhat|plaster|banavv?|house"),
+    ("education", r"education|padhai|padai|bhanvv?a|bhanvu|bhanu|\bfees\b|school|college|course|study|admission|shikshan|tuition"),
+    ("farming", r"kheti|\bkhet|fasal|beej|khad\b|tractor|trakter|pashu|gaay|bhains|bakri|dairy|\bbore\b|sinchai|krishi|\bfarm|\bcrop|seed|fertili"),
+    ("business", r"business|dukaan|dukan|vyapar|vyapaar|dhandh|dhanda|karobar|stock|machine|\bshop\b|factory"),
+    ("vehicle", r"gaadi|gadi|bike|scooter|\bcar\b|truck|tempo|rickshaw|taxi|vehicle|motorcycle"),
+    ("travel", r"travel|ghumn|trip|yatra|vacation|holiday"),
+    ("debt repayment", r"karz|karza|purana loan|debt|emi bharn|credit card|bill"),
+    ("emergency", r"emergency|zaroorat|jaruri|urgent|turant"),
+)
+YES.update({"hao", "haao", "jarur", "zaroor", "pakka", "haji", "hajee"})
+NO.update({"kono", "konai", "konyi", "koni", "nathi", "naa", "konoo"})
+
+
 def yes_no(text: str):
     w = set(_words(text))
     if w & NO or any(x.startswith(("nah", "nhi", "nhn")) for x in w):
@@ -255,7 +277,8 @@ def yes_no(text: str):
 
 def parse_name(text: str, strict: bool):
     t = text.lower().strip()
-    m = (re.search(r"(?:mera|meraa|my)\s+(?:full\s+)?(?:naam|nam|name)\s+(?:is\s+|hai\s+)?([a-z .]{2,40}?)(?:\s+(?:hai|hain|hu|hoon|hun|aur|and|bol|se|ka|ki|ko|mujhe|me|mein|ye|yeh)\b|[,.!?]|$)", t)
+    m = (re.search(r"(?:mera|meraa|my|maaro|maro|maru|mara|mharo|mhaaro|maharo|mahaaron|mahaaro)\s+(?:full\s+)?(?:naam|nam|name)\s+(?:is\s+|hai\s+)?([a-z .]{2,40}?)(?:\s+(?:hai|hain|hu|hoon|hun|aur|and|bol|se|ka|ki|ko|mujhe|me|mein|ye|yeh)\b|[,.!?]|$)", t)
+         or re.search(r"(?:mhane|mane|mujhe|mhaane)\s+([a-z .]{2,30}?)\s+(?:kehve|kehwe|kahe|kahte|kehte|bolte|bolu|kahevay)\b", t)
          or re.search(r"(?:this is|it'?s|myself|call me|you can call me|people call me)\s+([a-z .]{2,30}?)(?:\s+(?:speaking|here|bol)\b|[,.!?]|$)", t)
          or re.search(r"(?:i am|i'm|main|mai)\s+([a-z .]{2,30}?)\s+(?:bol|hoon|hu|hun|here|speaking)", t)
          or re.search(r"(?:naam|name)\s+([a-z .]{2,30})", t))
@@ -279,7 +302,7 @@ def parse_employment(text: str, asked):
     low = re.sub(r"(salary|sailri|salry|सैलरी)\s*(loan|advance|lone)|advance\s*salary|payday|pay\s*day", " ", text.lower())      # a loan type, not a job
     if re.search(r"pension|retired|retire\b|sevanivrit|रिटायर|सेवानिवृत्त", low):
         return "pensioner"
-    if re.search(r"housewife|house wife|homemaker|grihini|student|padhai|studying|unemployed|berozgar|berojgar|not working|naukri nahi|job nahi|kaam nahi|बेरोज़गार|बेरोजगार", low):
+    if re.search(r"housewife|house wife|homemaker|grihini|gruhini|grahini|gharelu|ghar\s+(?:ro|ka|ki|nu)\s+kaam|ghar\s+sambhal|student|padhai|studying|unemployed|berozgar|berojgar|not working|naukri nahi|job nahi|kaam nahi|बेरोज़गार|बेरोजगार", low):
         return "not-earning"
     selfish = re.search(SELF + r"|farmer|kisan|kheti|farming|doctor|lawyer|advocate|\bca\b|professional|freelanc|consultant|contractor|trader|vyapari|shopkeeper|dukandar|self\s*-?\s*employed", low)
     if selfish and not re.search(r"business\s+loan", low):
@@ -324,7 +347,7 @@ def parse_duration_years(text: str):
 CITY_ALIASES = {"dilli": "Delhi", "bombay": "Mumbai", "mumbay": "Mumbai", "lakhnau": "Lucknow", "luknow": "Lucknow", "banaras": "Varanasi", "kashi": "Varanasi", "calcutta": "Kolkata",
                 "madras": "Chennai", "poona": "Pune", "baroda": "Vadodara", "allahabad": "Prayagraj", "bangalore": "Bengaluru", "bengalooru": "Bengaluru", "gurgaon": "Gurugram",
                 "ahmadabad": "Ahmedabad", "ahmadaabaad": "Ahmedabad", "ahmedabaad": "Ahmedabad", "ahemdabad": "Ahmedabad", "ahmdabad": "Ahmedabad", "ahmadabaad": "Ahmedabad", "banglore": "Bengaluru", "bangalor": "Bengaluru", "hyderabaad": "Hyderabad", "haidrabad": "Hyderabad", "kolkatta": "Kolkata", "calcuta": "Kolkata", "vadodra": "Vadodara", "chandigad": "Chandigarh", "chandigarah": "Chandigarh", "mumbei": "Mumbai", "nagpure": "Nagpur", "raipure": "Raipur", "kanpoor": "Kanpur", "lakhnow": "Lucknow", "ajmeer": "Ajmer", "bikaaner": "Bikaner", "jodhpoor": "Jodhpur", "gwaliyar": "Gwalior", "bhopaal": "Bhopal", "nasik": "Nashik", "patana": "Patna", "agara": "Agra", "jaypur": "Jaipur", "jaipure": "Jaipur", "udaypur": "Udaipur", "udyapur": "Udaipur", "jodhapur": "Jodhpur", "bhopaal": "Bhopal", "indor": "Indore", "ahmedabad": "Ahmedabad", "amdavad": "Ahmedabad"}
-PLACE_FILLER = {"mujhe", "me", "mein", "main", "se", "hoon", "hu", "hun", "wo", "haan", "ji", "rehta", "rehti", "rahta", "rahti", "hai", "ka", "ki", "ke", "mera", "meri", "shahar", "sheher", "city", "bol", "raha", "rahi"}
+PLACE_FILLER = set("mhe mhane gaam gaon gam village vill taluka tehsil jila district post rahu rahun rahyo rahi su sun chhu thi ma pass paas near nazdik naju najik side wala wale wali live living i am from in at the city town".split()) | {"mujhe", "me", "mein", "main", "se", "hoon", "hu", "hun", "wo", "haan", "ji", "rehta", "rehti", "rahta", "rahti", "hai", "ka", "ki", "ke", "mera", "meri", "shahar", "sheher", "city", "bol", "raha", "rahi"}
 
 
 def clean_place(text: str) -> str:
@@ -424,7 +447,7 @@ def speak_time(text: str) -> str:
         out.append("एक घंटे बाद")
     elif re.search(r"\b(do|2|two)\s*ghant|\btwo\s*hours?", low):
         out.append("दो घंटे बाद")
-    for ws, hi in ((("abhi", "now"), "अभी"), (("aaj", "today"), "आज"), (("kal", "tomorrow"), "कल"), (("parso", "parson"), "परसों"),
+    for ws, hi in ((("abhi", "now"), "अभी"), (("aaj", "today"), "आज"), (("kal", "kaal", "tomorrow"), "कल"), (("parso", "parson"), "परसों"),
                    (("subah", "morning", "savere"), "सुबह"), (("dopahar", "dophar", "afternoon"), "दोपहर"), (("shaam", "sham", "evening"), "शाम"),
                    (("raat", "night"), "रात")):
         if words & set(ws):
@@ -552,6 +575,8 @@ class Flow:
         elif seen == self.lang:
             self._pending_lang = None
         inner = _lang.to_hinglish(raw, self.lang) if self.lang in ("gu", "mwr") else raw
+        if self.lang == "en" and "?" not in inner and re.match(r"(?i)\s*(?:is|are|do|does|did|will|can|could|should|would|may|am|have|has)\b", inner):
+            inner += "?"                                                       # an English question that starts with a verb
         reply = self._handle(inner)
         if reply is None or self.lang == "hi":
             return reply
@@ -715,7 +740,7 @@ class Flow:
             if target not in self.v or asked == target:
                 details[target] = amt
                 captured.append(target)
-        emp = parse_employment(text, asked) if (asked == "employment" or ("employment" not in self.v and asked not in ("loan_purpose", "loan_type", "loan_amount", "full_name"))) else None
+        emp = parse_employment(text, asked) if not asks_something(text) and (asked == "employment" or ("employment" not in self.v and asked not in ("loan_purpose", "loan_type", "loan_amount", "full_name"))) else None
         if emp and ("employment" not in self.v or asked == "employment"):
             details["employment_type"] = emp
             captured.append("employment")
@@ -726,13 +751,10 @@ class Flow:
         elif asked == "city" and not city and not trivial and 0 < len(re.findall(r"[a-z]+", low)) <= 6 and clean_place(low) and not bank and not looks_like_question(text) and not domain_like(text):
             details["city"] = clean_place(low) or " ".join(re.findall(r"[a-z]+", low)).title()
             captured.append("city")
-        if asked == "loan_purpose" and text:
+        if asked == "loan_purpose" and text and not asks_something(text):
             low_p = low
             canon = None
-            for word, pat in (("medical", r"medical|ilaj|ilaaj|hospital|dawai|bimar|operation|treatment|doctor"), ("wedding", r"shaadi|shadi|shaaadi|wedding|vivah|marriage|byah"),
-                              ("home repair", r"ghar|makaan|repair|renovation|marammat|construction"), ("education", r"education|padhai|padai|padhe|padhne|padhna|padh|fees|school|college|course|study"),
-                              ("business", r"business|dukaan|dukan|vyapar|vyapaar|dhandha|stock|machine"), ("travel", r"travel|ghumn|trip|yatra|vacation|holiday"),
-                              ("debt repayment", r"karz|karza|purana loan|debt|emi bharn|credit card|bill"), ("emergency", r"emergency|zaroorat|jaruri|urgent|turant")):
+            for word, pat in PURPOSE_PATTERNS:
                 if re.search(pat, low_p):
                     canon = word
                     break
@@ -741,7 +763,7 @@ class Flow:
             if canon is None and not bank:
                 if yes_no(text) == "no" and len(words_p) <= 3:
                     canon = "not shared"
-                elif not trivial and re.fullmatch(r"[a-z ]{3,40}", re.sub(r"[^a-z ]", " ", low_p).strip() or "-") and len(words_p) <= 4 and not (set(words_p) & filler):
+                elif not trivial and not asks_something(text) and re.fullmatch(r"[a-z ]{3,40}", re.sub(r"[^a-z ]", " ", low_p).strip() or "-") and len(words_p) <= 4 and not (set(words_p) & filler):
                     canon = re.sub(r"[^a-z ]", " ", low_p).strip()[:40]          # a short noun phrase such as "car repair"; never a whole sentence
                 elif not trivial and len(words_p) <= 6 and not looks_like_question(text):                  # "personal kaam se", "ghar ke liye": keep the meaningful words
                     drop = filler | {"kaam", "liye", "lie", "hain", "kar", "karna", "chahiye", "chahie", "lena", "leni", "liya", "pata", "pta", "samajh", "bolna", "bata", "batao", "karta", "karti", "job", "business"}
@@ -776,7 +798,7 @@ class Flow:
         if asked == "existing_loans":
             yn = yes_no(text)
             w_ = set(_words(text))
-            if yn is None and "koi" not in w_ and (w_ & {"ek", "do", "teen", "car", "bike", "home", "personal", "gold", "credit", "card"} or {"chal", "raha"} <= w_ or {"chal", "rahi"} <= w_):
+            if yn is None and "koi" not in w_ and (w_ & {"ek", "do", "teen", "car", "bike", "home", "personal", "gold", "credit", "card", "dho", "dhoy", "tran", "traan", "one", "two", "three", "running", "ongoing", "chalu", "active"} or {"chal", "raha"} <= w_ or {"chal", "rahi"} <= w_):
                 yn = "yes"
             if yn:
                 details["existing_loans"] = yn
