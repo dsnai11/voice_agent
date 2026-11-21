@@ -43,6 +43,8 @@ try:
         GENERAL_FINANCE = _f.read().strip()
 except OSError:
     pass
+GREET_LINE = "जी, नमस्ते।"
+GREETING_RE = re.compile(r"(?:hello|hallo|hi|hey|hii+|namaste|namaskar|namaskaram|pranam|ram\s*ram(?:\s*sa)?|ram\s*ram\s*ji|khamma\s*ghani|ghani\s*khamma|kem\s*cho|jai\s*shree\s*krishna|jai\s*jinendra|sat\s*sri\s*akal|salaam|good\s*(?:morning|afternoon|evening))(?:\s+(?:ji|sir|madam|mam|maam|sa|ria|riya|didi))?")
 NOT_UNDERSTOOD = "माफ़ कीजिए, मुझे ठीक से समझ नहीं आया। क्या आप फिर से बोल सकते हैं?"
 NOT_UNDERSTOOD_AGAIN = ["माफ़ कीजिए, मुझे ठीक से समझ नहीं आया कि आपने क्या कहा। क्या आप फिर से बोल सकते हैं?",
                         "माफ़ कीजिए, अभी भी साफ़ समझ नहीं आया। क्या आप थोड़ा धीरे और दूसरे शब्दों में बता सकते हैं?",
@@ -193,6 +195,21 @@ def digits_from_speech(text: str) -> str:
     return re.sub(r"\D", "", db.spoken_digits(t))
 
 
+def english_big_numbers(text: str) -> str:
+    """'five hundred thousand' -> '5 lakh', 'two million' -> '20 lakh' (the amount reader works in lakh and hazaar)."""
+    def val(w):
+        return float(w) if re.fullmatch(r"\d+(?:\.\d+)?", w) else float(NUM[w]) if w in NUM else None
+    def hundred_thousand(m):
+        v = val(m.group(1).lower())
+        return f"{v:g} lakh" if v is not None else m.group(0)
+    def million(m):
+        v = val(m.group(1).lower())
+        return f"{v * 10:g} lakh" if v is not None else m.group(0)
+    text = re.sub(r"\b(\w+(?:\.\d+)?)\s+hundred\s+thousand\b", hundred_thousand, text, flags=re.I)
+    text = re.sub(r"\b(\d+(?:\.\d+)?|\w+)\s+(?:million|mn)\b", million, text, flags=re.I)
+    return text
+
+
 def parse_amount(text: str, minimum: int = 1000):
     """'paanch laakh' / '5 lakh' / '2.5 lakh' / '50 hazaar' / '500000' -> rupees (int), or None if no amount is present.
     A small number with no lakh / hazaar / crore after it ("ek taarikh") is not part of an amount."""
@@ -200,6 +217,7 @@ def parse_amount(text: str, minimum: int = 1000):
         return None
     text = re.sub(r"one and a half", "dedh", text, flags=re.I)
     text = re.sub(r"two and a half", "dhai", text, flags=re.I)
+    text = english_big_numbers(text)
     words = _words(text.replace(",", ""))
     for size in (4, 3, 2):                                    # drop an immediately repeated phrase: "5 hazaar 5 hazaar" -> "5 hazaar"
         i = 0
@@ -228,6 +246,8 @@ def yes_no(text: str):
     w = set(_words(text))
     if w & NO or any(x.startswith(("nah", "nhi", "nhn")) for x in w):
         return "no"
+    if re.search(r"\bnot\b|n't\b|\bnever\b|\bnothing\b|\bnone\b|\bnobody\b|\bno one\b", text.lower()):             # English negatives
+        return "no"
     if w & YES:
         return "yes"
     return None
@@ -236,6 +256,7 @@ def yes_no(text: str):
 def parse_name(text: str, strict: bool):
     t = text.lower().strip()
     m = (re.search(r"(?:mera|meraa|my)\s+(?:full\s+)?(?:naam|nam|name)\s+(?:is\s+|hai\s+)?([a-z .]{2,40}?)(?:\s+(?:hai|hain|hu|hoon|hun|aur|and|bol|se|ka|ki|ko|mujhe|me|mein|ye|yeh)\b|[,.!?]|$)", t)
+         or re.search(r"(?:this is|it'?s|myself|call me|you can call me|people call me)\s+([a-z .]{2,30}?)(?:\s+(?:speaking|here|bol)\b|[,.!?]|$)", t)
          or re.search(r"(?:i am|i'm|main|mai)\s+([a-z .]{2,30}?)\s+(?:bol|hoon|hu|hun|here|speaking)", t)
          or re.search(r"(?:naam|name)\s+([a-z .]{2,30})", t))
     cand = m.group(1) if m else (t if strict and len(t.split()) <= 5 else "")
@@ -268,11 +289,25 @@ def parse_employment(text: str, asked):
         return "self-employed"
     if re.search(SALARIED, re.sub(r"self\s*-?\s*employed", " ", low)):
         return "salaried"
+    if re.search(r"\bwork(?:ing)?\s+(?:at|for|in|with)\b|\bemployed\b|\bemployee\b|\bi\s+am\s+(?:an?\s+)?(?:engineer|manager|teacher|clerk|executive|accountant|nurse|driver|officer)\b", re.sub(r"self\s*-?\s*employed", " ", low)):
+        return "salaried"
     return None
 
 
 def parse_duration_years(text: str):
     """'2 saal', 'do saal se', '6 mahine', 'dedh saal' -> years as a number; None if no duration is said."""
+    low = text.lower()
+    m = re.search(r"since\s+(?:the\s+year\s+)?(20\d\d|19\d\d)", low)
+    if m:
+        import datetime
+        return max(0.0, float(datetime.date.today().year - int(m.group(1))))
+    half = re.search(r"(\w+)\s+and\s+a\s+half\s+(?:year|years|yr|yrs)", low)
+    if half:
+        base = half.group(1)
+        if base.isdigit():
+            return float(base) + 0.5
+        if base in NUM:
+            return NUM[base] + 0.5
     n = None
     for w in _words(text):
         if re.fullmatch(r"\d+(?:\.\d+)?", w):
@@ -376,6 +411,13 @@ def speak_time(text: str) -> str:
     low = text.lower()
     words = set(re.findall(r"[a-z0-9]+", low))
     out = []
+    if re.search(r"day\s+after\s+tomorrow", low):
+        words.discard("tomorrow")
+        words.add("parso")
+    if re.search(r"\btonight\b", low):
+        words.update({"aaj", "raat"})
+    if re.search(r"\bin\s+(?:an|one|1)\s+hour\b", low):
+        low += " ek ghante"
     if re.search(r"aadh[ie]\s*ghant|half\s*(an\s*)?hour|30\s*min", low):
         out.append("आधे घंटे बाद")
     elif re.search(r"\b(ek|1|one)\s*ghant|\bone\s*hour|\b1\s*hour", low):
@@ -387,7 +429,7 @@ def speak_time(text: str) -> str:
                    (("raat", "night"), "रात")):
         if words & set(ws):
             out.append(hi)
-    m = re.search(r"\b(\d{1,2}|ek|do|teen|char|chaar|paanch|panch|chhe|saat|aath|nau|das|gyarah|barah)\s*baje", low)
+    m = re.search(r"\b(\d{1,2}|ek|do|teen|char|chaar|paanch|panch|chhe|saat|aath|nau|das|gyarah|barah)\s*baje", low) or re.search(r"\b(\d{1,2})(?::\d\d)?\s*(?:am|pm|a\.m\.|p\.m\.|o'?clock)", low)
     if m:
         n = m.group(1)
         out.append(f"{n if n.isdigit() else NUM.get(n, '')} बजे")
@@ -451,6 +493,8 @@ def _drop_trailing_questions(text: str) -> str:
 class Flow:
     def __init__(self, call):
         self._off_hit = False
+        self.lang = "hi"                      # the language the caller speaks: hi / en / gu / mwr
+        self._pending_lang = None
         self.call = call
         self.asked = "full_name"          # the slot the last question was about
         self.v = {}                       # captured values
@@ -485,8 +529,40 @@ class Flow:
         return devanagari_name(n.split()[0]) if n else ""
 
     # ----------------------------------------------------------- main entry
+    SWITCH_CONFIRM = {"hi": "जी, ज़रूर, मैं हिंदी में बात करती हूँ।", "en": "Sure, we can speak in English.", "gu": "જી, ચોક્કસ, હું ગુજરાતીમાં વાત કરીશ.",
+                      "mwr": "जी सा, म्हैं मारवाड़ी में बात करूंली।"}
+
     def handle(self, text: str):
-        """Reply text for this turn, or None if the full assistant should answer."""
+        """Reply for this turn in the caller's language (Hindi, English, Gujarati or Marwari / Rajasthani), or None if the full assistant should answer.
+        The conversation logic below works in Hindi / Hinglish: the caller's dialect words are first turned into Hinglish, the reply is translated at the end."""
+        import i18n
+        import lang as _lang
+        raw = (text or "").strip()
+        wanted = _lang.switch_request(raw)
+        if wanted and wanted != self.lang:                                  # "English mein baat karo", "Gujarati ma vaat karo", "Marwadi mein bolo"
+            self.lang = wanted
+            q = self._question(self.asked) if self.asked in QUESTIONS else ""
+            return (self.SWITCH_CONFIRM[wanted] + " " + i18n.localize(q, self.lang, self._roman_name())).strip()
+        seen = _lang.detect(raw)
+        if seen and seen != self.lang:
+            if _lang.is_strong(raw, seen) or self._pending_lang == seen:    # clear evidence, or the second sentence in a row: the caller changed language, follow
+                self.lang, self._pending_lang = seen, None
+            else:
+                self._pending_lang = seen
+        elif seen == self.lang:
+            self._pending_lang = None
+        inner = _lang.to_hinglish(raw, self.lang) if self.lang in ("gu", "mwr") else raw
+        reply = self._handle(inner)
+        if reply is None or self.lang == "hi":
+            return reply
+        return i18n.localize(reply, self.lang, self._roman_name())
+
+    def _roman_name(self) -> str:
+        n = (self.call.form.get("full_name") or self.v.get("full_name") or "").split()
+        return n[0] if n else ""
+
+    def _handle(self, text: str):
+        """Reply text for this turn (Hindi), or None if the full assistant should answer."""
         c = self.call
         if self.v.get("full_name") is None and c.form.get("full_name"):
             self.v["full_name"] = c.form["full_name"]
@@ -512,6 +588,12 @@ class Flow:
         if is_hold(text):
             return HOLD_LINE
         if is_filler(text) and not is_ack_only(text) and (len(_words(text)) >= 3 or not yes_no(text)):      # "kya hai na": that "na" is not a no
+            return LISTENING_LINE
+
+        # --- a greeting ("hello", "namaste", "ram ram sa", "kem cho"): greet back; it is not a name and not a failure
+        if GREETING_RE.fullmatch(re.sub(r"[^a-z ]", " ", low).strip()) or GREETING_RE.fullmatch(low.strip(" .!?,")):
+            if self.asked == "full_name" and "full_name" not in self.v:
+                return GREET_LINE + " " + self._question("full_name")
             return LISTENING_LINE
 
         # --- phone read-back answer

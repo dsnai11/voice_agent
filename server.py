@@ -74,6 +74,9 @@ import denoise  # noqa: E402
 import listen  # noqa: E402
 import stt  # noqa: E402
 import tickets  # noqa: E402
+import lang as lang_mod  # noqa: E402
+import replybank  # noqa: E402
+import random  # noqa: E402
 import voice  # noqa: E402
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
@@ -99,6 +102,24 @@ def _prewarm_voice():
         for x in todo:
             voice.audio_for(voice.speakable(x), voice.LIVE_FORMAT)
         print("voice cache ready", flush=True)
+        import i18n
+        import re as _re
+        for lg in [x for x in _setting("PREWARM_LANGS", "en,gu,mwr").split(",") if x.strip() in ("en", "gu", "mwr")]:      # the other languages: the fixed call lines, recorded in the background
+            code = lang_mod.TTS_CODE[lg]
+            lines = []
+            import json as _json
+            with open(replybank.BANK_PATH, encoding="utf-8") as _f:
+                answers = {p.strip() for e in _json.load(_f)["entries"] for p in _re.split(r"(?<=[।?!])\s+", e["reply"].strip())}      # answers are recorded when first used
+            for x in flow.static_sentences() + IDLE_LINES + [t for g in ("filler", "not_heard", "closing") for t in clips.GROUPS[g]]:
+                for part in _re.split(r"(?<=[।?!])\s+", x.strip()):
+                    tr = i18n.table(lg).get(part.strip())
+                    if tr and part.strip() not in answers:
+                        lines.append(tr)
+            todo2 = [x for x in dict.fromkeys(lines) if not os.path.exists(voice.cache_path(voice.speakable(x, lg), voice.LIVE_FORMAT, code))]
+            print(f"voice cache {lg}: {len(todo2)} call lines to prepare in the background", flush=True)
+            for x in todo2:
+                voice.audio_for(voice.speakable(x, lg), voice.LIVE_FORMAT, code)
+            print(f"voice cache {lg} ready", flush=True)
         try:
             if voice.ENGINE != "voicestudio":
                 return
@@ -375,8 +396,30 @@ class CallSession:
         enquiry = await asyncio.to_thread(db.save_enquiry, record, COLUMNS)
         return {"enquiry": enquiry, "ticket": info}
 
+    def call_lang(self) -> str:
+        fl = getattr(self.call, "flow", None)
+        return getattr(fl, "lang", "hi") or "hi"
+
     async def play_clip(self, group: str, transcript: bool = True):
-        """Play a pre-recorded phrase instantly. Returns its text, or None if none is recorded (callers then fall back to live)."""
+        """Play a pre-recorded phrase instantly. Returns its text, or None if none is recorded (callers then fall back to live).
+        In English / Gujarati / Marwari the same line is said in that language (from the translation tables, spoken from the voice cache)."""
+        lg = self.call_lang()
+        if lg != "hi" and group in clips.GROUPS and group != "greeting":
+            import i18n
+            texts = clips.GROUPS[group]
+            pick = [t for t in texts if t != self.last_clip.get(group)] or texts
+            hi_text = random.choice(pick)
+            self.last_clip[group] = hi_text
+            text = i18n.localize(hi_text, lg)
+            code = lang_mod.TTS_CODE[lg]
+            sentences = voice.split_sentences(text)
+            audio = [await asyncio.to_thread(voice.audio_for, voice.speakable(x, lg), voice.LIVE_FORMAT, code) for x in sentences]
+            if transcript:
+                self.transcript.append(("agent", text))
+                await self.send(type="transcript", role="agent", text=text)
+            for x, wav in zip(sentences, audio):
+                await self.send(type="agent_audio", text=x, data=base64.b64encode(wav).decode())
+            return text
         clip = clips.pick(group, avoid=self.last_clip.get(group, ""))
         if clip is None:
             return None
@@ -422,7 +465,9 @@ class CallSession:
         self.transcript.append(("agent", text))
         await self.send(type="status", state="speaking")
         t0 = time.time()
-        jobs = [asyncio.create_task(asyncio.to_thread(voice.audio_for, voice.speakable(sentence), voice.LIVE_FORMAT))
+        lg = self.call_lang()
+        code = lang_mod.TTS_CODE[lg] if lg != "hi" else None
+        jobs = [asyncio.create_task(asyncio.to_thread(voice.audio_for, voice.speakable(sentence, lg), voice.LIVE_FORMAT, code))
                 for sentence in voice.split_sentences(text)]
         shown = False
         for sentence, job in zip(voice.split_sentences(text), jobs):
@@ -520,9 +565,11 @@ class CallSession:
         """Nobody has spoken for a while. First time: ask if they are still on the line. Second time: say goodbye politely and end the call."""
         self.idle_prompts += 1
         if self.idle_prompts == 1:
-            await self.speak(IDLE_LINES[0])                                    # the browser answers with playback_done and listening resumes
+            import i18n
+            await self.speak(i18n.localize(IDLE_LINES[0], self.call_lang()))      # the browser answers with playback_done and listening resumes
         else:
-            await self.speak(IDLE_LINES[1], end_turn=False)
+            import i18n
+            await self.speak(i18n.localize(IDLE_LINES[1], self.call_lang()), end_turn=False)
             self.call.finished = True
             await self.finish()
 
@@ -566,7 +613,8 @@ class CallSession:
             if await self.play_clip("system_problem"):
                 await self.send(type="turn_end")
                 return
-            spoken = [voice.LINES["system_problem"]]
+            import i18n
+            spoken = [i18n.localize(voice.LINES["system_problem"], self.call_lang())]
         for reply in spoken[:-1]:
             await self.speak(reply, end_turn=False)
         await self.speak(spoken[-1], end_turn=not self.call.finished)

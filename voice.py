@@ -63,9 +63,9 @@ if ENGINE == "elevenlabs":
     VOICE_ID = "eleven:" + _eleven_resolve_voice()                                  # also keeps this voice's audio cache and clips apart from every other voice
 
 
-def _eleven_synth(sentence: str, fmt: str) -> bytes:
+def _eleven_synth(sentence: str, fmt: str, lang: str = None) -> bytes:
     pcm = fmt == "wav"                                                              # the recorded clips are .wav: ask for raw PCM and wrap it
-    body = {"text": sentence, "model_id": ELEVEN_MODEL, "language_code": VOICE_LANGUAGE,
+    body = {"text": sentence, "model_id": ELEVEN_MODEL, "language_code": lang or VOICE_LANGUAGE,
             "voice_settings": {"stability": 0.5, "similarity_boost": 0.8, "speed": max(0.7, min(1.2, VOICE_SPEED))}}
     r = requests.post(f"{_ELEVEN}/v1/text-to-speech/{VOICE_ID.split(':', 1)[1]}", params={"output_format": "pcm_24000" if pcm else "mp3_44100_128"},
                       json=body, headers=_eleven_headers(), timeout=60)
@@ -117,8 +117,13 @@ def _digit_words(digits: str) -> str:
     return ", ".join(_UNDER_100[int(d)] for d in digits)
 
 
-def speakable(text: str) -> str:
-    """Text for the voice: digits become Hindi words (amounts and dates as numbers; numbers of 9+ digits, such as phone numbers, digit by digit)."""
+def speakable(text: str, lang: str = "hi") -> str:
+    """Text for the voice: digits become words (amounts and dates as numbers; numbers of 9+ digits, such as phone numbers, digit by digit).
+    English keeps ordinary numbers as digits (the English voice reads them) and spells out long ones digit by digit."""
+    if lang == "en":
+        text = text.replace("₹", "").replace("%", " percent")
+        text = re.sub(r"(?<=\d),(?=\d)", "", text)
+        return re.sub(r"\d{9,}", lambda m: " ".join(m.group()), text)
     text = text.translate(_DEVANAGARI_DIGITS).replace("₹", "")
     text = re.sub(r"(?<=\d),(?=\d)", "", text)                              # 4,10,000 -> 410000
     text = re.sub(r"(\d+)\.(\d+)", lambda m: f"{hindi_words(int(m.group(1)))} दशमलव {_digit_words(m.group(2))}", text)
@@ -143,10 +148,10 @@ def split_sentences(text: str):
     return [p.strip() for p in re.split(r"(?<=[.!?।])\s+", text) if p.strip()]
 
 
-def synth(sentence: str, fmt: str = "wav") -> bytes:
+def synth(sentence: str, fmt: str = "wav", lang: str = None) -> bytes:
     if ENGINE == "elevenlabs":
-        return _eleven_synth(sentence, fmt)
-    body = {"model": "tts-1", "voice": VOICE_ID, "input": sentence, "language": VOICE_LANGUAGE, "speed": VOICE_SPEED, "response_format": fmt}
+        return _eleven_synth(sentence, fmt, lang)
+    body = {"model": "tts-1", "voice": VOICE_ID, "input": sentence, "language": lang or VOICE_LANGUAGE, "speed": VOICE_SPEED, "response_format": fmt}
     if VOICE_NUM_STEP:
         body["num_step"] = VOICE_NUM_STEP                      # fewer steps = faster speech, slightly rougher
     last = None
@@ -162,19 +167,19 @@ def synth(sentence: str, fmt: str = "wav") -> bytes:
     raise last
 
 
-def cache_path(sentence: str, fmt: str = "wav") -> str:
-    key = hashlib.sha1(f"{VOICE_ID}|{VOICE_LANGUAGE}|{VOICE_SPEED}|{VOICE_NUM_STEP}|{fmt}|{sentence}".encode()).hexdigest()[:16]
+def cache_path(sentence: str, fmt: str = "wav", lang: str = None) -> str:
+    key = hashlib.sha1(f"{VOICE_ID}|{lang or VOICE_LANGUAGE}|{VOICE_SPEED}|{VOICE_NUM_STEP}|{fmt}|{sentence}".encode()).hexdigest()[:16]
     return os.path.join(CACHE_DIR, key + ".bin")
 
 
-def audio_for(sentence: str, fmt: str = "wav") -> bytes:
+def audio_for(sentence: str, fmt: str = "wav", lang: str = None) -> bytes:
     """Disk cache: a sentence is generated once, then reused if it is spoken again."""
     os.makedirs(CACHE_DIR, exist_ok=True)
-    path = cache_path(sentence, fmt)
+    path = cache_path(sentence, fmt, lang)
     if os.path.exists(path):
         with open(path, "rb") as f:
             return f.read()
-    data = synth(sentence, fmt)
+    data = synth(sentence, fmt, lang)
     with open(path, "wb") as f:
         f.write(data)
     return data

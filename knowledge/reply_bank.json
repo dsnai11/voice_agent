@@ -866,13 +866,20 @@
    "id": "language",
    "topic": "which language can you speak",
    "examples": [
-    "hindi mein baat kar sakte ho",
-    "english mein baat karo",
-    "speak english",
     "aap english bolti ho",
-    "hindi aati hai kya"
+    "aapko kitni bhasha aati hain",
+    "do you speak english",
+    "english mein baat karo",
+    "gujarati aati hai kya",
+    "hindi aati hai kya",
+    "hindi mein baat kar sakte ho",
+    "kaun kaun si language mein baat kar sakte ho",
+    "kya aap gujarati jaante ho",
+    "kya aap marwadi samajhti ho",
+    "speak english",
+    "which languages do you speak"
    ],
-   "reply": "जी बिल्कुल, मैं हिंदी और इंग्लिश दोनों में बात कर सकती हूँ। आप जिसमें आराम से बोलें, उसी में बात करते हैं।",
+   "reply": "जी बिल्कुल, मैं हिंदी, इंग्लिश, गुजराती और मारवाड़ी, चारों भाषाओं में बात कर सकती हूँ। आप जिसमें आराम से बोलें, उसी में बात करते हैं।",
    "note": "If the caller prefers English, switch to plain English."
   },
   {
