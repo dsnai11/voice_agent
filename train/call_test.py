@@ -76,7 +76,10 @@ async def main():
         task.cancel()
     f = got["form"]
     print("\nform     :", {k: v for k, v in f.items() if k != "details"}, f.get("details"))
-    ok = got["audio"] > 20000 and len(got["user"]) >= 2 and f.get("full_name")
+    greeting_ok = bool(got["agent"]) and "रिया" in got["agent"][0] and "एआई" not in got["agent"][0] and "लक्ष्मी इंडिया फाइनेंस" in got["agent"][0]      # the recorded clip, not an improvised line
+    if not greeting_ok:
+        print("PROBLEM: the greeting is not the recorded clip:", got["agent"][:1])
+    ok = greeting_ok and got["audio"] > 20000 and len(got["user"]) >= 2 and f.get("full_name")
     print("\nRESULT   :", "CALL WORKS (greeting spoken, speech heard, form filled, answers spoken)" if ok else "PROBLEM: see the lines above")
     return 0 if ok else 1
 
