@@ -27,7 +27,7 @@ GROUPS = {
     ],
     # played if the real reply is not ready after about a second; neutral, so it fits any reply that follows
     "filler": [
-        "जी, एक क्षण।",
+        "जी, एक मिनट।",
         "ठीक है, एक मिनट।",
         "जी, मैं देख रही हूँ।",
         "जी, बस एक सेकंड।",
@@ -38,7 +38,7 @@ GROUPS = {
         "क्षमा कीजिए, मैं सुन नहीं पाई। कृपया एक बार फिर बोलिए।",
         "जी, आपकी आवाज़ मुझे ठीक से सुनाई नहीं दी। क्या आप दोबारा बोल सकते हैं?",
         "सॉरी, आवाज़ थोड़ी कट रही है। कृपया एक बार फिर से बता दीजिए।",
-        "माफ़ कीजिए, मुझे सुनाई नहीं दिया। प्लीज़ दोबारा बोलिए।",
+        "जी, मुझे आपकी बात ठीक से सुनाई नहीं दी। कृपया एक बार फिर बोलिए।",
     ],
     # played after the agent has finished (Gemini calls finish_call); makes no promises
     "closing": [
@@ -52,7 +52,7 @@ GROUPS = {
 
 
 def _settings() -> dict:
-    return {"voice": voice.VOICE_ID, "language": voice.VOICE_LANGUAGE, "speed": voice.VOICE_SPEED}
+    return {"voice": voice.VOICE_ID, "language": voice.VOICE_LANGUAGE, "speed": voice.VOICE_SPEED, "effect": voice.VOICE_EFFECT, "variation": voice.VOICE_VARIATION}
 
 
 def _manifest() -> dict:
@@ -69,11 +69,15 @@ def _name(group: str, i: int) -> str:
 
 def available(group: str):
     """[(text, wav_bytes)] for the clips of this group that exist and match the current text and voice settings."""
+    chosen = [(t, voice.approved_audio(t)) for t in GROUPS.get(group, [])]
+    chosen = [(t, a) for t, a in chosen if a is not None]
+    if chosen:                                       # the owner approved a recording for this group: only approved ones are played
+        return chosen
     manifest, out = _manifest(), []
     for i, text in enumerate(GROUPS.get(group, [])):
         entry = manifest.get(_name(group, i))
         path = os.path.join(LIB_DIR, _name(group, i) + ".wav")
-        if entry and entry.get("text") == text and all(entry.get(k) == v for k, v in _settings().items()) and os.path.exists(path):
+        if entry and entry.get("text") == text and all((entry.get(k) or "") == (v or "") for k, v in _settings().items()) and os.path.exists(path):
             with open(path, "rb") as f:
                 out.append((text, f.read()))
     return out
@@ -95,7 +99,7 @@ def build(play: bool = False) -> None:
     for n, (group, i, text) in enumerate(todo, 1):
         name, path = _name(group, i), os.path.join(LIB_DIR, _name(group, i) + ".wav")
         entry = manifest.get(name)
-        if entry and entry.get("text") == text and all(entry.get(k) == v for k, v in _settings().items()) and os.path.exists(path):
+        if entry and entry.get("text") == text and all((entry.get(k) or "") == (v or "") for k, v in _settings().items()) and os.path.exists(path):
             print(f"[{n}/{len(todo)}] {name}: already recorded", flush=True)
         else:
             print(f"[{n}/{len(todo)}] {name}: generating ... {text[:50]}", flush=True)

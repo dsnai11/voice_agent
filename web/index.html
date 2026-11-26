@@ -528,7 +528,7 @@ function maybeDone() {
   }
   if (turnEnded && !playing && queue.length === 0 && pending === 0) {
     turnEnded = false;
-    setTimeout(() => ws && ws.readyState === 1 && ws.send(JSON.stringify({ type: "playback_done" })), 500); // let the speaker tail fade
+    setTimeout(() => ws && ws.readyState === 1 && ws.send(JSON.stringify({ type: "playback_done" })), 150); // listen almost at once (the server also keeps what was said just before)
   }
 }
 
@@ -554,7 +554,7 @@ registerProcessor("pcm16", PCM);`;
 
 async function startMic() {
   const raw = new URLSearchParams(location.search).has("raw");      // ?raw=1: no browser voice processing (fixes some laptop mics that come out silent)
-  micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: !raw, noiseSuppression: !raw, autoGainControl: raw, channelCount: 1 } });
+  micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: !raw, noiseSuppression: !raw, autoGainControl: true, channelCount: 1 } });
   await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([workletSrc], { type: "application/javascript" })));
   const src = ctx.createMediaStreamSource(micStream);
   const an = ctx.createAnalyser(); an.fftSize = 1024; src.connect(an);      // live microphone level bar
@@ -567,7 +567,7 @@ async function startMic() {
     $("meterBar").style.width = Math.min(100, level * 600) + "%";
     document.documentElement.style.setProperty("--lvl", Math.min(1, level * 6).toFixed(3));        // the avatar swells with your voice
     quiet = level < 0.0005 ? quiet + 1 : 0;
-    $("meterWarn").style.display = quiet > 180 ? "block" : "none";       // about 3 seconds of dead silence
+    $("meterWarn").style.display = "none";        // the "no sound from the microphone" warning is not shown (owner's choice);       // about 3 seconds of dead silence
     requestAnimationFrame(tick);
   };
   tick();

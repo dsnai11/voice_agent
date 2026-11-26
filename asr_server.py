@@ -19,13 +19,16 @@ import numpy as np
 import soundfile as sf
 import torch
 import uvicorn
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, Form, UploadFile
 from transformers import pipeline
 
 MODEL = os.environ.get("ASR_MODEL_DIR", r"D:/asr_models/Whisper-Hindi2Hinglish-Apex")
 PORT = int(os.environ.get("ASR_PORT", "3950"))
 LANGUAGE = os.environ.get("ASR_LANGUAGE", "hi")             # "hi": the model writes Hinglish in Roman letters; try "en" if English-only callers dominate
 TARGET_PEAK = float(os.environ.get("ASR_TARGET_PEAK", "0.7"))   # quiet microphones are boosted to this peak before listening
+
+DEFAULT_BEAMS = int(os.environ.get("ASR_BEAMS", "1"))                    # 1 = greedy (fastest); 5 = beam search (more accurate)
+DEFAULT_PROMPT = os.environ.get("ASR_PROMPT", "")                         # words the caller is likely to say (names of products, EMI, kisht ...)
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 dtype = torch.float16 if torch.cuda.is_available() else torch.float32
@@ -51,12 +54,21 @@ def health():
 
 
 @app.post("/transcribe")
-async def transcribe(file: UploadFile = File(...)):
+async def transcribe(file: UploadFile = File(...), beams: int = Form(DEFAULT_BEAMS), prompt: str = Form(DEFAULT_PROMPT)):
     t = time.time()
     audio, rate = sf.read(io.BytesIO(await file.read()), dtype="float32")
     if audio.ndim > 1:
         audio = audio.mean(axis=1)
-    out = pipe({"raw": boost(audio), "sampling_rate": rate}, generate_kwargs={"task": "transcribe", "language": LANGUAGE})
+    gk = {"task": "transcribe", "language": LANGUAGE}
+    if beams > 1:
+        gk["num_beams"] = beams
+    if prompt:
+        gk["prompt_ids"] = pipe.tokenizer.get_prompt_ids(prompt, return_tensors="pt").to(device)
+    out = pipe({"raw": boost(audio), "sampling_rate": rate}, generate_kwargs=gk)
+    text = (out.get("text") or "").strip()
+    if prompt and text.startswith(prompt.strip()):
+        text = text[len(prompt.strip()):].strip()
+    out = {"text": text}
     return {"text": (out.get("text") or "").strip(), "seconds": round(time.time() - t, 2)}
 
 

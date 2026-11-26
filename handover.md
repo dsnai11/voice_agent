@@ -183,3 +183,22 @@ Qwen2.5-3B (base and fine-tuned): gibberish Hindi, unusable. Qwen2.5-7B-Instruct
 
 ## 11. Testing safely
 Never test against the real `company_data.xlsx` (copy to a temp folder, set `COMPANY_XLSX`). Use `PORT=8001`. Fake demo customers: Priya Verma 9990002222 (1990-07-21, ends 9012), Rahul Sharma 9990001111 (1985-03-12, ends 5678), Amit Singh 9876543210 (1988-11-02, ends 7341). Checks: `python train/check_examples.py`, `python train/test_replybank.py`, `python llm_eval.py`.
+
+## 0l. Call-recording trends (collection calls)
+- Call recordings and transcripts stay on the company's own storage; none of them is in this repository. Only general patterns were used: telecallers ask for the loan number first, never promise a date change or a waiver, and offer a branch or callback.
+- Reply bank: added emi_not_debited, payment_done_pending, promise_to_pay, closure_request, installments_count, outstanding_balance (no figures are ever stated), and "byaj dar" wordings for interest_rate. `matching`: AI token and informative-word guards in replybank.py; flow.py no longer treats a plain statement as a question about Ria.
+
+## 0m. Current voice setup (approved by the owner, tested by them: "working well")
+- Voice = the owner's own recordings (recorded with `record_my_voice.bat`, page http://localhost:3910). The reference audio, its text and the approved recordings are LOCAL ONLY (`voice_ref/`, `approved/`, not in git). Another PC needs `voice_ref/ria_ref.wav` + `ria_ref.txt` copied to it.
+- `tts_server.py` (port 3901, start with `tts_start.bat`) runs OmniVoice directly with VoiceStudio's Python; VoiceStudio itself does not need to run. It empties the GPU cache after every sentence. `start_all.bat` starts it.
+- `approved/approved.json` + WAV files: sentences the owner listened to and chose; they are played exactly as approved (voice.audio_for, clips.available, split_sentences).
+- voice.py: one synthesis at a time (FIFO); every take is checked (deep pitch, long break, missing words) and remade, never altered afterwards (VOICE_PITCH_TARGET=0, VOICE_MIN_PITCH=208, VOICE_VERIFY=2; a waiting caller gets at most one remake for a severe fault). Form questions are prepared first in the background; it pauses during calls. VOICE_FORMAT=wav (the mp3 conversion once hung and stopped the preparation).
+
+## 0n. Listening and speed
+- Cause of wrong hearing: the server threw away audio until the browser said playback was done, cutting the caller's first words. Now the last 1.6 s is kept and heard from where speech begins; TURN_SILENCE_S 0.8; longer pause allowed inside a mobile number. The browser's automatic gain is on; STT_DEBUG=1 keeps heard audio in calls/ (local only).
+- Test call (computer-voiced caller answering early): all form answers and the mobile number correct. Prepared replies start in about 1 s, new ones in about 7-9 s.
+
+## 0o. Open items
+- New (not prepared) replies are slow: one TTS sentence costs about 5 s on an RTX 5060 laptop; TTS + listener + qwen2.5:7b nearly fill the 8 GB card.
+- The filter for Ria's own voice coming back into the microphone is limited: use headphones.
+- A second batch of call recordings is not transcribed yet.

@@ -1,0 +1,17 @@
+[
+ {"id": "line_01", "tip": "Warm and smiling, like a real phone call.", "text": "जी नमस्ते, मैं रिया बोल रही हूँ, लक्ष्मी इंडिया फाइनेंस लिमिटेड से।"},
+ {"id": "line_02", "tip": "Friendly, slow and clear.", "text": "कृपया अपना पूरा नाम बताइए।"},
+ {"id": "line_03", "tip": "Natural, a little reassuring.", "text": "जी, किस्त आपके बैंक अकाउंट से कटती है। अपना लोन नंबर बता दीजिए, मैं नोट कर लेती हूँ।"},
+ {"id": "line_04", "tip": "Polite, with a small pause after the comma.", "text": "धन्यवाद जी। आप किस शहर में रहते हैं?"},
+ {"id": "line_05", "tip": "Honest and calm. No hurry.", "text": "जी, ब्याज दर आपकी प्रोफ़ाइल पर निर्भर करती है। सही जानकारी हमारी टीम आपको बताएगी।"},
+ {"id": "line_06", "tip": "Apologetic and soft.", "text": "माफ़ कीजिए, मुझे आपकी बात ठीक से सुनाई नहीं दी। कृपया एक बार फिर बोलिए।"},
+ {"id": "line_07", "tip": "Reassuring.", "text": "आप आराम से बताइए। हाँ जी, ये तो बिल्कुल हो जाएगा।"},
+ {"id": "line_08", "tip": "Gentle, like asking a favour.", "text": "अगर आपके खाते में पैसे थे, तो मैं आपका एनएसीएच दोबारा प्रेज़ेंट करवा दूँगी।"},
+ {"id": "line_09", "tip": "Understanding. Do not sound like a reading.", "text": "जी, मैं समझ सकती हूँ। आप चिंता मत कीजिए, हम आपकी पूरी मदद करेंगे।"},
+ {"id": "line_10", "tip": "A question, with a rising end.", "text": "क्या आप बता सकते हैं कि आप लोन क्यों बंद करवाना चाहते हैं?"},
+ {"id": "line_11", "tip": "Brief and polite.", "text": "ठीक है जी। एक मिनट, मैं देखकर बताती हूँ।"},
+ {"id": "line_12", "tip": "Warm closing.", "text": "ठीक है जी, आपकी जानकारी नोट हो गई है और हमारी टीम जल्दी आपसे संपर्क करेगी।"},
+ {"id": "line_13", "tip": "Cheerful goodbye.", "text": "आपके समय के लिए धन्यवाद। लक्ष्मी इंडिया फाइनेंस की तरफ़ से आपका दिन शुभ हो।"},
+ {"id": "line_14", "tip": "Numbers, say them naturally.", "text": "अपना लोन नंबर बोलिए, पहले के पाँच अंक बताना भी काफ़ी है।"},
+ {"id": "line_15", "tip": "Friendly small talk.", "text": "जी, मैं ठीक हूँ। आप बताइए, मैं आपकी क्या मदद कर सकती हूँ?"}
+]

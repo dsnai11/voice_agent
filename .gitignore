@@ -27,3 +27,8 @@ calls/
 
 testdata/
 logs/
+
+# the owner's voice: reference audio, its text and the approved recordings stay on this PC
+voice_ref/
+approved/
+voice_recordings*/

@@ -45,7 +45,9 @@ STT_COMPUTE = _setting("STT_COMPUTE", "int8")                            # GPU: 
 LLM_MODEL = _setting("LLM_MODEL", "gemini-3.5-flash-lite")
 DATA_BACKEND = _setting("DATA_BACKEND", "excel")
 CHUNK_SILENCE_S = float(_setting("CHUNK_SILENCE_S", "0.45"))                # a pause this long ends a chunk of the caller's speech
-TURN_SILENCE_S = float(_setting("TURN_SILENCE_S", "1.0"))                  # quiet this long ends the caller's turn: the replies are spoken
+EARLY_S = 1.6              # microphone audio kept while Ria speaks, so a caller who answers at once does not lose the first words
+PHONE_CHUNK_SILENCE_S = float(_setting("PHONE_CHUNK_SILENCE_S", "1.3"))      # slowly spoken digits stay in one piece of audio
+TURN_SILENCE_S = float(_setting("TURN_SILENCE_S", "0.8"))                  # quiet this long ends the caller's turn: the replies are spoken
 IDLE_PROMPT_S = float(_setting("IDLE_PROMPT_S", "12"))                      # nobody speaks for this long: Ria asks "are you on the line?" (0 = never)
 CONTINUATION_EXTRA_S = float(_setting("CONTINUATION_EXTRA_S", "0.8"))      # the caller trailed off on "aur", "ki", "matlab" ...: wait this much longer before answering
 IDLE_LINES = ["जी, क्या आप लाइन पर हैं? आप आराम से बोलिए, मैं सुन रही हूँ।",
@@ -83,24 +85,70 @@ WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
 STT_HINT = "फ़ोन नंबर नौ आठ सात छह पाँच चार तीन दो एक शून्य। लोन अकाउंट नंबर। ईएमआई। पाँच लाख रुपये। पचास हज़ार।"
 # One row per call in Excel (sheet "enquiries") and one full JSON file per call in calls/
 COLUMNS = ["call_id", "status", "started_at", "duration_s"] + forms.KEYS + ["details_text", "details_json", "needs_check", "confirmed_fields", "customer_ref", "ticket_id", "transcript"]
+CALLS_ON = [0]                    # open call pages: the background voice cache waits while a call is on, so the caller's own sentences get the voice engine first
 SESSIONS = OrderedDict()          # call_id -> CallSession (kept after the call so a late Submit still works)
 
 @contextlib.asynccontextmanager
 async def lifespan(_app):
     if STT_ENGINE == "whisper":                                  # with Gemini listening, Whisper loads only if it is needed
         threading.Thread(target=_load_stt, daemon=True).start()
-    threading.Thread(target=_prewarm_voice, daemon=True).start()
+    _setup_voice_hooks()
+    if _setting("VOICE_PREWARM", "1") == "1":                    # 0 = do not prepare the common sentences in the background
+        threading.Thread(target=_prewarm_voice, daemon=True).start()
     yield
+
+
+def _setup_voice_hooks():
+    voice.KNOWN_PIECES.update(_form_pieces())          # the form's questions are spoken as their own, already prepared pieces
+    voice.call_waiting = lambda: CALLS_ON[0] > 0       # background preparation steps aside for a caller
+
+
+def _form_pieces() -> list:
+    """The form's questions as single sentences (the short acknowledgements are not pieces of their own)."""
+    import flow
+    texts = [t for group in (flow.QUESTIONS, flow.INCOME_Q, flow.TENURE_Q) for qs in group.values() for t in qs]
+    return list(dict.fromkeys(p for t in texts for p in re.split(r"(?<=[.!?।])\s+", t.strip()) if len(p.split()) >= 4))
+
+
+def _form_combos() -> list:
+    """What the form actually says after an answer: a short acknowledgement and the next question, as the pieces it is spoken in."""
+    import flow
+    questions = [qs[0] for qs in flow.QUESTIONS.values() if qs] + [qs[1] for qs in flow.QUESTIONS.values() if len(qs) > 1]
+    return list(dict.fromkeys(pc for q in questions for a in flow.ACKS for pc in voice.split_sentences(f"{a} {q}")))
 
 
 def _prewarm_voice():
     """Generate Ria's common sentences once, in the background, so they play with no wait during calls (new ones are cached as they are spoken)."""
     try:
         import flow
-        todo = [] if voice.ENGINE == "elevenlabs" else [x for x in flow.static_sentences() + IDLE_LINES if not os.path.exists(voice.cache_path(voice.speakable(x), voice.LIVE_FORMAT))]
+        if voice.ENGINE == "voicestudio":                       # start from free GPU memory: a full card makes every sentence take 30 s
+            try:
+                requests.post(VOICESTUDIO_URL.rstrip("/") + "/system/flush-memory", headers=voice.auth_headers(), timeout=60)
+            except requests.RequestException:
+                pass
+        import json as _j0
+        with open(replybank.BANK_PATH, encoding="utf-8") as _f0:               # the reply bank answers first: they are spoken as the pieces voice.split_sentences makes
+            bank_pieces = [pc for e in _j0.load(_f0)["entries"] for pc in voice.split_sentences(e["reply"])]
+        wanted = list(dict.fromkeys(_form_pieces() + _form_combos() + bank_pieces + [x for t in flow.static_sentences() + IDLE_LINES for x in voice.split_sentences(t)]))     # questions every call asks come first
+        todo = [] if voice.ENGINE == "elevenlabs" else [x for x in wanted if not os.path.exists(voice.cache_path(voice.speakable(x), voice.LIVE_FORMAT))
+                                                       and voice.approved_audio(x) is None]
         print(f"voice cache: {len(todo)} common sentences to prepare in the background", flush=True)
-        for x in todo:
-            voice.audio_for(voice.speakable(x), voice.LIVE_FORMAT)
+        done = 0
+        while todo:
+            x = todo.pop(0)
+            while CALLS_ON[0] > 0:
+                time.sleep(1)
+            try:
+                voice.audio_for(voice.speakable(x), voice.LIVE_FORMAT, patient=True)
+            except voice.Busy:                       # a call came in: leave the engine to the caller, do this one later
+                todo.append(x)
+                continue
+            except Exception as e:                   # one sentence failing must not stop the preparation of all the others
+                print(f"voice cache: skipped one sentence ({type(e).__name__})", flush=True)
+                continue
+            done += 1
+            if done % 10 == 0:
+                print(f"voice cache: {done} prepared, {len(todo)} to go", flush=True)
         print("voice cache ready", flush=True)
         import i18n
         import re as _re
@@ -118,6 +166,8 @@ def _prewarm_voice():
             todo2 = [x for x in dict.fromkeys(lines) if not os.path.exists(voice.cache_path(voice.speakable(x, lg), voice.LIVE_FORMAT, code))]
             print(f"voice cache {lg}: {len(todo2)} call lines to prepare in the background", flush=True)
             for x in todo2:
+                while CALLS_ON[0] > 0:
+                    time.sleep(1)
                 voice.audio_for(voice.speakable(x, lg), voice.LIVE_FORMAT, code)
             print(f"voice cache {lg} ready", flush=True)
         try:
@@ -291,6 +341,8 @@ class CallSession:
         self.noise = []                 # room-noise levels measured during the first second
         self.seg = None                 # listen.Segmenter, created once noise is measured
         self.listening = False          # True only while the caller's turn is open
+        self.early = []                 # the last EARLY_S of microphone audio heard while not listening
+        self.early_chunk = False        # the chunk being collected began in that kept audio
         self.tasks = set()
         self.call_id = uuid.uuid4().hex[:12]
         self.started = time.time()
@@ -500,14 +552,45 @@ class CallSession:
         self._reset_turn()
         self.listening = True
         self.spawn(self.send(type="status", state="listening"))
+        kept, self.early = self.early, []
+        if self.seg:
+            start = self._speech_onset(kept)
+            if start is not None:                       # the caller was already speaking: hear those words too
+                for block in kept[start:]:
+                    self.early_chunk = True
+                    self._listen(block)
+
+    def _speech_onset(self, blocks):
+        """Where the caller's words begin in the kept audio: just after the last quiet gap (0.3 s) that has speech behind it; None if nothing was said."""
+        loud = [listen.rms(b) > self.seg.thr for b in blocks]
+        if sum(loud) < 3:
+            return None
+        gap = max(1, int(0.3 / listen.BLOCK_S))
+        last_loud = max(i for i, v in enumerate(loud) if v)
+        quiet = 0
+        for i in range(last_loud, -1, -1):
+            quiet = 0 if loud[i] else quiet + 1
+            if quiet >= gap:
+                return i
+        return 0
+
+    def _is_echo(self, text: str) -> bool:
+        """True if what was heard is only the end of Ria's own last sentence coming back through the microphone."""
+        said = next((t for role, t in reversed(self.transcript) if role == "agent"), "")
+        heard = [w for w in voice._sounds(text).split() if w]
+        tail = voice._sounds(" ".join(said.split()[-8:])).split()
+        return len(heard) >= 5 and " ".join(tail).endswith(" ".join(heard))       # long and word for word her closing words: short answers like "salary loan" are never dropped
 
     # --- chunked listening: each chunk is transcribed at once and gets its own reply
-    async def _hear(self, part: int, audio: np.ndarray) -> str:
+    async def _hear(self, part: int, audio: np.ndarray, early: bool = False) -> str:
         """Transcribe one chunk and show it at once, without waiting for the replies to earlier chunks."""
         t = time.time()
         text = await asyncio.to_thread(transcribe, audio)
         self._stt_times.append(time.time() - t)
         print(f"  chunk {part}: heard in {time.time() - t:.1f}s ({len(audio) / listen.RATE:.1f}s of speech): {text!r}", flush=True)
+        if early and text and self._is_echo(text):
+            print("    (only Ria's own words coming back: ignored)", flush=True)
+            text = ""
         if text and len(audio) / listen.RATE < 0.4 and not _short_answer(text):
             print("    (a very short sound that is not a short answer: treated as noise)", flush=True)
             text = ""
@@ -645,31 +728,43 @@ class CallSession:
                     self.seg = listen.Segmenter(thr, end_silence_s=CHUNK_SILENCE_S, min_speech_s=0.12)     # even a single short word ("haan", "ji") counts
                     print(f"  mic threshold {thr:.4f} (median noise {float(np.median(self.noise)):.4f}, peak {max(self.noise):.4f})", flush=True)
             elif self.listening:
-                self.peak = max(getattr(self, "peak", 0.0), listen.rms(block))
-                if int(time.time()) != getattr(self, "_peak_t", 0) and int(time.time()) % 3 == 0:
-                    self._peak_t = int(time.time())
-                    print(f"  mic level peak {self.peak:.4f} vs threshold {self.seg.thr:.4f}", flush=True)
-                    self.peak = 0.0
-                self.silent_s = 0.0 if listen.rms(block) > self.seg.thr else self.silent_s + listen.BLOCK_S
-                if self.seg.speaking or self.turn_has_audio or listen.rms(block) > self.seg.thr:
-                    self.idle_s = 0.0
-                else:
-                    self.idle_s += listen.BLOCK_S
-                    if IDLE_PROMPT_S and self.idle_s >= IDLE_PROMPT_S and not self.turn_ending and not self.complete:
-                        self.idle_s, self.listening = 0.0, False
-                        self.spawn(self.idle_prompt())
-                chunk = self.seg.feed(block)
-                if chunk is not None:                             # a chunk of speech just ended: transcribe it right away
-                    self.turn_has_audio = True
-                    self.turn_audio_s += len(chunk) / listen.RATE
-                    self.chunk_idx += 1
-                    self.turn_parts += 1
-                    stt_task = asyncio.ensure_future(self._hear(self.turn_parts, chunk))
-                    self.chunk_q.put_nowait((self.chunk_idx, chunk, stt_task))
-                    self._ensure_worker()
-                if self.turn_has_audio and not self.seg.speaking and self.silent_s >= self._turn_silence() and not self.turn_ending:
-                    self.turn_ending, self.listening = True, False   # quiet long enough: the turn is over
-                    self.spawn(self.end_turn())
+                self._listen(block)
+            else:                                                 # Ria is speaking or thinking: keep the latest audio
+                self.early.append(block)
+                del self.early[:-int(EARLY_S / listen.BLOCK_S)]
+
+    def _listen(self, block: np.ndarray):
+        """One block of microphone audio while the caller's turn is open."""
+        if not self.listening:
+            return
+        self.peak = max(getattr(self, "peak", 0.0), listen.rms(block))
+        if int(time.time()) != getattr(self, "_peak_t", 0) and int(time.time()) % 3 == 0:
+            self._peak_t = int(time.time())
+            print(f"  mic level peak {self.peak:.4f} vs threshold {self.seg.thr:.4f}", flush=True)
+            self.peak = 0.0
+        self.silent_s = 0.0 if listen.rms(block) > self.seg.thr else self.silent_s + listen.BLOCK_S
+        if self.seg.speaking or self.turn_has_audio or listen.rms(block) > self.seg.thr:
+            self.idle_s = 0.0
+        else:
+            self.idle_s += listen.BLOCK_S
+            if IDLE_PROMPT_S and self.idle_s >= IDLE_PROMPT_S and not self.turn_ending and not self.complete:
+                self.idle_s, self.listening = 0.0, False
+                self.spawn(self.idle_prompt())
+        asked_phone = self.call.flow is not None and self.call.flow.asked == "phone"
+        self.seg.end_blocks = int((PHONE_CHUNK_SILENCE_S if asked_phone else CHUNK_SILENCE_S) / listen.BLOCK_S)
+        chunk = self.seg.feed(block)
+        if chunk is not None:                             # a chunk of speech just ended: transcribe it right away
+            self.turn_has_audio = True
+            self.turn_audio_s += len(chunk) / listen.RATE
+            self.chunk_idx += 1
+            self.turn_parts += 1
+            early, self.early_chunk = self.early_chunk, False
+            stt_task = asyncio.ensure_future(self._hear(self.turn_parts, chunk, early))
+            self.chunk_q.put_nowait((self.chunk_idx, chunk, stt_task))
+            self._ensure_worker()
+        if self.turn_has_audio and not self.seg.speaking and self.silent_s >= self._turn_silence() and not self.turn_ending:
+            self.turn_ending, self.listening = True, False   # quiet long enough: the turn is over
+            self.spawn(self.end_turn())
 
     def close(self):
         for t in list(self.tasks):
@@ -680,6 +775,7 @@ class CallSession:
 async def ws_call(ws: WebSocket):
     await ws.accept()
     sess = CallSession(ws, asyncio.get_running_loop())
+    CALLS_ON[0] += 1
     try:
         async with asyncio.timeout(MAX_CALL_S or None):
             while True:
@@ -699,6 +795,7 @@ async def ws_call(ws: WebSocket):
     except TimeoutError:
         await sess.send(type="error", message="Call time limit reached.")
     finally:
+        CALLS_ON[0] = max(0, CALLS_ON[0] - 1)
         if not sess.submitted and sess.has_content():      # call ended early: keep everything said so far
             try:
                 result = await sess.persist("partial")

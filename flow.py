@@ -673,6 +673,8 @@ class Flow:
         raw_bank = (replybank.match_hybrid(text) if question_here and not (parse_amount(text) and "?" not in text) else replybank.match(text))
         self._off_hit = any(m["id"] == "off_topic" and m["score"] >= 0.7 for m in raw_bank)
         bank = [m for m in raw_bank if m["score"] >= (0.45 if m["id"] in ("more_to_discuss", "small_talk") else 0.5 if m["entry"].get("require") else 0.6) and m["id"] not in SKIP_IDS]
+        # real calls: a plain statement ("main sirvi se baat kar raha hoon", "thik hai sir") must not be taken as a question about Ria herself
+        bank = [m for m in bank if question_here or m["id"] not in ("her_name", "what_is_ai", "what_doing", "her_experience", "small_talk", "are_you_robot", "who_are_you") or m["score"] >= 0.85]
         if is_ack_only(text):
             bank = []
         _ident = {"her_name", "what_is_ai", "what_doing", "who_are_you", "her_experience", "small_talk", "are_you_robot"}      # one "about me" answer per turn is enough

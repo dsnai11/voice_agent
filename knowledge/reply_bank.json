@@ -467,7 +467,10 @@
     "saal ka byaj kitna hai",
     "sabse kam interest kitna",
     "sood kitni lagegi",
-    "zyada byaj to nahi lagega na"
+    "zyada byaj to nahi lagega na",
+    "byaj dar kya hai",
+    "aapka byaj dar kya hai",
+    "byaj dar kitni hai"
    ],
    "reply": "जी, इंटरेस्ट आपकी प्रोफ़ाइल पर निर्भर करता है, इसलिए मैं अभी सही नंबर नहीं बता सकती। टीम आपको एग्ज़ैक्ट रेट बता देगी, क्या कॉलबैक लगा दूँ?",
    "note": "Never quote or guess a rate."
@@ -3250,6 +3253,244 @@
     "emi",
     "interest"
    ]
+  },
+  {
+   "id": "emi_not_debited",
+   "topic": "EMI was not debited or bounced although the money was in the account (real collection calls)",
+   "examples": [
+    "meri emi nahi kati",
+    "kist account se nahi kati",
+    "emi bounce ho gayi",
+    "emi kyon nahi kati",
+    "paise account mein the phir bhi emi bounce ho gayi",
+    "emi nahi kati sms aaya hai",
+    "kisht nahi kati bank se",
+    "emi cut nahi hui abhi tak",
+    "account mein balance tha phir bhi emi nahi kati"
+   ],
+   "require": [
+    "nahi kat",
+    "nahin kat",
+    "nahi kati",
+    "bounce",
+    "cut nahi",
+    "kat nahi",
+    "kyon nahi kat"
+   ],
+   "require2": [
+    "emi",
+    "kist",
+    "kisht",
+    "ईएमआई"
+   ],
+   "forbid": [
+    "charge",
+    "penalty",
+    "fine",
+    "late fee",
+    "maaf",
+    "jurmana"
+   ],
+   "reply": "जी, ईएमआई आपके बैंक अकाउंट से कटती है। अगर ड्यू डेट पर अकाउंट में पूरा बैलेंस था, तो टीम चेक करके बताएगी कि आगे क्या करना है। आपका लोन नंबर बता दीजिए, मैं नोट कर लेती हूँ।",
+   "note": "Ask for the loan number first. Do not state any charge or penalty amount and do not promise a re-presentation. Tell the customer to keep balance for the next date. Offer a callback with request_callback if they want."
+  },
+  {
+   "id": "payment_done_pending",
+   "topic": "customer says he already paid but still gets a reminder or message",
+   "examples": [
+    "maine payment kar diya phir bhi message aa raha hai",
+    "paisa jama kar diya phir bhi sms aa raha hai",
+    "emi bhar di phir bhi notification aa raha hai",
+    "payment ho gaya phir bhi call aa raha hai",
+    "maine pay kar diya abhi bhi reminder aa raha hai",
+    "jama kar diya fir bhi update nahi hua"
+   ],
+   "require": [
+    "kar diya",
+    "jama kar",
+    "bhar di",
+    "bhar diya",
+    "payment ho gaya",
+    "pay kar diya",
+    "kar chuka",
+    "kar chuki"
+   ],
+   "require2": [
+    "phir bhi",
+    "fir bhi",
+    "abhi bhi",
+    "message",
+    "sms",
+    "notification",
+    "reminder",
+    "update",
+    "call aa"
+   ],
+   "reply": "जी, पेमेंट अपडेट होने में कभी-कभी थोड़ा समय लग जाता है। आप अपना लोन नंबर और पेमेंट की तारीख़ बता दीजिए, टीम चेक करके कन्फ़र्म कर देगी।",
+   "note": "Ask for the loan number and the payment date. Do not give a time frame for the update. Offer a callback."
+  },
+  {
+   "id": "promise_to_pay",
+   "topic": "customer promises to pay on a day (kal, parson, salary ke baad)",
+   "examples": [
+    "kal bhar dunga",
+    "parson tak jama kar dunga",
+    "salary aate hi bhar dunga",
+    "5 tarikh tak bhar dunga",
+    "shaam tak payment kar dunga",
+    "kal subah emi bhar dunga",
+    "hafte mein jama kar dunga",
+    "kal tak payment ho jayega"
+   ],
+   "require": [
+    "bhar dunga",
+    "bhar dungi",
+    "bharunga",
+    "bharungi",
+    "jama kar dunga",
+    "jama kar dungi",
+    "kar dunga",
+    "kar dungi",
+    "de dunga",
+    "de dungi",
+    "payment ho jayega"
+   ],
+   "require2": [
+    "kal",
+    "parson",
+    "tarikh",
+    "date",
+    "salary",
+    "hafte",
+    "subah",
+    "shaam",
+    "tak"
+   ],
+   "reply": "ठीक है जी, बहुत अच्छा। आप उस दिन तक पेमेंट कर दीजिए, मैं नोट कर लेती हूँ। और पेमेंट वाले दिन से पहले अकाउंट में बैलेंस रख लीजिए।",
+   "note": "Confirm the day back to the customer and note it. No pressure, no threats. Thank them."
+  },
+  {
+   "id": "closure_request",
+   "topic": "customer wants to close the loan early (retention: ask the reason first)",
+   "examples": [
+    "loan close karwana hai",
+    "loan band karwana hai",
+    "mujhe loan band karna hai",
+    "loan foreclose karna hai",
+    "loan khatam karwana hai",
+    "main apna loan close karna chahta hoon",
+    "loan jaldi band karna hai"
+   ],
+   "require": [
+    "close",
+    "band",
+    "khatam",
+    "foreclos",
+    "बंद"
+   ],
+   "require2": [
+    "loan",
+    "लोन"
+   ],
+   "forbid": [
+    "noc",
+    "certificate",
+    "statement",
+    "kitna dena",
+    "papers",
+    "kagaz",
+    "dues",
+    "emi",
+    "settlement",
+    "maaf",
+    "waive",
+    "kam paise"
+   ],
+   "reply": "जी, ठीक है। क्या मैं जान सकती हूँ कि आप लोन क्यों बंद करवाना चाहते हैं? अगर कोई दिक्कत है तो टीम उसमें मदद कर सकती है। क्लोज़र का प्रोसेस और चार्जेस की सही जानकारी टीम या ब्रांच बताएगी।",
+   "note": "Ask the reason politely, listen. Do not state any foreclosure percent or amount (unverified). If they insist, say the branch or the team will take the closure request, and offer a callback."
+  },
+  {
+   "id": "installments_count",
+   "topic": "customer asks how many EMIs are paid or left",
+   "examples": [
+    "kitni kisht baaki hai",
+    "kitni kisht jama hui",
+    "kitni emi bachi hai",
+    "kitni kishten hui hain",
+    "kitni emi ho gayi",
+    "kitne emi baaki hain"
+   ],
+   "require": [
+    "kisht",
+    "kishten",
+    "emi",
+    "किस्त"
+   ],
+   "require2": [
+    "kitni",
+    "kitne",
+    "baaki",
+    "bachi",
+    "bacha",
+    "hui",
+    "jama",
+    "कितनी",
+    "कितने",
+    "बाकी"
+   ],
+   "forbid": [
+    "kati",
+    "bounce",
+    "penalty",
+    "charge",
+    "close",
+    "band",
+    "foreclos"
+   ],
+   "reply": "जी, कितनी किस्तें जमा हुईं और कितनी बाकी हैं, यह लोन अकाउंट देखकर ही बता पाऊँगी। क्या आप अपना लोन नंबर बता सकते हैं? या टीम आपको वापस कॉल करके सही जानकारी दे देगी।",
+   "note": "Ask for the loan number first. Never state a number of EMIs; the team confirms from the account."
+  },
+  {
+   "id": "outstanding_balance",
+   "topic": "customer asks how much of the loan is still pending",
+   "examples": [
+    "mera loan kitna baaki hai",
+    "kitna paisa baaki hai",
+    "loan mein kitna rah gaya",
+    "kitna dena bacha hai",
+    "outstanding kitna hai"
+   ],
+   "require": [
+    "baaki",
+    "bacha",
+    "rah gaya",
+    "pending",
+    "outstanding",
+    "बाकी",
+    "बचा"
+   ],
+   "require2": [
+    "kitna",
+    "kitne",
+    "amount",
+    "paisa",
+    "पैसा",
+    "कितना"
+   ],
+   "forbid": [
+    "kisht",
+    "kishten",
+    "emi",
+    "close",
+    "band",
+    "foreclos",
+    "noc",
+    "statement",
+    "penalty",
+    "charge"
+   ],
+   "reply": "जी, आपके लोन में कितनी रकम बाकी है, यह अकाउंट देखकर ही बताई जा सकती है। कृपया अपना लोन नंबर बताइए, या ब्रांच में पूछ लीजिए। टीम भी आपको सही रकम बता देगी।",
+   "note": "Ask for the loan number first. Never state an amount; the team confirms. No foreclosure or interest figures."
   }
  ]
 }

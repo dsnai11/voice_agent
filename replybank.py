@@ -14,6 +14,7 @@ from collections import Counter
 BANK_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "knowledge", "reply_bank.json")
 MIN_SCORE = 0.45         # below this a chunk is treated as "no approved reply fits"
 MAX_REPLIES = 3
+MIN_HIT_IDF = 3.0        # the shared words must include one at least this informative (idf); "kya hai" alone is not a question about AI
 
 _DEV = {}
 for _chars, _lat in (("कख", "k"), ("गघ", "g"), ("चछ", "#"), ("जझ", "j"), ("टठ", "t"), ("डढ", "d"), ("ण", "n"), ("तथ", "t"),
@@ -24,6 +25,8 @@ for _chars, _lat in (("कख", "k"), ("गघ", "g"), ("चछ", "#"), ("जझ
         _DEV[_c] = _lat
 _NUKTA_R = ("ड़", "ढ़")                                   # ड़ and ढ़ written as base letter + nukta sound like r
 _NEGATIONS = {"nh", "nhi", "nhin", "mt", "n", "nt"}          # skeletons of nahi, nahin, mat, na, not: they flip a meaning, so they weigh more
+_AI_WORDS = {"ai", "एआई", "एआइ", "आई"}                      # "AI" is all vowels, so its skeleton is empty and it used to vanish: "ai kya hai" became "kya hai" and matched everything
+_FILLER_WORDS = "thik theek sir sahab saheb saahab madam hello hanji"       # only words whose skeleton is not shared with a real topic word (ji = mujhe, achha = chahiye)
 _SPLIT = re.compile(r"[?।!.;\n]+|,| (?:aur|lekin|par|magar|and|but|और|लेकिन|पर|मगर) ")
 
 
@@ -67,10 +70,13 @@ _SYNONYMS = {
 _SYN = {w: canon for canon, words in _SYNONYMS.items() for w in words.split()}
 
 
+_FILLER = {_skeleton(w) for w in _FILLER_WORDS.split()}                  # acknowledgements, forms of address and glue words: they never make a topic
+
+
 def tokens(text: str) -> list:
     words = re.findall(r"[\wऀ-ॿ]+", text.lower())
     words = [_SYN.get(w, w) for w in words]
-    out = ["NUM" if w.isdigit() else _skeleton(w) for w in words]       # any number counts as one word
+    out = ["NUM" if w.isdigit() else ("AIW" if w in _AI_WORDS else _skeleton(w)) for w in words]       # any number counts as one word
     return [t for t in out if t]
 
 
@@ -122,6 +128,10 @@ class _Bank:
             if entry.get("require2") and not _has_any(low, entry["require2"]):      # a second word that must also be there ("mera" + "score")
                 continue
             if entry.get("forbid") and _has_any(low, entry["forbid"]):
+                continue
+            hit = ct & ex
+            hit = hit - _FILLER
+            if not hit or max(self.idf.get(t, self.default_idf) for t in hit) < MIN_HIT_IDF:   # only "kya", "hai", "haan", "main" in common: not a real match
                 continue
             s = self.score(ct, ex)
             if entry.get("require"):                                              # the question names the exact topic: prefer it over a generic entry

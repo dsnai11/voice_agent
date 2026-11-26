@@ -8,6 +8,18 @@ import replybank
 
 CASES = [   # (what the caller says, ids that must all be found; [] means nothing should match)
     ("aap kaun bol rahe ho", ["who_are_you"]),
+    ("mera loan ki kitni kisht baaki hai", ["installments_count"]),
+    ("kitni kishten jama ho chuki hain", ["installments_count"]),
+    ("mere loan mein kitna paisa baaki hai", ["outstanding_balance"]),
+    ("loan mein abhi kitna rah gaya", ["outstanding_balance"]),
+    ("meri emi nahi kati bank se", ["emi_not_debited"]),                       # real collection calls
+    ("account mein paise the phir bhi kist bounce ho gayi", ["emi_not_debited"]),
+    ("maine payment kar diya phir bhi sms aa raha hai", ["payment_done_pending"]),
+    ("kal tak jama kar dunga", ["promise_to_pay"]),
+    ("salary aate hi emi bhar dunga", ["promise_to_pay"]),
+    ("mujhe apna loan close karwana hai", ["closure_request"]),
+    ("Ok ma'am thik hai", []),                                       # real call: an acknowledgement, never a question about AI
+    ("kya tum ai ho", ["what_is_ai"]),
     ("मेरा नंबर आपको कहाँ से मिला", ["number_source"]),
     ("main abhi kaam pe hoon baad me phone karo", ["busy_callback"]),
     ("मुझे लोन नहीं चाहिए", ["not_interested"]),
