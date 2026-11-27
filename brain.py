@@ -12,7 +12,7 @@ import re
 import time
 from datetime import datetime
 
-from openai import OpenAI, RateLimitError
+from openai import APITimeoutError, InternalServerError, OpenAI, RateLimitError
 
 import clips
 import crm
@@ -42,7 +42,7 @@ Rules:
 - Write every reply fresh, in natural spoken Hinglish, in response to what the caller just said. Vary your wording; never sound scripted. Be warm, polite and brief.
 - Use the caller's name once it is known. Acknowledge what they said before asking for what you need.
 - Messages in round brackets, such as (कॉल शुरू हुई है), are call events, not caller speech. Respond to them naturally.
-- Tell the caller you are an AI assistant if they ask.""" + KNOWLEDGE
+- Never say the words "AI" or "artificial intelligence". Say who you are (Ria from Laxmi India Finance) only once, and again only if the caller asks about you. If they sincerely ask whether you are a person or a machine, say honestly that you are the company's automated assistant (ऑटोमेटेड असिस्टेंट); never claim to be a human.""" + KNOWLEDGE
 
 SUPPORT_PROMPT = _BASE_RULES + """
 - Before sharing ANY order or account detail, ask for the registered phone number and then the PIN, and call verify_customer. Ask one thing at a time.
@@ -67,10 +67,10 @@ ENQUIRY_PROMPT = _BASE_RULES + f"""
 - This is an enquiry call. The caller can see an on-screen form that you fill in while talking. It has fixed fields and a flexible list of extra details that you add depending on what the caller needs.
 - Fixed fields:
 {_FIELD_HELP}
-- Greeting: say you are Ria from Laxmi India Finance and will note down their details, then ask for the caller's name (do not call yourself an AI assistant in the greeting; if the caller asks whether you are a robot or an AI, answer honestly that you are).
+- Greeting: say you are Ria from Laxmi India Finance and will note down their details, then ask for the caller's name (if the caller asks whether you are a person or a machine, say honestly that you are an automated assistant, without using the word AI).
 - Be conversational, never a rigid form or script. Take whatever the caller says in any order, even several things in one message (a name, a question and a number together): record it at once and ask only for what is still missing, usually one thing at a time. If they ask a question, answer it first as far as the rules allow, then continue. If they make several requests in one message, handle them all.
 - By the end of a normal call you should know their name, what they need, a mobile number, and whether and when they agree to be called back; gather what is missing naturally, and ask the follow-up questions that this particular need calls for (usually a few) as details.
-- Only these steps are strict, for legal or security reasons: the AI disclosure in your greeting, identity verification before any account details, and consent before anyone calls them back.
+- Only these steps are strict, for legal or security reasons: honesty about being automated when asked, identity verification before any account details, and consent before anyone calls them back.
 - Extra details go in the "details" list of update_form as short English snake_case labels with short English values (write names and places in English letters). Useful labels by need: new loan - loan_type, loan_amount, city, monthly_income, employment_type; existing loan or EMI - loan_account_number, issue, due_date; complaint - complaint_description, date_of_issue; anything else - whatever helps the team understand and act. Amounts are plain rupee numbers (five lakh = 500000).
 - EVERYTHING you write into the form must be in English using Roman letters only, never Devanagari. Transliterate names and places (सुनीता वर्मा becomes Sunita Verma, जयपुर becomes Jaipur) and translate descriptions and reasons into clear English. Only your spoken replies to the caller are in Hindi.
 - Record values completely, the way the caller said them: for example a date as "10th of last month", never just "10". Never record a guess.
@@ -168,7 +168,11 @@ def _api_key() -> str:
     return key
 
 
-_llm = OpenAI(base_url=LLM_BASE_URL, api_key=_api_key(), timeout=40)
+# A caller must not wait for a slow model: one try, a short limit, short answers. (With 40 s and 2 silent retries one answer once took 114 s.)
+LLM_TIMEOUT_S = float(os.environ.get("LLM_TIMEOUT_S", "14"))
+LLM_MAX_TOKENS = int(os.environ.get("LLM_MAX_TOKENS", "110"))
+SLOW_ANSWER = "जी, इसकी सही जानकारी हमारी टीम आपको देगी। और कुछ पूछना चाहें तो बताइए।"
+_llm = OpenAI(base_url=LLM_BASE_URL, api_key=_api_key(), timeout=LLM_TIMEOUT_S, max_retries=0)
 
 
 class Call:
@@ -442,9 +446,13 @@ class Call:
         """One Gemini call. On the free tier's per-minute limit, wait and retry instead of failing the call."""
         for attempt in range(3):
             try:
-                return _llm.chat.completions.create(
-                    model=LLM_MODEL, messages=self.history, tools=self.tools, max_tokens=500, temperature=0.4
-                ).choices[0].message
+                choice = _llm.chat.completions.create(
+                    model=LLM_MODEL, messages=self.history, tools=self.tools, max_tokens=LLM_MAX_TOKENS, temperature=0.4
+                ).choices[0]
+                if choice.finish_reason == "length" and choice.message.content:      # cut at the limit: keep whole sentences only
+                    whole = re.match(r"(?s)^(.*[।?!.])", choice.message.content)
+                    choice.message.content = whole.group(1) if whole else SLOW_ANSWER
+                return choice.message
             except RateLimitError:
                 if attempt == 2:
                     raise
@@ -507,7 +515,12 @@ class Call:
             if self.mode == "enquiry":   # tell the model what the form already holds (history may have been trimmed)
                 state = json.dumps(self.form, ensure_ascii=False)
                 self.history[0]["content"] = f"{self.system_prompt}\n\nForm so far: {state}\nStill missing: {forms.missing(self.form)}\n{self._state_hint()}"
-            msg = self._complete()
+            try:
+                msg = self._complete()
+            except (APITimeoutError, InternalServerError) as e:      # too slow: answer honestly at once instead of leaving silence
+                print(f"   [llm] no answer in time ({type(e).__name__}): short honest answer", flush=True)
+                self.history.append({"role": "assistant", "content": SLOW_ANSWER})
+                return SLOW_ANSWER
             entry = {"role": "assistant", "content": msg.content or ""}
             if msg.tool_calls:
                 entry["tool_calls"] = [tc.model_dump() for tc in msg.tool_calls]

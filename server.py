@@ -12,6 +12,7 @@ Browser <-> server over one WebSocket (/ws/call):
 import asyncio
 import base64
 import contextlib
+import copy
 import json
 import os
 import re
@@ -45,6 +46,11 @@ STT_COMPUTE = _setting("STT_COMPUTE", "int8")                            # GPU: 
 LLM_MODEL = _setting("LLM_MODEL", "gemini-3.5-flash-lite")
 DATA_BACKEND = _setting("DATA_BACKEND", "excel")
 CHUNK_SILENCE_S = float(_setting("CHUNK_SILENCE_S", "0.45"))                # a pause this long ends a chunk of the caller's speech
+BARGE_ON = _setting("BARGE", "1") == "1"                  # 0 = the customer cannot interrupt Ria
+THINKING_KEEP_S = 15.0                                     # how much talk is kept while a reply is being prepared
+HEARD_S, HEARD_SHARE = 2.0, 0.35                           # a reply counts as not heard only if cut in its first 2 s AND its first 35 %
+BARGE_RMS = float(_setting("BARGE_RMS", "0.04"))        # interruption (collection calls): the caller must be at least this loud ...
+BARGE_SPEECH_S, BARGE_WINDOW_S = 0.45, 0.7                 # ... for 0.45 s within 0.7 s, so a cough or a short "haan" does not stop Ria
 EARLY_S = 1.6              # microphone audio kept while Ria speaks, so a caller who answers at once does not lose the first words
 PHONE_CHUNK_SILENCE_S = float(_setting("PHONE_CHUNK_SILENCE_S", "1.3"))      # slowly spoken digits stay in one piece of audio
 TURN_SILENCE_S = float(_setting("TURN_SILENCE_S", "0.8"))                  # quiet this long ends the caller's turn: the replies are spoken
@@ -58,7 +64,8 @@ CONTINUATION_WORDS = {"aur", "ki", "ke", "ka", "ko", "mein", "se", "toh", "to", 
 PHONE_SILENCE_S = float(_setting("PHONE_SILENCE_S", "3.5"))              # while a phone number is half said, wait this long before answering
 HOST = _setting("HOST", "127.0.0.1")                                     # keep local; see notes before exposing
 PORT = int(_setting("PORT", "8000"))
-FILLER_DELAY_S = float(_setting("FILLER_DELAY_S", "1.0"))                # play a waiting phrase if the reply takes longer than this
+FILLER_DELAY_S = float(_setting("FILLER_DELAY_S", "3.0"))                # play a waiting phrase if writing the reply takes longer than this ...
+FILLER_PER_CALL = int(_setting("FILLER_PER_CALL", "1"))                  # ... and at most this many times in one call ("ji, ek minute" everywhere sounded wrong)
 MAX_CALL_S = int(_setting("MAX_CALL_S", "0"))                       # 0 = no limit on how long a call can last
 STT_DEBUG = _setting("STT_DEBUG", "0") == "1"                              # 1 = save every chunk of caller audio + what was heard (for tuning the listener)
 STT_DEBUG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "calls", "stt_debug")
@@ -78,6 +85,7 @@ import stt  # noqa: E402
 import tickets  # noqa: E402
 import lang as lang_mod  # noqa: E402
 import replybank  # noqa: E402
+import collection  # noqa: E402
 import random  # noqa: E402
 import voice  # noqa: E402
 
@@ -129,7 +137,7 @@ def _prewarm_voice():
         import json as _j0
         with open(replybank.BANK_PATH, encoding="utf-8") as _f0:               # the reply bank answers first: they are spoken as the pieces voice.split_sentences makes
             bank_pieces = [pc for e in _j0.load(_f0)["entries"] for pc in voice.split_sentences(e["reply"])]
-        wanted = list(dict.fromkeys(_form_pieces() + _form_combos() + bank_pieces + [x for t in flow.static_sentences() + IDLE_LINES for x in voice.split_sentences(t)]))     # questions every call asks come first
+        wanted = list(dict.fromkeys(voice.split_sentences(brain.SLOW_ANSWER) + [pc for t in collection.all_lines() for pc in voice.split_sentences(t)] + _form_pieces() + _form_combos() + bank_pieces + [x for t in flow.static_sentences() + IDLE_LINES for x in voice.split_sentences(t)]))     # questions every call asks come first
         todo = [] if voice.ENGINE == "elevenlabs" else [x for x in wanted if not os.path.exists(voice.cache_path(voice.speakable(x), voice.LIVE_FORMAT))
                                                        and voice.approved_audio(x) is None]
         print(f"voice cache: {len(todo)} common sentences to prepare in the background", flush=True)
@@ -245,6 +253,17 @@ def index():
     return FileResponse(os.path.join(WEB_DIR, "index.html"))
 
 
+@app.get("/crm")
+def crm_page():
+    return FileResponse(os.path.join(WEB_DIR, "crm.html"))
+
+
+@app.get("/api/demo-crm")
+def api_demo_crm():
+    """The DEMO collection CRM: made-up customers and what happened on their calls."""
+    return {"customers": collection.customers(), "results": collection.results()}
+
+
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#6d5efc"/><text x="16" y="22" font-size="18" text-anchor="middle" fill="#fff" font-family="Arial" font-weight="700">R</text></svg>'
@@ -343,6 +362,16 @@ class CallSession:
         self.listening = False          # True only while the caller's turn is open
         self.early = []                 # the last EARLY_S of microphone audio heard while not listening
         self.early_chunk = False        # the chunk being collected began in that kept audio
+        self.await_playback = False     # Ria's reply has been sent and the browser is still playing it
+        self.barge = []                 # which of the latest blocks were loud while it plays
+        self.cut = False                # the customer interrupted while the rest of the reply was still being made
+        self.before_reply = None        # (state of the conversation before the reply now being prepared, what the customer had said)
+        self.held_back = 0              # replies held back in a row because the customer was still talking
+        self.spoke_at = 0.0             # when Ria started to speak the current reply
+        self.interrupted_at = 0.0       # when the customer last interrupted
+        self.reply_seconds = 0.0        # how long the reply being spoken lasts
+        self.fillers = 0                # waiting phrases played in this call
+        self.reply_held = False         # the last reply was held back: this turn is still going on
         self.tasks = set()
         self.call_id = uuid.uuid4().hex[:12]
         self.started = time.time()
@@ -399,7 +428,17 @@ class CallSession:
         self.spawn(self.send(type="call", id=self.call_id))
         self.spawn(self.greet())
 
+    def use_collection(self, customer_id: str) -> bool:
+        """Turn this call into a DEMO collection call to a demo-CRM customer."""
+        person = collection.customer(customer_id)
+        if person is None:
+            return False
+        self.call = collection.CollectionCall(person)
+        return True
+
     def has_content(self) -> bool:
+        if getattr(self.call, "collection", False):
+            return any(r == "caller" for r, _ in self.transcript)
         form = self.call.form
         return any(form.get(k) for k in forms.KEYS) or bool(form.get("details")) or any(r == "caller" for r, _ in self.transcript)
 
@@ -421,6 +460,10 @@ class CallSession:
     async def persist(self, status: str) -> dict:
         """Save everything about this call: the lead or query, one Excel row, and a full JSON file.
         Rows are updated, not duplicated, by call_id."""
+        if getattr(self.call, "collection", False):          # demo calls are kept apart from the company's leads and queries
+            await asyncio.to_thread(collection.save_result, self.call, list(self.transcript), self.call_id, self.started)
+            self.ticket = {"kind": "collection", "id": None}
+            return {"enquiry": None, "ticket": self.ticket}
         record = self.build_record(status)
         details = self.call.form.get("details") or {}
         caller = {}
@@ -485,8 +528,12 @@ class CallSession:
         return text
 
     async def _filler_after(self, delay: float):
-        """If the real reply is still not ready after `delay` seconds, play a short waiting phrase."""
+        """If the real reply is still not ready after `delay` seconds, play a short waiting phrase (rarely: FILLER_PER_CALL)."""
         await asyncio.sleep(delay)
+        if self.fillers >= FILLER_PER_CALL:
+            return
+        self.fillers += 1
+        print("  waiting phrase played", flush=True)
         await self.play_clip("filler", transcript=False)
 
     async def finish(self):
@@ -500,9 +547,13 @@ class CallSession:
     async def greet(self):
         recorded = None
         await self.send(type="status", state="speaking")
+        if getattr(self.call, "collection", False):          # a collection call opens by asking for the customer by name
+            await self.speak(self.call.opening())
+            return
         recorded = await self.play_clip("greeting")
         if recorded:
             self.call.start_with(recorded)
+            self._allow_interrupt()
             await self.send(type="turn_end")
             return
         await self.send(type="status", state="thinking")
@@ -515,6 +566,8 @@ class CallSession:
     async def speak(self, text: str, end_turn: bool = True):
         """Send the reply one sentence at a time. Every sentence starts generating at once (sentences heard before come straight
         from the cache), and the text appears on screen together with the first audio, so what is written is what is being said."""
+        self.cut = False
+        self.reply_seconds = 0.0
         self.transcript.append(("agent", text))
         await self.send(type="status", state="speaking")
         t0 = time.time()
@@ -531,22 +584,105 @@ class CallSession:
                 for j in jobs:
                     j.cancel()
                 break
+            if self.cut:                                             # interrupted while this piece was being made
+                break
             if not shown:
+                if self.before_reply and self._customer_talked(self.early):
+                    for j in jobs:
+                        j.cancel()
+                    if self.transcript and self.transcript[-1] == ("agent", text):
+                        self.transcript.pop()
+                    self._listen_instead()
+                    return
                 shown = True
+                self.spoke_at = time.time()
+                if end_turn:
+                    self._allow_interrupt()
                 await self.send(type="transcript", role="agent", text=text)
                 print(f"  voice: first audio ready {time.time() - t0:.1f}s after the reply was written", flush=True)
                 if self._turn_t0 and "first_audio_s" not in self.cur_metrics:
                     self.cur_metrics["first_audio_s"] = round(time.time() - self._turn_t0, 2)      # from the end of the caller's turn to the first sound
+            self.reply_seconds += max(0.0, (len(wav) - 44) / 48000)          # 24 kHz, 16-bit sound
             await self.send(type="agent_audio", text=sentence, data=base64.b64encode(wav).decode())
+        if self.cut:                                                 # the customer interrupted: nothing more of this reply is sent
+            for j in jobs:
+                j.cancel()
+            return
         if not shown:
             await self.send(type="transcript", role="agent", text=text)
         if end_turn:
             await self.send(type="turn_end")
 
+    # --- the customer comes first (all calls)
+    def _snapshot(self):
+        """The conversation as it is before a reply is written, so a reply that is never spoken can be taken back."""
+        try:
+            call = self.call
+            if getattr(call, "collection", False):
+                return {k: copy.deepcopy(getattr(call, k)) for k in ("stage", "finished", "outcome", "notes", "unclear")}
+            state = {k: copy.deepcopy(getattr(call, k)) for k in ("form", "flags", "confirmed", "history", "finished", "turn_no", "_turn_open")}
+            if call.flow is not None:
+                state["flow"] = {k: copy.deepcopy(v) for k, v in call.flow.__dict__.items() if k != "call"}
+            return state
+        except Exception as e:                       # never let this stop a call: the reply is then simply spoken
+            print("  could not keep the state before the reply:", type(e).__name__, flush=True)
+            return None
+
+    def _restore(self, state: dict) -> None:
+        for key, value in state.items():
+            if key == "flow":
+                self.call.flow.__dict__.update(value)
+            else:
+                setattr(self.call, key, value)
+
+    def _loud(self, block) -> bool:
+        return listen.rms(block) > max(BARGE_RMS, 3 * self.seg.thr)
+
+    def _customer_talked(self, blocks) -> bool:
+        """True if the kept audio holds real speech (0.45 s of it within 0.7 s), not a cough or a short "haan"."""
+        if not (BARGE_ON and self.seg):
+            return False
+        width, need = int(BARGE_WINDOW_S / listen.BLOCK_S), int(BARGE_SPEECH_S / listen.BLOCK_S)
+        loud = [self._loud(b) for b in blocks]
+        return any(sum(loud[i:i + width]) >= need for i in range(len(loud)))
+
+    def _allow_interrupt(self) -> None:
+        """Ria has started to speak a reply: from now on the customer may interrupt it (never the goodbye)."""
+        if BARGE_ON and not self.call.finished and not self.complete:
+            self.barge, self.early, self.await_playback = [], [], True
+
+    def _listen_instead(self, audio=None) -> None:
+        """The customer was still talking when the reply was ready: say nothing, hear all of it, and answer it together with what came before."""
+        state, said = self.before_reply
+        self.before_reply = None
+        self.held_back += 1
+        self.reply_held = True
+        self._restore(state)
+        kept, self.early = (list(self.early) if audio is None else audio), []
+        print("  the customer is still talking: reply held back, listening first", flush=True)
+        if self.seg:
+            self.seg.reset()
+        self._reset_turn()
+        self.turn_texts, self.turn_has_audio, self.listening = list(said), True, True
+        self.spawn(self.send(type="status", state="listening"))
+        first = next((i for i, b in enumerate(kept) if self._loud(b)), 0)
+        for block in kept[max(0, first - 12):]:
+            self.early_chunk = True
+            self._listen(block)
+
+    def browser_playback_done(self):
+        """The browser's "I have finished playing". Ignored if the customer's turn is already open (they started to speak and Ria stopped, or
+        the message is late): opening the turn again would throw away the words already heard."""
+        if self.listening or time.time() - self.interrupted_at < 1.5:
+            return
+        self.playback_done()
+
     def playback_done(self):
         """The browser finished playing the agent's turn: open the caller's turn."""
         if self.complete:
             return
+        self.await_playback = False
+        self.before_reply, self.held_back = None, 0
         if self.seg:
             self.seg.reset()
         self._reset_turn()
@@ -671,6 +807,9 @@ class CallSession:
             self.idle_prompts = 0                                                              # everything said in this turn, merged, answered once
             self.call.more_coming = False
             t = time.time()
+            state = self._snapshot() if self.held_back < 2 else None       # held back at most twice in a row, then she speaks
+            self.early, self.reply_held = [], False
+            self.before_reply = (state, texts) if state is not None else None
             try:
                 replies = [await asyncio.to_thread(self.call.reply, " ".join(texts))]
             except Exception as e:
@@ -686,6 +825,7 @@ class CallSession:
                 self.playback_done()
                 return
             if await self.play_clip("not_heard"):
+                self._allow_interrupt()
                 await self.send(type="turn_end")
                 return
             try:
@@ -702,6 +842,9 @@ class CallSession:
         for reply in spoken[:-1]:
             await self.speak(reply, end_turn=False)
         await self.speak(spoken[-1], end_turn=not self.call.finished)
+        if self.reply_held:                       # nothing was said: this turn is still going on
+            self.reply_held = False
+            return
         if self.cur_metrics.get("heard"):
             self.cur_metrics["total_s"] = round(time.time() - self._turn_t0, 2)
             self.turn_metrics.append({"turn": len(self.turn_metrics) + 1, **self.cur_metrics})
@@ -731,7 +874,30 @@ class CallSession:
                 self._listen(block)
             else:                                                 # Ria is speaking or thinking: keep the latest audio
                 self.early.append(block)
-                del self.early[:-int(EARLY_S / listen.BLOCK_S)]
+                keep = EARLY_S
+                if self.seg and not self.await_playback and self.before_reply and any(self._loud(b) for b in self.early):
+                    keep = THINKING_KEEP_S                        # the customer is talking while Ria prepares: lose none of it
+                del self.early[:-int(keep / listen.BLOCK_S)]
+                if self.await_playback:
+                    self._watch_interruption(block)
+
+    def _watch_interruption(self, block: np.ndarray):
+        """The customer starts talking while Ria is speaking, so she stops and listens (their first words are kept)."""
+        self.barge.append(self._loud(block))
+        del self.barge[:-int(BARGE_WINDOW_S / listen.BLOCK_S)]
+        if sum(self.barge) >= int(BARGE_SPEECH_S / listen.BLOCK_S):
+            self.barge_audio = list(self.early)
+            self.await_playback, self.barge, self.cut = False, [], True
+            print("  the customer interrupted: Ria stops and listens", flush=True)
+            self.interrupted_at = time.time()
+            self.spawn(self.send(type="interrupt"))
+            if self.before_reply and self.held_back < 2 and time.time() - self.spoke_at < min(HEARD_S, HEARD_SHARE * max(self.reply_seconds, 2.0)):
+                said_by_ria = next((i for i in range(len(self.transcript) - 1, -1, -1) if self.transcript[i][0] == "agent"), None)
+                if said_by_ria is not None:
+                    self.transcript.pop(said_by_ria)       # barely started: take the reply back and answer everything the customer says
+                self._listen_instead(self.barge_audio)
+            else:
+                self.playback_done()
 
     def _listen(self, block: np.ndarray):
         """One block of microphone audio while the caller's turn is open."""
@@ -785,11 +951,15 @@ async def ws_call(ws: WebSocket):
                 if msg.get("bytes"):
                     sess.on_audio(msg["bytes"])
                 elif msg.get("text"):
-                    kind = json.loads(msg["text"]).get("type")
+                    data = json.loads(msg["text"])
+                    kind = data.get("type")
                     if kind == "start":
+                        if data.get("customer") and not sess.use_collection(str(data["customer"])):
+                            await sess.send(type="error", message="This customer is not in the demo CRM.")
+                            break
                         sess.start()
                     elif kind == "playback_done":
-                        sess.playback_done()
+                        sess.browser_playback_done()
                     elif kind == "end":
                         break
     except TimeoutError:

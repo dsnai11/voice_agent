@@ -8,6 +8,10 @@ import replybank
 
 CASES = [   # (what the caller says, ids that must all be found; [] means nothing should match)
     ("aap kaun bol rahe ho", ["who_are_you"]),
+    ("mujhe loan ka settlement karna hai", ["settlement_request"]),
+    ("meri kisht ki raseed nahi mili", ["emi_receipt"]),
+    ("mere ghar company ka notice aaya hai", ["legal_notice"]),
+    ("सेटलमेंट हो सकता है क्या", ["settlement_request"]),
     ("mera loan ki kitni kisht baaki hai", ["installments_count"]),
     ("kitni kishten jama ho chuki hain", ["installments_count"]),
     ("mere loan mein kitna paisa baaki hai", ["outstanding_balance"]),

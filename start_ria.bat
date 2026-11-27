@@ -13,6 +13,7 @@ if not defined VOICE_MIN_PITCH set VOICE_MIN_PITCH=208
 if not defined VOICE_PREWARM set VOICE_PREWARM=1
 set PREWARM_LANGS=
 if not defined VOICE_VERIFY set VOICE_VERIFY=2
+if not defined VOICE_PACE set VOICE_PACE=6.4
 set VOICESTUDIO_URL=http://localhost:3901
 set PORT=8000
 set DENOISE=none

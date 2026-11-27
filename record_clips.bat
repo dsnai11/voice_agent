@@ -9,5 +9,6 @@ if not defined VOICE_NUM_STEP set VOICE_NUM_STEP=24
 if not defined VOICE_PITCH_TARGET set VOICE_PITCH_TARGET=0
 if not defined VOICE_MIN_PITCH set VOICE_MIN_PITCH=208
 if not defined VOICE_VERIFY set VOICE_VERIFY=2
+if not defined VOICE_PACE set VOICE_PACE=6.4
 set PYTHONIOENCODING=utf-8
 ".venv\Scripts\python.exe" clips.py

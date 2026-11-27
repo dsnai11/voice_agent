@@ -1,0 +1,6 @@
+[
+ {"id": "ram", "name": "राम", "name_en": "Ram", "loan_no": "DEMO-LN-1001", "product": "Personal Loan", "emi": 4500, "due": "पाँच नवंबर", "due_en": "05 Nov 2026"},
+ {"id": "shyam", "name": "श्याम", "name_en": "Shyam", "loan_no": "DEMO-LN-1002", "product": "Vehicle Loan", "emi": 7200, "due": "सात नवंबर", "due_en": "07 Nov 2026"},
+ {"id": "mohan", "name": "मोहन", "name_en": "Mohan", "loan_no": "DEMO-LN-1003", "product": "Business Loan", "emi": 12500, "due": "दस नवंबर", "due_en": "10 Nov 2026"},
+ {"id": "sonu", "name": "सोनू", "name_en": "Sonu", "loan_no": "DEMO-LN-1004", "product": "Two Wheeler Loan", "emi": 2800, "due": "पंद्रह नवंबर", "due_en": "15 Nov 2026"}
+]

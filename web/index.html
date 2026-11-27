@@ -500,12 +500,19 @@ function addMsg(role, text, part) {
 }
 
 // ---------------- playback ----------------
+let speakingNow = null, cutCount = 0;
+function stopSpeaking() {      // the customer interrupted: stop Ria at once and drop what was still waiting to be played
+  cutCount++; queue = []; turnEnded = false;
+  if (speakingNow) { speakingNow.onended = null; try { speakingNow.stop(); } catch (e) {} speakingNow = null; }
+  playing = false; render();
+}
 async function enqueue(b64) {
-  pending++;
+  pending++; const before = cutCount;
   try {
     const bin = atob(b64), bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    queue.push(await ctx.decodeAudioData(bytes.buffer));
+    const audio = await ctx.decodeAudioData(bytes.buffer);
+    if (before === cutCount) queue.push(audio);
   } finally { pending--; }
   pump();
 }
@@ -516,7 +523,7 @@ function pump() {
   playing = true; render();
   const src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination);
   src.onended = () => { playing = false; pump(); };
-  src.start();
+  speakingNow = src; src.start();
 }
 function maybeDone() {
   if (callComplete && !playing && queue.length === 0 && pending === 0 && ws) {      // the goodbye has been spoken: hang up like a phone call
@@ -592,7 +599,8 @@ async function startCall() {
   }
   ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws/call");
   ws.onopen = () => {
-    ws.send(JSON.stringify({ type: "start" }));
+    const demoCustomer = new URLSearchParams(location.search).get("customer");      // set by the demo CRM page (/crm)
+    ws.send(JSON.stringify(demoCustomer ? { type: "start", customer: demoCustomer } : { type: "start" }));
     $("callBtn").textContent = "End call"; $("callBtn").classList.add("live"); $("callBtn").disabled = false;
     t0 = Date.now(); timerId = setInterval(() => {
       const s = Math.floor((Date.now() - t0) / 1000);
@@ -614,6 +622,7 @@ async function startCall() {
       if (savedResolve) savedResolve();
     }
     else if (m.type === "agent_audio") enqueue(m.data);
+    else if (m.type === "interrupt") stopSpeaking();
     else if (m.type === "turn_end") { turnEnded = true; maybeDone(); }
     else if (m.type === "error") banner(m.message);
   };
@@ -638,6 +647,18 @@ function endCall() {
   $("callBtn").textContent = "Call"; $("callBtn").classList.remove("live"); $("callBtn").disabled = false; render();
 }
 $("callBtn").onclick = () => (ws ? hangUp() : startCall());
+(() => {      // demo collection call: say whom Ria is calling, and give a way back to the CRM
+  const id = new URLSearchParams(location.search).get("customer");
+  if (!id) return;
+  fetch("/api/demo-crm").then((r) => r.json()).then((d) => {
+    const c = d.customers.find((x) => x.id === id); if (!c) return;
+    const note = document.createElement("div");
+    note.style.cssText = "margin-top:10px;padding:10px 14px;border-radius:12px;border:1px solid var(--line);font-size:.9rem";
+    note.textContent = `DEMO collection call to ${c.name_en} (EMI Rs ${c.emi}, due ${c.due_en}). Press Call, then answer as ${c.name_en}. `;
+    const back = document.createElement("a"); back.href = "/crm"; back.textContent = "Back to CRM"; back.style.color = "var(--brand)";
+    note.appendChild(back); $("callBtn").parentNode.insertBefore(note, $("callBtn"));
+  });
+})();
 
 buildForm(); render();
 fetch("/api/health").then((r) => r.json()).then((h) => {

@@ -202,3 +202,13 @@ Never test against the real `company_data.xlsx` (copy to a temp folder, set `COM
 - New (not prepared) replies are slow: one TTS sentence costs about 5 s on an RTX 5060 laptop; TTS + listener + qwen2.5:7b nearly fill the 8 GB card.
 - The filter for Ria's own voice coming back into the microphone is limited: use headphones.
 - A second batch of call recordings is not transcribed yet.
+
+## 0p. Collection demo, customer-first calls and pace (latest)
+- Demo collection CRM: http://localhost:8000/crm (4 made-up customers, `demo_crm/customers.json`; results stay local). `collection.py` is a fixed-script EMI call: identity first, nothing about the loan to anyone else, no threats or waivers; wording on unpaid EMI is authoritative (owner's choice; compliance should approve it before real use). Test: `python train/test_collection.py`. Browser demo only, no real phone calls.
+- Customer comes first (sales and collection): speaking over Ria stops her; talk during her preparation or her first moments takes that reply back and both parts are answered together (BARGE=0 turns it off). Use headphones; speaker echo is untested.
+- Ria does not say "AI"; asked sincerely, she says she is the company's automated assistant and never claims to be human. She introduces herself once.
+- Waiting phrase at most once per call, only after 3 s. LLM: 14 s limit, no retries, short answers, honest fallback line.
+- Steady pace: `VOICE_PACE=6.4` syllables/s; `tts_server.py` takes a `duration`, and a take that is too fast or slow is made again (audio is never stretched). Saved sentences outside the range are re-prepared in the background after a start.
+- Replies added: settlement_request, emi_receipt, legal_notice.
+- Open: firmer-sounding delivery for collection (owner to decide; would need a firm-tone reference recording); some model-written answers are still slow; call-recording training for sales and collection is in progress, with every new reply to be approved by the owner first.
+

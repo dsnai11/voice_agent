@@ -22,7 +22,7 @@ CHECKS = [("Mujhe kuchh aur bhi poochhana hai aapse.", "बताइए", ["न�
           ("India ka AUM kitna hai?", "एक हज़ार आठ सौ तैंतालीस", ["चौबीस"]),
           ("Aur employees kitne hain lakshymi India ke andar?", "दो हज़ार एक सौ", ["एयूएम"]),
           ("Kitne customers hain aapke?", "चालीस हज़ार", []),
-          ("Aap vah kitna time ho gaya lakshyap India mein kaam karte hue?", "एआई असिस्टेंट", ["नोट हो गई"]),
+          ("Aap vah kitna time ho gaya lakshyap India mein kaam karte hue?", "ऑटोमेटेड असिस्टेंट", ["नोट हो गई"]),
           ("Aaj kaun sa saal chal raha hai?", str(datetime.date.today().year) and "दो हज़ार", []),
           ("Aaj kya date hai?", "आज", []),
           ("Aapki kitni branch hain?", "दो सौ ग्यारह", ["दो सौ नौ"])]

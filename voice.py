@@ -122,9 +122,22 @@ def _digit_words(digits: str) -> str:
     return ", ".join(_UNDER_100[int(d)] for d in digits)
 
 
+_SAYS_AI = [(re.compile(r"(एआई|ए आई|\bA\.?I\.?(?![A-Za-z]))\s*(असिस्टेंट|सहायक|assistant)", re.I), "ऑटोमेटेड असिस्टेंट"),
+            (re.compile(r"आर्टिफ़?िशियल इंटेलिजेंस|artificial intelligence", re.I), "कंप्यूटर प्रोग्राम"),
+            (re.compile(r"एआई|ए आई(?![\u0900-\u097F])|\bA\.?I\.?(?![A-Za-z])"), "ऑटोमेटेड सिस्टम")]
+
+
+def no_ai_word(text: str) -> str:
+    """Ria does not say "AI" (owner's choice). She still never claims to be human: she calls herself an automated assistant."""
+    for pattern, word in _SAYS_AI:
+        text = pattern.sub(word, text)
+    return text
+
+
 def speakable(text: str, lang: str = "hi") -> str:
     """Text for the voice: digits become words (amounts and dates as numbers; numbers of 9+ digits, such as phone numbers, digit by digit).
     English keeps ordinary numbers as digits (the English voice reads them) and spells out long ones digit by digit."""
+    text = no_ai_word(text)
     if lang == "en":
         text = text.replace("₹", "").replace("%", " percent")
         text = re.sub(r"(?<=\d),(?=\d)", "", text)
@@ -142,6 +155,7 @@ _URDU_FIX = {"کیا": "क्या", "ہاں": "हाँ", "نہیں": "न�
 
 def sanitize_reply(text: str) -> str:
     """Fix the occasional stray Urdu-script word in a Hindi reply (a rare model slip) so the voice never gets it."""
+    text = no_ai_word(text)
     text = re.sub(r"</?\s*[a-zA-Z][^>]{0,30}>", "", text)                        # stray tags such as </thought>
     for bad, good in _URDU_FIX.items():
         text = text.replace(bad, good)
@@ -211,7 +225,7 @@ def _split_new(text: str):
     return out
 
 
-def _synth_raw(sentence: str, fmt: str = "wav", lang: str = None) -> bytes:
+def _synth_raw(sentence: str, fmt: str = "wav", lang: str = None, seconds: float = 0.0) -> bytes:
     if ENGINE == "elevenlabs":
         return _eleven_synth(sentence, fmt, lang)
     if VOICE_EFFECT or VOICE_VARIATION:
@@ -219,6 +233,8 @@ def _synth_raw(sentence: str, fmt: str = "wav", lang: str = None) -> bytes:
     body = {"model": "tts-1", "voice": VOICE_ID, "input": sentence, "language": lang or VOICE_LANGUAGE, "speed": VOICE_SPEED, "response_format": fmt}
     if VOICE_NUM_STEP:
         body["num_step"] = VOICE_NUM_STEP                      # fewer steps = faster speech, slightly rougher
+    if seconds:
+        body["duration"] = seconds                             # steady pace: how long this sentence should be
     last = None
     for attempt in range(3):                                   # a busy / briefly out-of-memory voice server often works on the second try
         try:
@@ -377,6 +393,49 @@ VOICE_MIN_PITCH = float(os.environ.get("VOICE_MIN_PITCH", "0"))
 _MAX_BREAK_S = 0.7
 
 
+# ------------------------------------------------------------------------------------------------
+# One steady speaking pace. The engine guesses how long a sentence should be from its letters: short phrases were dragged out (3 syllables a
+# second) and others rushed (up to 10). VOICE_PACE (syllables a second, 0 = off) gives the engine the length from the syllable count, and a
+# take that still comes out too fast or too slow is MADE AGAIN with a corrected length. The sound itself is never stretched or changed.
+VOICE_PACE = float(os.environ.get("VOICE_PACE", "0"))
+
+
+def _beats(text: str) -> int:
+    """About how many syllables the spoken sentence has."""
+    t, n = speakable(text), 0
+    for i, ch in enumerate(t):
+        o = ord(ch)
+        if 0x904 <= o <= 0x914:
+            n += 1
+        elif (0x915 <= o <= 0x939 or 0x958 <= o <= 0x95F) and not (i + 1 < len(t) and t[i + 1] == "्"):
+            n += 1
+    return n + sum(len(re.findall(r"[aeiouy]+", w.lower())) for w in re.findall(r"[A-Za-z]+", t))
+
+
+def _planned_seconds(text: str) -> float:
+    pauses = len(re.findall(r"[,;]", text)) * 0.18 + max(0, len(re.findall(r"[।?!.]", text)) - 1) * 0.32
+    return round(_beats(text) / VOICE_PACE + pauses + 0.45, 2)
+
+
+def _speaking_rate(text: str, x, sr: int) -> float:
+    """Syllables a second while speaking (pauses of 0.18 s or more are not counted); 0 if it cannot be told."""
+    import numpy as np
+    fr = int(sr * 0.02)
+    e = np.sqrt((x[:len(x) // fr * fr].reshape(-1, fr) ** 2).mean(1))
+    on = e > 0.06 * e.max()
+    where = np.where(on)[0]
+    if len(where) < 3:
+        return 0.0
+    speech = gap = 0
+    for loud in on[where[0]:where[-1] + 1]:
+        if loud:
+            speech += 1 + (gap if gap < 9 else 0)
+            gap = 0
+        else:
+            gap += 1
+    return _beats(text) / max(speech * 0.02, 0.2)
+
+
 def _problems(text: str, wav: bytes, lang: str):
     """[(weight, reason)] of what is wrong with a take: deep voice, a long break inside it, first or last word not heard, words missing."""
     import difflib
@@ -399,6 +458,12 @@ def _problems(text: str, wav: bytes, lang: str):
             longest = max(longest, run)
         if longest * 0.02 > _MAX_BREAK_S:
             found.append((2 + longest * 0.02, f"break of {longest * 0.02:.1f} s"))
+        if VOICE_PACE and lang in (None, "hi") and _beats(text) >= 4:
+            rate = _speaking_rate(text, x, sr)
+            allowed = 0.25 if _beats(text) < 10 else 0.12          # very short phrases naturally vary more
+            off = abs(rate / VOICE_PACE - 1) if rate else 0.0
+            if off > allowed:
+                found.append((1 + 12 * (off - allowed), f"speed {rate:.1f} instead of {VOICE_PACE:.1f}"))
         if lang not in (None, "hi"):
             return found
         y = np.interp(np.linspace(0, len(x), int(len(x) * 16000 / sr), endpoint=False), np.arange(len(x)), x).astype("float32")
@@ -440,10 +505,20 @@ def _synth_now(sentence: str, fmt: str, lang: str, patient: bool = False):
     if ENGINE == "elevenlabs" or not (VOICE_PITCH_TARGET or VOICE_VERIFY):
         return _synth_raw(sentence, fmt, lang), True
     best, best_score, best_found = None, 1e9, []
-    for attempt in range(1 + max(0, VOICE_VERIFY if patient else min(1, VOICE_VERIFY))):
+    paced = VOICE_PACE > 0 and lang in (None, "hi")
+    seconds = _planned_seconds(sentence) if paced else 0.0
+    extra_takes = max(VOICE_VERIFY, 3) if paced else VOICE_VERIFY
+    for attempt in range(1 + max(0, extra_takes if patient else min(1, VOICE_VERIFY))):
         if patient and attempt and call_waiting():
             raise Busy()
-        wav = _synth_raw(sentence, "wav", lang)
+        wav = _synth_raw(sentence, "wav", lang, seconds)
+        if paced:                                                   # spoke too fast -> give the next take more time, too slow -> less
+            import io
+            import soundfile as sf
+            x, sr = sf.read(io.BytesIO(wav), dtype="float32")
+            rate = _speaking_rate(sentence, x if x.ndim == 1 else x[:, 0], sr)
+            if rate:
+                seconds = round(max(0.8, seconds * min(1.25, max(0.8, rate / VOICE_PACE))), 2)
         if VOICE_PITCH_TARGET:
             wav = _pitch_fix(wav, "wav")
         found = _problems(sentence, wav, lang) if VOICE_VERIFY else []
@@ -467,7 +542,7 @@ def synth(sentence: str, fmt: str = "wav", lang: str = None) -> bytes:
 
 
 def cache_path(sentence: str, fmt: str = "wav", lang: str = None) -> str:
-    key = hashlib.sha1(f"{VOICE_ID}|{VOICE_EFFECT}|{VOICE_VARIATION}|{lang or VOICE_LANGUAGE}|{VOICE_SPEED}|{VOICE_NUM_STEP}|{VOICE_PITCH_TARGET}|{VOICE_MIN_PITCH}|checked-2|{fmt}|{sentence}".encode()).hexdigest()[:16]
+    key = hashlib.sha1(f"{VOICE_ID}|{VOICE_EFFECT}|{VOICE_VARIATION}|{lang or VOICE_LANGUAGE}|{VOICE_SPEED}|{VOICE_NUM_STEP}|{VOICE_PITCH_TARGET}|{VOICE_MIN_PITCH}|checked-2|{VOICE_PACE}|{fmt}|{sentence}".encode()).hexdigest()[:16]
     return os.path.join(CACHE_DIR, key + ".bin")
 
 

@@ -37,10 +37,11 @@ print("ready", flush=True)
 app = FastAPI()
 
 
-def synth(text: str, speed: float, steps: int, language: str = "hi") -> np.ndarray:
+def synth(text: str, speed: float, steps: int, language: str = "hi", duration: float = 0.0) -> np.ndarray:
+    extra = {"duration": duration} if duration > 0 else {}
     with LOCK:
         try:
-            audios = model.generate(text=text, language=language or "hi", voice_clone_prompt=PROMPT, num_step=steps, speed=speed)
+            audios = model.generate(text=text, language=language or "hi", voice_clone_prompt=PROMPT, num_step=steps, speed=speed, **extra)
             a = audios[0] if isinstance(audios, (list, tuple)) else audios
             return a.detach().to("cpu").float().numpy().squeeze()
         finally:
@@ -80,8 +81,8 @@ def flush():
 
 
 @app.post("/generate")
-def generate(text: str = Form(...), language: str = Form("hi"), speed: str = Form("1.0"), num_step: str = Form("0")):
-    x = synth(text, float(speed or 1.0), int(num_step or 0) or DEFAULT_STEPS, language)
+def generate(text: str = Form(...), language: str = Form("hi"), speed: str = Form("1.0"), num_step: str = Form("0"), duration: str = Form("0")):
+    x = synth(text, float(speed or 1.0), int(num_step or 0) or DEFAULT_STEPS, language, float(duration or 0))
     body, _ = encode(x, "wav")
     return Response(body, media_type="audio/wav")
 
@@ -92,13 +93,14 @@ class Speech(BaseModel):
     speed: float = 1.0
     response_format: str = "wav"
     num_step: int = 0
+    duration: float = 0.0
     model: str = ""
     voice: str = ""
 
 
 @app.post("/v1/audio/speech")
 def speech(r: Speech):
-    x = synth(r.input, r.speed or 1.0, r.num_step or DEFAULT_STEPS, r.language)
+    x = synth(r.input, r.speed or 1.0, r.num_step or DEFAULT_STEPS, r.language, r.duration)
     body, mime = encode(x, r.response_format)
     return Response(body, media_type=mime)
 

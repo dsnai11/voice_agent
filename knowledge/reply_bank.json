@@ -147,7 +147,7 @@
     "are you a bot",
     "human se baat karao"
    ],
-   "reply": "जी हाँ, मैं एआई असिस्टेंट हूँ। अगर आप चाहें तो टीम के किसी सदस्य से कॉलबैक करवा देती हूँ, बताइए किस टाइम पर?",
+   "reply": "जी हाँ, मैं ऑटोमेटेड असिस्टेंट हूँ। अगर आप चाहें तो टीम के किसी सदस्य से कॉलबैक करवा देती हूँ, बताइए किस टाइम पर?",
    "note": "If they want a human, collect a time and call request_callback."
   },
   {
@@ -2181,7 +2181,7 @@
   {
    "id": "what_is_ai",
    "topic": "What is AI / are you artificial intelligence / how do you work",
-   "reply": "जी, एआई यानी आर्टिफिशियल इंटेलिजेंस, एक कंप्यूटर प्रोग्राम जो बात समझकर जवाब दे सकता है। मैं लक्ष्मी इंडिया फाइनेंस की एआई असिस्टेंट हूँ और लोन की जानकारी में आपकी मदद करती हूँ।",
+   "reply": "जी, ये एक कंप्यूटर प्रोग्राम होता है, जो बात समझकर जवाब दे सकता है। मैं लक्ष्मी इंडिया फाइनेंस की ऑटोमेटेड असिस्टेंट हूँ और लोन की जानकारी में आपकी मदद करती हूँ।",
    "examples": [
     "ai assistant kya hota hai",
     "ai assistant matlab kya",
@@ -3104,7 +3104,7 @@
   {
    "id": "her_experience",
    "topic": "How long have you worked here / are you experienced / how old are you at the company",
-   "reply": "जी, मैं एक एआई असिस्टेंट हूँ, इसलिए मेरा अनुभव सालों में नहीं गिना जाता। हाँ, कंपनी को पच्चीस साल से ज़्यादा हो गए हैं और मैं उसी की तरफ़ से आपकी मदद करती हूँ।",
+   "reply": "जी, मैं एक ऑटोमेटेड असिस्टेंट हूँ, इसलिए मेरा अनुभव सालों में नहीं गिना जाता। हाँ, कंपनी को पच्चीस साल से ज़्यादा हो गए हैं और मैं उसी की तरफ़ से आपकी मदद करती हूँ।",
    "examples": [
     "aap kab se is company mein ho",
     "aap kitne saal se job kar rahi ho",
@@ -3491,6 +3491,78 @@
    ],
    "reply": "जी, आपके लोन में कितनी रकम बाकी है, यह अकाउंट देखकर ही बताई जा सकती है। कृपया अपना लोन नंबर बताइए, या ब्रांच में पूछ लीजिए। टीम भी आपको सही रकम बता देगी।",
    "note": "Ask for the loan number first. Never state an amount; the team confirms. No foreclosure or interest figures."
+  },
+  {
+   "id": "settlement_request",
+   "topic": "customer asks about settling the loan",
+   "examples": [
+    "loan ka settlement karwana hai",
+    "settlement karna hai",
+    "settlement ho sakta hai kya",
+    "loan settle karwana hai",
+    "mera settlement kar do",
+    "सेटलमेंट करवाना है"
+   ],
+   "require": [
+    "settlement",
+    "settle",
+    "setalment",
+    "setlment",
+    "सेटलमेंट",
+    "सेटल"
+   ],
+   "reply": "जी, सेटलमेंट के बारे में फ़ैसला मैं कॉल पर नहीं ले सकती। आप अपना लोन नंबर बता दीजिए, मैं आपकी रिक्वेस्ट नोट कर लेती हूँ। टीम या ब्रांच आपको सही जानकारी देगी।",
+   "note": "Never promise or discuss a settlement amount or waiver."
+  },
+  {
+   "id": "emi_receipt",
+   "topic": "customer wants the receipt of an instalment or payment",
+   "examples": [
+    "kisht ki raseed chahiye",
+    "emi ki receipt chahiye",
+    "payment ki rasid kaise milegi",
+    "raseed nahi mili",
+    "kist ki parchi chahiye",
+    "किस्त की रसीद चाहिए"
+   ],
+   "require": [
+    "raseed",
+    "rasid",
+    "rasheed",
+    "receipt",
+    "reciept",
+    "parchi",
+    "रसीद",
+    "पर्ची"
+   ],
+   "forbid": [
+    "salary",
+    "pension",
+    "pagar",
+    "सैलरी",
+    "पेंशन"
+   ],
+   "reply": "जी, किस्त की रसीद के लिए आप अपनी ब्रांच में संपर्क कर सकते हैं। अपना लोन नंबर और पेमेंट की तारीख़ बता दीजिए, मैं नोट कर लेती हूँ।",
+   "note": "Receipt through the branch (owner approved this wording)."
+  },
+  {
+   "id": "legal_notice",
+   "topic": "customer received a notice",
+   "examples": [
+    "notice aaya hai ghar par kya karu",
+    "mere ghar notice aaya hai",
+    "legal notice mila hai",
+    "notice kyon bheja hai",
+    "company ka notice aaya hai",
+    "नोटिस आया है"
+   ],
+   "require": [
+    "notice",
+    "notis",
+    "नोटिस"
+   ],
+   "reply": "जी, नोटिस के बारे में सही जानकारी टीम आपका अकाउंट देखकर ही दे पाएगी। कृपया अपना लोन नंबर बताइए। आप नोटिस लेकर अपनी ब्रांच में भी बात कर सकते हैं।",
+   "note": "Do not explain legal consequences or promise anything."
   }
  ]
 }

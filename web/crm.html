@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Demo CRM</title>
+<style>
+:root{--bg:#f5f7f9;--card:#fff;--ink:#14171f;--mute:#5f6b80;--line:#e0e5ec;--acc:#0f8a6c;--warn:#b45309}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1315;--card:#161d20;--ink:#eef2f3;--mute:#9aa8ad;--line:#29353a;--acc:#2fc29c;--warn:#f0a53a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,Segoe UI,sans-serif}
+.wrap{max-width:960px;margin:0 auto;padding:22px 16px 60px}h1{margin:0;font-size:22px}.sub{color:var(--mute);margin:4px 0 14px}
+.demo{display:inline-block;border:1px solid var(--warn);color:var(--warn);border-radius:99px;padding:2px 12px;font-size:12px;font-weight:700;letter-spacing:.04em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:12px}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}.name{font-size:19px;font-weight:700;min-width:150px}
+.f{min-width:120px}.f small{display:block;color:var(--mute);font-size:12px}
+a.call{margin-left:auto;background:var(--acc);color:#fff;text-decoration:none;border-radius:10px;padding:10px 22px;font-weight:700}
+.res{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}.res b{color:var(--acc)}.mute{color:var(--mute)}
+summary{cursor:pointer;color:var(--mute)}.line{margin:4px 0}
+</style></head><body><div class="wrap">
+<span class="demo">DEMO DATA - NOT REAL CUSTOMERS</span>
+<h1>Collection CRM</h1>
+<p class="sub">Press <b>Call</b> next to a customer. Ria speaks as the caller and you answer as the customer through this computer's microphone. No real phone call is made. This page refreshes the results by itself.</p>
+<div id="list">Loading…</div>
+</div><script>
+const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;};
+let last="";
+async function load(){
+  let d;try{d=await (await fetch("/api/demo-crm")).json();}catch(e){document.getElementById("list").textContent="Ria is not running.";last="";return;}
+  const key=JSON.stringify(d);if(key===last)return;last=key;
+  const L=document.getElementById("list");L.textContent="";
+  d.customers.forEach(c=>{
+    const card=el("div","card"),row=el("div","row");row.appendChild(el("div","name",c.name_en+" ("+c.name+")"));
+    [["Loan number",c.loan_no],["Product",c.product],["EMI due","Rs "+c.emi.toLocaleString("en-IN")],["Due date",c.due_en]].forEach(([k,v])=>{const f=el("div","f");f.appendChild(el("small","",k));f.appendChild(el("div","",v));row.appendChild(f);});
+    const a=el("a","call","Call");a.href="/?customer="+encodeURIComponent(c.id);row.appendChild(a);card.appendChild(row);
+    const mine=d.results.filter(r=>r.customer_id===c.id),res=el("div","res");
+    if(!mine.length)res.appendChild(el("span","mute","Not called yet."));
+    else{const r=mine[mine.length-1];const top=el("div");top.appendChild(el("span","mute","Last call "+r.started_at+": "));top.appendChild(el("b","",r.outcome_text));res.appendChild(top);
+      if(r.customer_said.length)res.appendChild(el("div","line","Customer said: "+r.customer_said.join(" | ")));
+      const det=el("details");det.appendChild(el("summary","","Show conversation ("+mine.length+" call"+(mine.length>1?"s":"")+" so far)"));r.transcript.forEach(t=>det.appendChild(el("div","line",t.who+": "+t.text)));res.appendChild(det);}
+    card.appendChild(res);L.appendChild(card);});
+}
+load();setInterval(load,4000);
+</script></body></html>
