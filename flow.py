@@ -327,15 +327,23 @@ def yes_no(text: str):
     return None
 
 
-def parse_name(text: str, strict: bool):
-    t = text.lower().strip()
-    m = (re.search(r"(?:mera|meraa|my|maaro|maro|maru|mara|mharo|mhaaro|maharo|mahaaron|mahaaro)\s+(?:full\s+)?(?:naam|nam|name)\s+(?:is\s+|hai\s+)?([a-z .]{2,40}?)(?:\s+(?:hai|hain|hu|hoon|hun|aur|and|bol|se|ka|ki|ko|mujhe|me|mein|ye|yeh)\b|[,.!?]|$)", t)
-         or re.search(r"(?:mhane|mane|mujhe|mhaane)\s+([a-z .]{2,30}?)\s+(?:kehve|kehwe|kahe|kahte|kehte|bolte|bolu|kahevay)\b", t)
-         or re.search(r"(?:this is|it'?s|myself|call me|you can call me|people call me)\s+([a-z .]{2,30}?)(?:\s+(?:speaking|here|bol)\b|[,.!?]|$)", t)
-         or re.search(r"(?:i am|i'm|main|mai)\s+([a-z .]{2,30}?)\s+(?:bol|hoon|hu|hun|here|speaking)", t)
-         or re.search(r"(?:naam|name)\s+([a-z .]{2,30})", t))
-    cand = m.group(1) if m else (t if strict and len(t.split()) <= 5 else "")
-    end = {"hai", "hain", "hu", "hoon", "hun", "aur", "and", "mujhe", "loan", "chahiye", "chahie", "kya", "kaise", "kitna", "ka", "ki", "ko", "se", "mein", "me",
+# words that are never part of a person's name: a sentence leaving only these has no name in it
+_NOT_NAME = set("""kya kyun kyu kyo kyon kaise kaisa kitna kitni kitne kaun kon kahan kaha kab kis loan lone chahiye chahie chaiye chaahiye batao bataiye bataye bata batana batayein bataunga bataungi
+boliye bolo bol aap aapka aapki aapke apka apki tum tumhara tumhari tera teri apna apni company branch interest byaj emi zaroori jaruri personal salary payday business home gold vehicle
+hello hallo theek thik ruko ruk minute pehle pahle likh lijiye likhiye likho likhen he mera meraa meri mere hamara my naam nam name poora pura full kehte kahte bolte kehve kehwe ye yeh woh wo
+nahi nahin nai nhi no not sir madam rate kar karo karna karni do dena dijiye de den sun suno suniye haan han ha ji accha achha acha ok okay matlab wala wali hai hain ho hoon hun hu tha thi
+ek mujhe muje mereko hume humein call phone number paisa paise lakh rupaye rupee address document documents time kal aaj abhi kyunki lekin aur and but please plz is the are you your what who why how
+arre yaar yar baad bad phir fir kuch koi sab bahut thoda jaldi dobara samay free busy driving meeting gaadi gadi chala wait later bahar kaam office ghar dukaan shaam subah raat hello bye thanks dhanyavaad shukriya sorry maaf awaaz aawaaz sunai samajh pata hua hue gaya gayi raha rahi rahe sakte sakta sakti milega milegi lagega hoga hogi dunga dungi doonga chalo boliyega puchiye pooch poochna puchna baat karni information detail details""".split())
+# said around a name, not part of it
+_NAME_LEAD = r"^(?:(?:ji|haan|han|ha|sir|madam|hello|namaste|achha|accha|acha|ok|okay|toh|to|mera|meraa|my|naam|nam|name|poora|pura|full|hai|likh|likho|likhiye|likhen|lijiye|lo)\s+)+"
+_NAME_TAIL = r"(?:\s+(?:ji|sir|madam|hai|he|toh|to))+$"
+
+
+def _name_tokens(cand: str) -> list:
+    cand = re.sub(r"[^a-z ]", " ", cand)
+    cand = re.sub(r"\s+", " ", cand).strip()
+    cand = re.sub(_NAME_TAIL, "", re.sub(_NAME_LEAD, "", cand + " ").strip())
+    end = {"hai", "hain", "he", "hu", "hoon", "hun", "aur", "and", "mujhe", "loan", "chahiye", "chahie", "kya", "kaise", "kitna", "ka", "ki", "ko", "se", "mein", "me",
            "ye", "yeh", "bol", "salary", "personal", "payday", "business", "job", "chhe", "chhu", "chho", "chhai", "bolu", "bolun", "kehve", "kehwe", "kahe", "kehte", "kahte", "bolte"}
     toks = []
     for w in re.findall(r"[a-z]+", cand):                         # the name ends at the first filler word after it ("priya hai aur mujhe ...")
@@ -343,10 +351,49 @@ def parse_name(text: str, strict: bool):
             break
         if w not in STOP and len(w) > 1:
             toks.append(w)
+    if not toks or any(w in _NOT_NAME for w in toks):
+        return []
     fixes = {"sinh": "singh", "sing": "singh", "singha": "singh", "shrma": "sharma", "sarma": "sharma", "varma": "verma", "kumaar": "kumar", "gupta": "gupta", "yadaw": "yadav",
              "patil": "patil", "pateel": "patel", "jain": "jain", "mishr": "mishra", "tripathy": "tripathi", "chouhan": "chauhan", "chohan": "chauhan"}
-    toks = [fixes.get(w, w) for w in toks]
-    return " ".join(toks[:4]).title() if toks else None
+    return [fixes.get(w, w) for w in toks][:4]
+
+
+def parse_name(text: str, strict: bool):
+    t = re.sub(r"\s+", " ", text.lower()).strip(" .!?")
+    word = r"(?:naam|nam|name)"
+    full = r"(?:(?:poora|pura|full)\s+)?"
+    mine = r"(?:mera|meraa|meri|my)"
+    patterns = [
+        # "mera naam X hai"
+        rf"(?:{mine}|maaro|maro|maru|mara|mharo|mhaaro|maharo|mahaaron|mahaaro)\s+{full}{word}\s+(?:is\s+|hai\s+|to\s+|toh\s+)?([a-z .]{{2,40}}?)(?:\s+(?:hai|hain|he|hu|hoon|hun|aur|and|bol|se|ka|ki|ko|mujhe|me|mein|ye|yeh)\b|[,.!?]|$)",
+        # the name first: "X naam hai mera", "X mera naam hai", "X hai mera naam", "X naam hai", "X, ye mera naam hai", "X is my name"
+        rf"(?:^|[.!?]\s*)([a-z][a-z ,]{{1,45}}?)[ ,]+(?:(?:ye|yeh)\s+)?(?:(?:hai|he)\s+)?{mine}\s+{full}{word}\b",
+        rf"(?:^|[.!?]\s*)([a-z][a-z ,]{{1,45}}?)[ ,]+{full}{word}\s+(?:hai|he)\b(?:\s+(?:mera|meraa|ji))*\s*(?:[,.!?]|$)",
+        rf"(?:^|[.!?]\s*)([a-z][a-z ,]{{1,45}}?)\s+is\s+my\s+{full}{word}",
+        r"(?:mhane|mane|mujhe|mhaane)\s+([a-z .]{2,30}?)\s+(?:kehve|kehwe|kahe|kahte|kehte|bolte|bolu|kahevay)\b",
+        r"^([a-z .]{2,30}?)\s+(?:bolte|kehte|kahte)\s+(?:hai|hain)\s+(?:mujhe|mereko)\b",
+        r"(?:this is|it'?s|myself|call me|you can call me|people call me)\s+([a-z .]{2,30}?)(?:\s+(?:speaking|here|bol)\b|[,.!?]|$)",
+        r"(?:i am|i'm|main|mai)\s+([a-z .]{2,30}?)\s+(?:bol|hoon|hu|hun|here|speaking)",
+        rf"{word}\s+([a-z .]{{2,30}})",
+    ]
+    for pattern in patterns:                                     # the first reading that leaves a real name wins
+        m = re.search(pattern, t)
+        if m:
+            toks = _name_tokens(m.group(1))
+            if toks:
+                return " ".join(toks).title()
+    if strict:                                                    # "I am Ramesh Kumar" as the answer to "your name?"
+        m = re.fullmatch(r"(?:i am|i'm)\s+([a-z .]{2,40})", t)
+        toks = _name_tokens(m.group(1)) if m else []
+        if toks and not set(toks) & {"fine", "busy", "good", "here", "interested", "looking", "salaried", "employed", "working", "student", "driving", "sorry", "ready"}:
+            return " ".join(toks).title()
+    if strict and len(t.split()) <= 6:                            # only the name, perhaps with "ji" or "likh lijiye"
+        bare = re.sub(_NAME_TAIL, "", re.sub(_NAME_LEAD, "", re.sub(r"[^a-z ]", " ", t).strip() + " ").strip())
+        if 0 < len(bare.split()) <= 4 and not re.search(rf"\b{word}\b", bare):
+            toks = _name_tokens(bare)
+            if toks:
+                return " ".join(toks).title()
+    return None
 
 
 def parse_employment(text: str, asked):
@@ -861,7 +908,8 @@ class Flow:
         # "hmm", "haan", "na", "ok": an acknowledgement or a yes/no, never a name, a city, a purpose or a time
         trivial = is_ack_only(text) or (len(_words(text)) <= 2 and (bool(yes_no(text)) or all(w in FILLER_WORDS for w in _words(text))))
         # the name is asked for in the greeting: always try it until captured
-        if "full_name" not in self.v and not trivial:
+        just_a_name = asked == "full_name" and bool(set(_name_tokens(text.lower())) - ACK_WORDS - set(FILLER_WORDS) - {"hmm", "hm", "hello", "arre", "are"})      # "Pooja ji"
+        if "full_name" not in self.v and (not trivial or just_a_name):
             n = parse_name(text, strict=(asked == "full_name" and not bank))
             if n is None and re.search(r"[ऀ-ॿ]", text) and asked == "full_name":
                 n = self._llm_name(text)
