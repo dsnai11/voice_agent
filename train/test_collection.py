@@ -30,8 +30,42 @@ CASES = [   # (what the customer says, turn by turn, in the listener's Hinglish;
     (["Haan", "Maine koi loan nahi liya"], "dispute"),
     (["Haan", "Mujhe call mat karo"], "stop_calling"),
     (["Aap kaun bol rahe ho", "Haan main bol raha hoon", "Kal tak ho jayega, jama kar dunga"], "promise_to_pay"),
+    # the owner-approved lines C1-C6 (2026-11-27): answered, then the call goes on to a date
+    (["Haan", "Maine aaj subah account mein paise daale hain kist abhi tak nahi kati", "Kal tak balance rakh dunga"], "promise_to_pay"),
+    (["Haan", "Penalty maaf kar dijiye", "Parson jama kar dunga"], "promise_to_pay"),
+    (["Haan", "Mujhe loan number yaad nahi hai", "Mohan ke naam se hai number nau aath saat", "Kal kar dunga"], "promise_to_pay"),
+    (["Haan", "Kya main branch mein cash jama kar sakta hoon", "Kal kar dunga"], "promise_to_pay"),
+    (["Haan", "Meri NOC kab milegi", "Paanch tarikh ko dunga"], "promise_to_pay"),
+    (["Haan", "Kal tak branch mein jama kar dunga"], "promise_to_pay"),
+    (["Haan", "Kal jama kar dunga par penalty maaf kar dena"], "promise_to_pay"),
 ]
 bad = 0
+for said_, want_key in [("Maine aaj paise daale hain emi nahi kati", "deposited_today"), ("charge hata dijiye", "penalty_waiver"), ("penalty kyon lagi hai", "penalty"),
+                        ("loan number mere paas nahi hai", "no_loan_number"), ("cash de sakte hain kya", "pay_branch"), ("meri noc nahi mili", "noc_pending"),
+                        ("लोन नंबर याद नहीं है", "no_loan_number"), ("पेनल्टी माफ़ कर दीजिए", "penalty_waiver")]:
+    call = collection.CollectionCall(collection.customer("ram"))
+    call.reply("Haan")
+    got = call.reply(said_)
+    ok = got == call.say[want_key] and not call.finished
+    bad += not ok
+    print(("ok  " if ok else "BAD ") + f"{said_!r} -> {want_key}")
+# a customer who said yes and carried on (the reply that followed was cut off): stays confirmed, unless the new words say otherwise
+for new_words, want in [("Mujhe loan number yaad nahi hai", True), ("Penalty maaf kar dijiye", True), ("Nahi abhi maine jama nahi ki", True), ("Samajh nahi aaya phir se bolo", True),
+                        ("Maine to jama kar di hai", True), ("Abhi paise nahi hain", True), ("लोन नंबर याद नहीं है", True),
+                        ("Main uska bhai bol raha hoon", False), ("Nahi main Ram nahi hoon", False), ("Ram nahi hai ghar pe", False), ("Main Ram nahi bol raha", False),
+                        ("Galat number hai", False), ("Nahi", False), ("Nahi ji", False), ("Haan ji", False), ("Main Ram hi bol raha hoon", False), ("Aap kaun bol rahe ho", False)]:
+    call = collection.CollectionCall(collection.customer("ram"))
+    got = call.keeps_confirmation(new_words)
+    bad += got != want
+    print(("ok  " if got == want else "BAD ") + f"stays confirmed after {new_words!r}: {got} (wanted {want})")
+# after C4 the name and mobile number are noted and not taken as a payment date
+call = collection.CollectionCall(collection.customer("ram"))
+for x in ("Haan", "loan number nahi pata"):
+    call.reply(x)
+got = call.reply("Ram ke naam se, number 9000000000")
+ok = got == call.say["after_details"] and not call.finished
+bad += not ok
+print(("ok  " if ok else "BAD ") + "name and mobile number after C4 are not read as a date")
 for turns, want in CASES:
     call = collection.CollectionCall(collection.customer("ram"))
     said = [call.opening()]

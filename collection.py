@@ -69,7 +69,14 @@ def lines(c: dict) -> dict:
         "hardship_noted": "ठीक है जी, मैंने आपकी परेशानी नोट कर ली है। हमारी टीम आपसे बात करेगी।",
         "debit_ask": "जी, किस्त आपके बैंक अकाउंट से कटती है। कृपया अकाउंट में पूरा बैलेंस रखिए, टीम चेक करके बताएगी। आप किस तारीख़ तक बैलेंस रख पाएँगे?",
         "promise_noted": "ठीक है, मैंने आपकी बताई हुई तारीख़ नोट कर ली है। ध्यान रखिए, उस दिन तक किस्त ज़रूर जमा होनी चाहिए।",
-        "penalty": f"जी, देरी के चार्ज की सही जानकारी टीम या ब्रांच बताएगी। {ask_date}",
+        # C1-C6: wording approved by the owner on 2026-11-27; Ria answers and then asks for the payment date again
+        "deposited_today": f"जी, बैंक किस समय किस्त काटेगा, ये मैं पक्का नहीं बता सकती। अगर पैसा बैंक की कोशिश के बाद जमा हुआ है, तो किस्त बाउंस हो सकती है। अकाउंट में पूरा बैलेंस रखिए, और आज ही ब्रांच से सही जानकारी ले लीजिए। {ask_date}",
+        "penalty_waiver": f"जी, चार्ज हटाने या कम करने का वादा मैं नहीं कर सकती। आपकी बात मैं नोट कर लेती हूँ, टीम या ब्रांच इसे देखेगी। {ask_date}",
+        "penalty": f"जी, चार्ज कितना है और क्यों लगा है, ये आपका लोन अकाउंट देखकर ही बताया जा सकता है। ब्रांच से आप पूरा हिसाब ले सकते हैं। {ask_date}",
+        "no_loan_number": "कोई बात नहीं जी। लोन किसके नाम पर है, और आपका रजिस्टर्ड मोबाइल नंबर क्या है, ये बता दीजिए। मैं नोट कर लेती हूँ।",       # waits for the answer; the date is asked after it
+        "after_details": f"जी। {ask_date}",
+        "pay_branch": f"जी, आप ब्रांच में जाकर जमा कर सकते हैं, और रसीद ज़रूर लीजिए। बिना रसीद के किसी को पैसे मत दीजिए। {ask_date}",
+        "noc_pending": f"जी, मैं आपकी रिक्वेस्ट नोट कर लेती हूँ। टीम या ब्रांच आपका अकाउंट और बाकी चार्ज चेक करके एन ओ सी की स्थिति बताएगी। {ask_date}",
         "how_pay": f"जी, किस्त जमा करने का सही तरीक़ा आपकी ब्रांच बता देगी, आप ब्रांच में जाकर भी जमा कर सकते हैं। {ask_date}",
         "other_question": f"जी, इसकी सही जानकारी हमारी टीम आपको देगी। {ask_date}",
         "ask_callback": "कोई बात नहीं जी। मैं आपको किस समय कॉल करवाऊँ?",
@@ -103,6 +110,23 @@ CONFIRM = r"\bha+n?\b|haanji|hanji|\byes\b|\bhao\b|bol rah[aie] h(oo|u)n|hi bol|
 ABOUT = r"kya (kaam|baat)|kaam (tha|hai|kya)|kis (liye|kaam|baare|silsile)|ky(un|on)? (call|phone|fon)|(emi|kist|loan)[^.?]{0,20}(baare|bare|batai|bataiye|batao|detail|jaankari)|(batai|bataiye|batao)[^.?]{0,20}(emi|kist|loan)|क्या काम|किस लिए|क्यों कॉल|के बारे में"
 WHO = r"(aap|tum)\s*kaun|kaun (bol|baat)|kahan se|kis (company|kaam|liye|baare)|kyun? (call|phone)|kya kaam|robot|machine|ai ho|आप कौन|कौन बोल|कहाँ से|किस लिए|क्यों कॉल"
 UNSURE = r"samajh (nahi|nahin)|sunai nahi|dobara|phir se bol|repeat|kya bola|समझ नहीं|दोबारा|फिर से"
+# the questions of the owner-approved lines C1-C6
+TODAY = r"\baaj\b|subah|आज|सुबह"
+PUT_IN = r"daal|\bdal(a|e|i|ya|wa|va|aa|va)|dalv|dalw|jama|deposit|डाल|जमा"
+CUT = r"\bkat|\bcut|bounce|कट|बाउंस"
+WILL_I = r"dung[aie]|doonga|karung[aie]|karoong[aie]|d(aa|a)lung|दूँगा|दूंगा|करूँगा|करूंगा|डालूँगा|डालूंगा"
+WAIVE = r"maaf|\bmaf\b|hata|waive|kam kar|kam ki|mat lag|na lagao|nahi lagao|माफ़|माफ|हटा|कम कर|कम की|मत लगा"
+NO_LOAN_NO = r"(loan|लोन)\s*(account\s*|अकाउंट\s*)?(number|नंबर)[^?]{0,25}(nahi|nahin|bhool|नहीं|भूल)|(nahi|nahin|नहीं)[^?]{0,15}(loan|लोन)\s*(number|नंबर)"
+BRANCH = r"branch|\bcash\b|naqad|nakad|ब्रांच|कैश|नकद"
+MAY_I = r"sakt|sakat|chalega|lete h|loge|\b(du|doon|dun|karu|karoon)\b|सकत|चलेगा|(दूँ|दूं|करूँ|करूं)(?=\s|\?)"
+NOC = r"\bnoc\b|\bn o c\b|एनओसी|एन ओ सी"
+PAPERS = r"kagaz|kaagaz|kagaj|\bpapers?\b|document|कागज़|कागज|पेपर"
+NOT_GOT = r"(nahi|nahin) (mil|aa)|kab (mil|aa)|vaapas|wapas|waapas|नहीं मिल|कब मिल|वापस|नहीं आ"
+# a customer who has just confirmed and carries on talking (see keeps_confirmation)
+NOT_ME = r"\b(main|mai)\b[^?]{0,20}\b(nahi|nahin|nai)\s*(hoon|hu\b|hun|bol)|(मैं)[^?]{0,20}नहीं\s*(हूँ|हूं|बोल)"
+ACK_WORDS = set("haan han ha haanji hanji ji jee yes hao main mai me hi bol raha rahi rha rhi hoon hu hun boliye bolo bataiye batao hello accha achha acha theek thik ok okay se ho speaking sir madam "
+                "हाँ हां जी मैं ही बोल रहा रही हूँ हूं बोलिए बताइए हेलो अच्छा ठीक है से हो hai".split())
+NO_ONLY = {"nahi", "nahin", "nahee", "nai", "no", "naa", "na", "नहीं", "ना"}
 IDENTITY = r"bol rah[aie]|bol rha|bol rhi|speaking|hi h(oo|u)n|बोल रहा|बोल रही"
 YES_W = r"\b(haan?|han|haanji|hanji|ji|yes|bilkul|sahi|bol raha|bol rahi|boliye|bolo|speaking|hao)\b|हाँ|हां|जी|बोलिए|बोल रहा|बोल रही"
 NO_W = r"\b(nahi|nahin|nahee|nai|no|naa|koni)\b|नहीं|ना\b"
@@ -204,6 +228,48 @@ class CollectionCall:
     def _callback(self, t, raw):
         return self._end("callback_noted", "callback", raw)
 
+    def _approved(self, t, raw):
+        """The questions answered with the owner-approved lines C1, C2, C4, C5 and C6 (C3, the plain charge question, is in _question)."""
+        if _has(t, FUTURE) and _has(t, DATE) and not _has(t, CUT):
+            return None                                       # "kal jama kar dunga" is a promise, whatever else was said
+        if _has(t, NO_LOAN_NO):
+            return self._go("loan_id", "no_loan_number", raw)
+        if _has(t, TODAY) and _has(t, PUT_IN) and _has(t, CUT) and not _has(t, WILL_I):
+            return self._go("date", "deposited_today", raw)
+        if _has(t, PENALTY) and _has(t, WAIVE):
+            return self._go("date", "penalty_waiver", raw)
+        if _has(t, NOC) or (_has(t, PAPERS) and _has(t, NOT_GOT)):
+            return self._go("date", "noc_pending", raw)
+        if _has(t, BRANCH) and _has(t, MAY_I) and not _has(t, FUTURE):
+            return self._go("date", "pay_branch", raw)
+        return None
+
+    def keeps_confirmation(self, text: str) -> bool:
+        """The customer said yes, Ria began the next line, and they carried on with `text`. True: they stay confirmed and `text` is
+        answered on its own. False: both are judged together at the identity step again - for anything that may mean this is not
+        the customer, and for a mere second "yes" or "who are you?", after which Ria says her line again."""
+        t = " " + re.sub(r"[^\w\sऀ-ॿ?]", " ", text.lower()) + " "
+        names = (self.customer["name_en"].lower(), self.customer["name"])
+        if any(_has(t, p) for p in (WRONG, AWAY, RELATIVE, NOT_ME)):
+            return False
+        if any(_has(t, re.escape(n) + r"\s*(ji\s*|जी\s*)?(nahi|nahin|नहीं)") for n in names):
+            return False
+        if _has(t, WHO) or _has(t, ABOUT) or _has(t, MACHINE):
+            return False
+        left = [w for w in t.replace("?", " ").split() if w not in ACK_WORDS and w not in names]
+        return bool(left) and not set(left) <= NO_ONLY
+
+    def _loan_id(self, t, raw):
+        """After C4: whatever they say (name, mobile number) is noted for the team; then the date is asked."""
+        hit = self._always(t, raw)
+        if hit:
+            return hit
+        if _has(t, DISPUTE):
+            return self._end("dispute_noted", "dispute", raw)
+        if _has(t, FUTURE) and _has(t, DATE):
+            return self._end("promise_noted", "promise_to_pay", raw)
+        return self._go("date", "after_details", raw)
+
     def _question(self, t, raw):
         if _has(t, PENALTY):
             return self._go("date", "penalty", raw)
@@ -221,6 +287,9 @@ class CollectionCall:
             return hit
         if _has(t, DISPUTE):
             return self._end("dispute_noted", "dispute", raw)
+        answer = self._approved(t, raw)
+        if answer:
+            return answer
         if _has(t, DEBIT):
             return self._go("debit_date", "debit_ask", raw)
         if _has(t, HARD):
@@ -260,6 +329,9 @@ class CollectionCall:
             return hit
         if _has(t, DISPUTE):
             return self._end("dispute_noted", "dispute", raw)
+        answer = self._approved(t, raw)
+        if answer:
+            return answer
         if _has(t, PAID) and not _has(t, NO_W) and not _has(t, FUTURE):
             return self._go("paid_detail", "ask_paid_detail", raw)
         if _has(t, DATE) or re.search(r"\d", t):
@@ -282,6 +354,9 @@ class CollectionCall:
         return self._date(t, raw, "hardship_noted", "hardship")
 
     def _debit_date(self, t, raw):
+        answer = self._approved(t, raw)
+        if answer:
+            return answer
         if _has(t, DATE) or re.search(r"\d", t):
             return self._end("promise_noted", "debit_issue", raw)
         return self._date(t, raw, "team_followup", "debit_issue")

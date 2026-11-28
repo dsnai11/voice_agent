@@ -22,5 +22,9 @@ set STT_DEBUG=1
 set LLM_BASE_URL=http://localhost:11434/v1
 set LLM_MODEL=qwen2.5:7b
 set VOICE_FORMAT=wav
+rem Interruption is on (owner's choice, 2026-11-28): when the customer speaks over her, Ria stops and listens; after noise with no words she carries on. BARGE=0 turns it off.
+set BARGE=1
+rem Model sorter off (owner's choice, 2026-11-28): on this PC it mostly timed out after 8 s and made replies slow. CLASSIFIER=1 turns it on again.
+set CLASSIFIER=0
 set PYTHONIOENCODING=utf-8
 ".venv\Scripts\python.exe" -u server.py

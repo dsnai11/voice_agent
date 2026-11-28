@@ -17,6 +17,7 @@ import random
 import re
 
 import db
+import intents
 import forms
 import replybank
 import voice
@@ -535,11 +536,14 @@ class Flow:
     def __init__(self, call):
         self._off_hit = False
         self.lang = "hi"                      # the language the caller speaks: hi / en / gu / mwr
+        self.fixed_lang = False             # chosen before the call (page or customer record): guessing from the words does not change it
         self._pending_lang = None
         self.call = call
         self.asked = "full_name"          # the slot the last question was about
         self.v = {}                       # captured values
         self.skipped = set()
+        self.not_shared = []               # what the customer would not or could not say (noted for the team)
+        self.later = False                 # the customer is busy: take a time for a callback, then end
         self.fails = {}
         self.phone_pending = None
         self.phone_buf = ""                # digits heard so far while the number is still being said
@@ -584,7 +588,7 @@ class Flow:
             self.lang = wanted
             q = self._question(self.asked) if self.asked in QUESTIONS else ""
             return (self.SWITCH_CONFIRM[wanted] + " " + i18n.localize(q, self.lang, self._roman_name())).strip()
-        seen = _lang.detect(raw)
+        seen = None if self.fixed_lang else _lang.detect(raw)
         if seen and seen != self.lang:
             if _lang.is_strong(raw, seen) or self._pending_lang == seen:    # clear evidence, or the second sentence in a row: the caller changed language, follow
                 self.lang, self._pending_lang = seen, None
@@ -638,6 +642,11 @@ class Flow:
             if self.asked == "full_name" and "full_name" not in self.v:
                 return GREET_LINE + " " + self._question("full_name")
             return LISTENING_LINE
+
+        # --- what the customer means when the answer is not the value asked for (refuses, does not know, not interested, busy ...)
+        meant = self._meant(text)
+        if meant is not None:
+            return meant
 
         # --- phone read-back answer
         if self.asked == "phone_confirm" and self.phone_pending:
@@ -980,6 +989,10 @@ class Flow:
                 except Exception:
                     pass
 
+        if self.later and "callback_time" in captured:
+            c.finished = True
+            return " ".join(parts)
+
         nxt = self._next()
         if nxt is None:
             if not self.done:
@@ -1029,6 +1042,102 @@ class Flow:
             days = ["सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार", "रविवार"]
             reply = reply.replace("{DATE}", f"{days[n.weekday()]}, {hindi_words(n.day)} {months[n.month - 1]} {hindi_words(n.year)}")
         return reply
+
+    def _value_in(self, text: str, asked) -> bool:
+        """True if the sentence also holds the value that was asked for."""
+        if asked == "loan_amount" or asked == "monthly_income":
+            return bool(parse_amount(text))
+        if asked == "existing_emi":
+            return bool(parse_amount(text, minimum=100))
+        if asked in ("phone", "phone_confirm"):
+            return len(digits_from_speech(text)) >= 4
+        if asked == "work_tenure":
+            return parse_duration_years(text) is not None
+        if asked == "callback_time":
+            return bool(speak_time(text))
+        return False
+
+    def _meant(self, text: str):
+        """The reply when the customer refuses, does not know, does not want it, is busy, did not understand, or asks in their own words.
+        None = an ordinary answer or question, handled as before."""
+        c, asked = self.call, self.asked
+        if self.done or asked in ("amount_confirm", "phone_confirm"):
+            kind = intents.read(text, None, bool(parse_amount(text)))
+            if kind not in ("stop", "leave"):
+                return None
+        else:
+            kind = intents.read(text, asked, self._value_in(text, asked))
+        if not kind:
+            return None
+        if kind in ("stop", "leave"):
+            if self.done and kind == "leave":
+                return None
+            if kind == "stop":
+                self._save({"consent_to_contact": "no"})
+                try:
+                    c._run_tool("request_callback", {"note": "DO NOT CALL: caller asked to stop calling"})
+                except Exception:
+                    pass
+            else:
+                self._save(details={"outcome": "not interested"})
+            c.finished = True
+            return intents.STOP_LINE if kind == "stop" else intents.NO_THANKS_LINE
+        if kind == "busy":
+            if intents.has(intents.REAL_TIME, text.lower()):       # "busy hoon, kal shaam ko call karna": the time is already said ("abhi" alone is not a time)
+                self._save({"preferred_callback_time": " ".join(text.split())[:80], "consent_to_contact": "yes"})
+                self.v["callback_time"], self.v["consent"] = " ".join(text.split())[:80], "yes"
+                try:
+                    c._run_tool("request_callback", {"note": f"{c.form.get('full_name', '')}: call back: {self.v['callback_time']}"})
+                except Exception:
+                    pass
+                self.later, c.finished = True, True
+                when = speak_time(text)
+                return f"ठीक है जी, टीम आपको {when} कॉल करेगी।" if when else "ठीक है जी, मैंने नोट कर लिया, टीम आपको उसी समय कॉल करेगी।"
+            self.later, self.asked = True, "callback_time"
+            self._save({"consent_to_contact": "yes"})              # they ask to be called later
+            self.v["consent"] = "yes"
+            return intents.BUSY_LINE
+        if kind == "any_time":
+            when = " ".join(text.split())[:80]
+            self._save({"preferred_callback_time": when, "consent_to_contact": "yes"})
+            self.v["callback_time"], self.v["consent"] = when, "yes"
+            return self._carry_on("ठीक है जी, हमारी टीम आपको जल्दी ही कॉल करेगी।")
+        if asked not in QUESTIONS and asked != "work_tenure":      # (its wording depends on the kind of work)
+            return None
+        if kind == "unsure":
+            question = self._question(asked)
+            return " ".join([intents.AGAIN_LINE, question] + ([EXAMPLES[asked]] if asked in EXAMPLES else []))
+        if kind == "why":
+            return intents.WHY_LINE + " " + self._question(asked)
+        if kind == "need_money":
+            return intents.HELP_LINE + " " + self._question(asked)
+        if kind == "home":
+            self._save(details={"employment_type": "not-earning"})
+            self.v["employment"] = "not-earning"
+            return self._carry_on(intents.SKIP_LINE)
+        # refuse, dont_know, any_loan, max_amount, varies: leave this one out, note it for the team, and go on
+        self.skipped.add(asked)
+        self.not_shared.append(asked)
+        note = {"not_shared": ", ".join(self.not_shared)}
+        if asked == "loan_purpose":
+            note["loan_purpose"] = "not shared"
+        self._save(details=note)
+        return self._carry_on(intents.AMOUNT_LINE if kind == "max_amount" else intents.SKIP_LINE)
+
+    def _carry_on(self, first: str) -> str:
+        """`first`, then the next question (or the closing line when nothing is left to ask)."""
+        if self.later and "callback_time" in self.v:
+            self.call.finished = True
+            return first
+        nxt = self._next()
+        if nxt is None:
+            self.done, self.asked = True, None
+            return f"{first} ठीक है {self._name()} जी, आपकी सारी जानकारी नोट हो गई है। और कुछ पूछना हो तो पूछ लीजिए।"
+        self.asked = nxt
+        question = self._question(nxt)
+        if nxt == "consent" and self._name():
+            question = f"{self._name()} जी, " + question
+        return f"{first} {question}"
 
     def _next(self):
         for s in SLOTS:

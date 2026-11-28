@@ -95,8 +95,8 @@ def detect(text: str):
 
 _SWITCH = [
     ("en", r"english\s*(mein|me|mai|main|ma|bolo|bol|baat|speak|please)|speak\s+(in\s+)?english|in\s+english|angrezi|angreji|english\s*(language)?\s*(please|only)|can\s+you\s+(speak|talk)\s+(in\s+)?english"),
-    ("gu", r"gujarati|gujrati|gujarathi|gujrathi|ગુજરાતી"),
-    ("mwr", r"marwadi|marwari|marvadi|marvari|rajasthani|rajasthaani|rajasthni|mewari|shekhawati|dhundhari|hadoti|mewati|village\s+(language|boli)|desi\s+boli|gaon\s+ki\s+boli|मारवाड़ी|राजस्थानी"),
+    ("gu", r"g[uo]+j+a?r+aa?th?(?:i+|ee)|ગુજરાતી|गुजराती"),
+    ("mwr", r"ma+r+[wv]a+(?:r|d|rh)(?:i+|ee)|raja?sthaa?n(?:i+|ee)|shekh?a+[wv]a+t(?:i+|ee)|सेखावाटी|शेखावाटी|marwadi|marwari|marvadi|marvari|rajasthani|rajasthaani|rajasthni|mewari|shekhawati|dhundhari|hadoti|mewati|village\s+(language|boli)|desi\s+boli|gaon\s+ki\s+boli|मारवाड़ी|राजस्थानी"),
     ("hi", r"hindi\s*(mein|me|mai|main|bolo|bol|baat|please)|speak\s+(in\s+)?hindi|in\s+hindi|हिंदी\s*(में|मे)"),
 ]
 

@@ -1,0 +1,4 @@
+[
+ {"id": "vijay", "name": "विजय", "name_en": "Vijay", "loan_no": "DEMO-LN-2001", "product": "Vehicle Loan"},
+ {"id": "anita", "name": "अनीता", "name_en": "Anita", "loan_no": "DEMO-LN-2002", "product": "Loan Against Property"}
+]

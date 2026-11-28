@@ -218,7 +218,13 @@
     "loan amount kitna hoga",
     "maximum kitna milega",
     "mujhe 50000 chahiye",
-    "mujhe kitna paisa dogi"
+    "mujhe kitna paisa dogi",
+    "aap kitne tak de sakte ho",
+    "kitne tak de sakte ho aap log",
+    "aap kitne tak loan de sakte hain",
+    "aap mujhe kitne tak loan de sakte hain",
+    "mujhe kitne tak ka loan de sakte ho maximum",
+    "आप कितने तक लोन दे सकते हो"
    ],
    "reply": "जी, लोन की रकम आपकी एलिजिबिलिटी पर निर्भर करती है। आपको कितने पैसे चाहिए और आप क्या काम करते हैं, बता दीजिए, टीम सही रकम बताएगी।",
    "note": "Never promise an amount. Note the amount wanted and the job type."
@@ -304,7 +310,10 @@
     "pehle emi bounce hui thi milega kya",
     "pichhla loan nahi bhara tha ab milega kya",
     "purana default hai score down hai",
-    "score kam hai to kya karun"
+    "score kam hai to kya karun",
+    "cibil kam hai to milega kya",
+    "cibil kam hai to loan milega kya",
+    "सिबिल कम है तो मिलेगा क्या"
    ],
    "reply": "जी, छह सौ पचास या उससे ऊपर का क्रेडिट स्कोर बेहतर माना जाता है, पर फ़ैसला टीम करती है। मैं पक्का नहीं बोल सकती, आप चाहें तो डिटेल्स लिखवा दीजिए।",
    "note": "Do not promise approval."
@@ -383,7 +392,9 @@
     "loan ke liye kaun kaun se papers dene honge",
     "paperwork kya hota hai",
     "sirf aadhar se ho jayega kya",
-    "what documents"
+    "what documents",
+    "which documents do i need",
+    "what documents are required"
    ],
    "reply": "जी, आधार या पैन जैसा आईडी प्रूफ, एड्रेस प्रूफ, पिछले तीन महीने की सैलरी स्लिप, छह महीने का बैंक स्टेटमेंट और जॉब का प्रूफ लगता है। क्या ये आपके पास हैं?"
   },
@@ -470,7 +481,13 @@
     "zyada byaj to nahi lagega na",
     "byaj dar kya hai",
     "aapka byaj dar kya hai",
-    "byaj dar kitni hai"
+    "byaj dar kitni hai",
+    "aapka loan ka interest kya hai",
+    "loan ka interest kya hai",
+    "aapke loan ka byaj kya hai",
+    "what is the interest rate",
+    "what interest rate do you charge",
+    "how much is the interest"
    ],
    "reply": "जी, इंटरेस्ट आपकी प्रोफ़ाइल पर निर्भर करता है, इसलिए मैं अभी सही नंबर नहीं बता सकती। टीम आपको एग्ज़ैक्ट रेट बता देगी, क्या कॉलबैक लगा दूँ?",
    "note": "Never quote or guess a rate."
@@ -814,25 +831,10 @@
    "id": "late_fee",
    "topic": "late fee, bounce charge, penalty",
    "examples": [
-    "bounce charge kya hai",
-    "bounce charge kyon laga",
-    "bounce hua charge kyun laga",
-    "charge zyada kat gaya",
-    "charges hata do",
-    "der se emi bharne par kitna fine hai",
-    "emi bounce hone par kitna charge hai",
-    "emi bounce hone par kitna charge lagta hai",
     "emi miss ho jaye to kya hoga",
     "late charge laga diya",
     "late fee bhi lag gayi",
-    "late fee kitni hai",
-    "late fee lag gayi",
-    "late fee maaf kar do",
-    "late fee waive kar do",
-    "late payment par kitna penalty lagti hai",
-    "late payment pe kitna charge",
-    "penalty kitni lagegi",
-    "penalty maaf kar do"
+    "late fee lag gayi"
    ],
    "reply": "जी, इसके बारे में कलेक्शंस टीम आपसे बात करेगी, मैं यहाँ कुछ पक्का नहीं बोल सकती। आपको किस दिन और किस टाइम पर कॉल करवा दूँ?",
    "note": "Do not state any late fee or bounce amount. Ask for a day and time, call request_callback with it, confirm the slot."
@@ -1235,7 +1237,9 @@
     "office ki location",
     "office ki location batao",
     "office kidhar hai",
-    "office kis road par hai"
+    "office kis road par hai",
+    "where is your office",
+    "what is your office address"
    ],
    "reply": "जी, हमारा मुख्य ऑफ़िस जयपुर में एम आई रोड पर, गोपीनाथ मार्ग पर है, पता है दो डी एफ एल, गोपीनाथ मार्ग, एम आई रोड, जयपुर। आप टोल-फ्री नंबर एक आठ शून्य शून्य, एक दो एक, सात सात चार सात पर भी बात कर सकते हैं।",
    "require": [
@@ -1255,7 +1259,8 @@
     "pata",
     "kidhar",
     "location",
-    "kaise pahunch"
+    "kaise pahunch",
+    "where"
    ]
   },
   {
@@ -1431,7 +1436,11 @@
     "ye sab kyun pooch rahe ho",
     "mera naam number kyun chahiye",
     "ye jaankari kyun chahiye",
-    "kyun puch rahe ho ye sab"
+    "kyun puch rahe ho ye sab",
+    "aapko kya karna hai jaan kar",
+    "aise aapko kya karna hai yeh cheez jaankar",
+    "aapko yeh jaan kar kya karna hai",
+    "आपको क्या करना है जानकर"
    ],
    "reply": "जी, ये जानकारी सिर्फ़ इसलिए चाहिए कि टीम आपके लिए सही लोन ऑप्शन देख सके। जो आप न बताना चाहें, उसे छोड़ सकते हैं।"
   },
@@ -2318,7 +2327,8 @@
    "require": [
     "branch",
     "office",
-    "shakha"
+    "shakha",
+    "branches"
    ],
    "forbid": [
     "head office"
@@ -2362,7 +2372,9 @@
     "surat mein aapki shakha hai kya",
     "tehsil mein office hai kya",
     "total branches kitni hain",
-    "udaipur mein branch kahan hai"
+    "udaipur mein branch kahan hai",
+    "how many branches do you have",
+    "do you have a branch near me"
    ]
   },
   {
@@ -2752,6 +2764,45 @@
     "truck loan chahiye",
     "two wheeler loan hai kya",
     "vehicle loan ke baare mein batao"
+   ],
+   "require": [
+    "gaadi",
+    "gadi",
+    "gaadiyon",
+    "vehicle",
+    "bike",
+    "car",
+    "truck",
+    "trak",
+    "bus",
+    "tractor",
+    "tipper",
+    "scooter",
+    "scooty",
+    "auto",
+    "rickshaw",
+    "rikshaw",
+    "riksha",
+    "hathi",
+    "wheeler",
+    "motorcycle",
+    "pickup",
+    "jeep",
+    "taxi",
+    "गाड़ी",
+    "गाडी",
+    "वाहन",
+    "बाइक",
+    "कार",
+    "ट्रक",
+    "बस",
+    "ट्रैक्टर",
+    "टिपर",
+    "स्कूटर",
+    "स्कूटी",
+    "ऑटो",
+    "रिक्शा",
+    "व्हीलर"
    ]
   },
   {
@@ -3563,6 +3614,151 @@
    ],
    "reply": "जी, नोटिस के बारे में सही जानकारी टीम आपका अकाउंट देखकर ही दे पाएगी। कृपया अपना लोन नंबर बताइए। आप नोटिस लेकर अपनी ब्रांच में भी बात कर सकते हैं।",
    "note": "Do not explain legal consequences or promise anything."
+  },
+  {
+   "id": "deposited_today",
+   "topic": "customer put money in the account today and the EMI is not deducted yet",
+   "examples": [
+    "aaj paisa dala hai kist abhi tak nahi kati",
+    "maine aaj account mein paise daale emi kategi ya nahi",
+    "subah paisa jama kiya tha emi nahi kati",
+    "aaj khate mein paise dalwaye hain kist kategi kya",
+    "aaj paise daal diye to bounce to nahi hogi"
+   ],
+   "reply": "जी, बैंक किस समय किस्त काटेगा, ये मैं पक्का नहीं बता सकती। अगर पैसा बैंक की कोशिश के बाद जमा हुआ है, तो किस्त बाउंस हो सकती है। अकाउंट में पूरा बैलेंस रखिए, और आज ही ब्रांच से सही जानकारी ले लीजिए।",
+   "note": "Owner-approved wording (2026-11-27). Do not state any amount, do not promise a waiver or a time.",
+   "require": [
+    "aaj",
+    "subah",
+    "आज",
+    "सुबह"
+   ]
+  },
+  {
+   "id": "penalty_waiver",
+   "topic": "customer asks to remove or reduce a penalty or charge",
+   "examples": [
+    "penalty maaf kar do",
+    "late fee maaf kar do",
+    "late fee waive kar do",
+    "charges hata do",
+    "bounce charge maaf kar dijiye",
+    "penalty kam kar do",
+    "charge mat lagao is baar",
+    "पेनल्टी माफ़ कर दो",
+    "चार्ज हटा दीजिए"
+   ],
+   "reply": "जी, चार्ज हटाने या कम करने का वादा मैं नहीं कर सकती। आपकी बात मैं नोट कर लेती हूँ, टीम या ब्रांच इसे देखेगी।",
+   "note": "Owner-approved wording (2026-11-27). Do not state any amount, do not promise a waiver or a time.",
+   "require": [
+    "maaf",
+    "maf",
+    "hata",
+    "hatao",
+    "waive",
+    "kam",
+    "mat",
+    "माफ़",
+    "माफ",
+    "हटा",
+    "कम",
+    "मत"
+   ]
+  },
+  {
+   "id": "penalty_why",
+   "topic": "why there is a penalty or bounce charge, or how much it is",
+   "examples": [
+    "bounce charge kya hai",
+    "bounce charge kyon laga",
+    "bounce hua charge kyun laga",
+    "charge zyada kat gaya",
+    "der se emi bharne par kitna fine hai",
+    "emi bounce hone par kitna charge hai",
+    "emi bounce hone par kitna charge lagta hai",
+    "late fee kitni hai",
+    "late payment par kitna penalty lagti hai",
+    "late payment pe kitna charge",
+    "penalty kitni lagegi",
+    "penalty kyon lagi hai",
+    "meri penalty kitni hai"
+   ],
+   "reply": "जी, चार्ज कितना है और क्यों लगा है, ये आपका लोन अकाउंट देखकर ही बताया जा सकता है। ब्रांच से आप पूरा हिसाब ले सकते हैं।",
+   "note": "Owner-approved wording (2026-11-27). Do not state any amount, do not promise a waiver or a time."
+  },
+  {
+   "id": "no_loan_number",
+   "topic": "customer does not know his loan number",
+   "examples": [
+    "loan number nahi pata",
+    "mujhe loan number yaad nahi hai",
+    "loan number mere paas nahi hai",
+    "loan account number pata nahi",
+    "loan number bhool gaya",
+    "लोन नंबर याद नहीं है",
+    "मुझे लोन नंबर नहीं पता"
+   ],
+   "reply": "कोई बात नहीं जी। लोन किसके नाम पर है, और आपका रजिस्टर्ड मोबाइल नंबर क्या है, ये बता दीजिए। मैं नोट कर लेती हूँ।",
+   "note": "Owner-approved wording (2026-11-27). Do not state any amount, do not promise a waiver or a time.",
+   "require2": [
+    "loan",
+    "लोन"
+   ],
+   "require": [
+    "number",
+    "नंबर"
+   ]
+  },
+  {
+   "id": "pay_at_branch",
+   "topic": "paying the EMI at the branch or in cash",
+   "examples": [
+    "branch mein jama kar sakte hain kya",
+    "cash de sakte hain kya",
+    "kist cash mein bhar sakta hoon",
+    "branch jaakar payment kar sakta hoon",
+    "agent ko cash de doon kya",
+    "ब्रांच में जमा कर सकते हैं क्या",
+    "नकद दे सकते हैं क्या"
+   ],
+   "reply": "जी, आप ब्रांच में जाकर जमा कर सकते हैं, और रसीद ज़रूर लीजिए। बिना रसीद के किसी को पैसे मत दीजिए।",
+   "note": "Owner-approved wording (2026-11-27). Do not state any amount, do not promise a waiver or a time.",
+   "require": [
+    "branch",
+    "cash",
+    "naqad",
+    "nakad",
+    "ब्रांच",
+    "कैश",
+    "नकद"
+   ]
+  },
+  {
+   "id": "noc_pending",
+   "topic": "loan finished but the NOC or loan papers are not received",
+   "examples": [
+    "noc nahi mili",
+    "loan khatam ho gaya noc kab milegi",
+    "loan poora ho gaya par noc nahi aayi",
+    "loan band ho gaya mere paper kab milenge",
+    "एन ओ सी नहीं मिली",
+    "एनओसी कब मिलेगी"
+   ],
+   "reply": "जी, मैं आपकी रिक्वेस्ट नोट कर लेती हूँ। टीम या ब्रांच आपका अकाउंट और बाकी चार्ज चेक करके एन ओ सी की स्थिति बताएगी।",
+   "note": "Owner-approved wording (2026-11-27). Do not state any amount, do not promise a waiver or a time.",
+   "require": [
+    "noc",
+    "n o c",
+    "paper",
+    "papers",
+    "kagaz",
+    "kaagaz",
+    "document",
+    "एनओसी",
+    "एन ओ सी",
+    "कागज़",
+    "पेपर"
+   ]
   }
  ]
 }

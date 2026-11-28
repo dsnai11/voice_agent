@@ -60,6 +60,8 @@ async def transcribe(file: UploadFile = File(...), beams: int = Form(DEFAULT_BEA
     if audio.ndim > 1:
         audio = audio.mean(axis=1)
     gk = {"task": "transcribe", "language": LANGUAGE}
+    # nobody says more than this in that much time: stops the long made-up loops noise can cause (they took 4-10 s)
+    gk["max_new_tokens"] = int(min(440, 24 + 14 * len(audio) / max(1, rate)))
     if beams > 1:
         gk["num_beams"] = beams
     if prompt:
