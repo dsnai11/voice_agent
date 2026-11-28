@@ -38,7 +38,7 @@ UNSURE = rf"\bsamajh\w*\s+(?:mein\s+|me\s+)?{_NO}|\b{_NO}\s+samajh|\bkya\s+matla
 NEED_MONEY = r"\bpais\w*\b[^.?]{0,25}\b(?:chahiye|chahie|chaiye|zaroorat|zarurat|jarurat|jaroorat)\b|\b(?:zaroorat|zarurat|jarurat|jaroorat)\b[^.?]{0,25}\bpais|\b(?:rupaye|rupees|rupay|rupe|udhaar|udhar|karz|karja|karza)\b[^.?]{0,15}\b(?:chahiye|chahie|chaiye)\b|पैसे\s+चाहिए"
 ANY_LOAN = r"\bkoi\s*(?:sa\s+)?bhi\b|\bjo\s+(?:bhi\s+)?mil\s*(?:jaye|jae|sake|jay)|\bkuch\s+bhi\b"
 MAX_AMOUNT = r"\bjitna\s+(?:bhi\s+)?(?:mil|ho)\s*\w*|\b(?:zyada|jyada|adhik)\s+se\s+(?:zyada|jyada|adhik)\b|\bmaximum\b|\bjitna\s+aap\b"
-VARIES = rf"\bfix(?:ed)?\s+{_NO}|\bupar\s+(?:neeche|niche)\b|\bpakk?a\s+{_NO}|\bkam\s+zyada\s+hoti"
+VARIES = rf"\bth(?:ee|i)k\s*th(?:aa|a)k\b|\bguzara\b|\bfix(?:ed)?\s+{_NO}|\bupar\s+(?:neeche|niche)\b|\bpakk?a\s+{_NO}|\bkam\s+zyada\s+hoti"
 HOME = r"\bghar\s+(?:par|pe|per)\s+(?:rehti|rehta|rahti|rahta|hi)\b|\bhouse\s*wife\b|\bgrihini\b|\bkuch\s+nahi\s+(?:karta|karti)\b|\bberozgar\b|\bstudent\b|\bpadhai\s+kar"
 ANY_TIME = r"\bkabhi\b|\bjab\s+(?:aapka\s+man|chaho|chahe|aap\s+chah|marzi|bhi)|\bke\s+baad\b|\bany\s*time\b|\bkisi\s+bhi\s+(?:time|din)|\bfree\s+(?:hoon|hun|rahunga|rahungi)\b|कभी\s+भी"
 

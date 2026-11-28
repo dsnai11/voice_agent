@@ -29,6 +29,7 @@ testdata/
 
 # the company's branch list stays on this PC
 knowledge/branches.json
+knowledge/heard_places.json
 logs/
 
 # the owner's voice: reference audio, its text and the approved recordings stay on this PC

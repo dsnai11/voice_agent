@@ -150,6 +150,10 @@ def _branch_sentence(s: str, lang: str):
         return " ".join(words.get(w, (w, w))[0 if lang == "en" else 1] for w in h.split())
 
     rules = [
+        (r"(.+) ब्रांच का पिनकोड है (.+)।", lambda m: {"en": f"The pincode of the {m[1]} branch is {digits(m[2])}.", "gu": f"{m[1]} બ્રાંચનો પિનકોડ છે {digits(m[2])}.",
+            "mwr": f"{m[1]} ब्रांच रो पिनकोड है {m[2]}।"}),
+        (r"ठीक है जी, आपका बिज़नेस (.+) में है, नोट कर लिया।", lambda m: {"en": f"Okay, your business is in {m[1]}, I have noted it.", "gu": f"ઠીક છે જી, તમારો બિઝનેસ {m[1]}માં છે, નોંધી લીધું.",
+            "mwr": f"ठीक है सा, आपरो बिज़नेस {m[1]} में है, नोट कर लियो।"}),
         (r"जी हाँ, (.+) में हमारी ब्रांच है, ज़िला (.+), (.+)।", lambda m: {"en": f"Yes, we have a branch in {m[1]}, district {m[2]}, {st(m[3])}.",
             "gu": f"જી હા, {m[1]}માં અમારી બ્રાંચ છે, જિલ્લો {m[2]}, {st(m[3])}.", "mwr": f"जी हां सा, {m[1]} में म्हारी ब्रांच है, जिलो {m[2]}, {st(m[3])}।"}),
         (r"पता है, (.+)।", lambda m: {"en": f"The address is {m[1]}.", "gu": f"સરનામું છે, {m[1]}.", "mwr": f"पतो है, {m[1]}।"}),

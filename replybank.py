@@ -242,3 +242,14 @@ def match_hybrid(text: str, limit: int = MAX_REPLIES, sure: float = 0.8) -> list
         found[0]["score"] = max(found[0]["score"], 0.9)
         return found
     return [{"id": pick["id"], "score": 0.9, "chunk": text, "entry": pick}]
+
+
+def entry(key: str):
+    """The saved answer with this id, or None."""
+    import json
+
+    try:
+        with open(BANK_PATH, encoding="utf-8") as f:
+            return next((e for e in json.load(f)["entries"] if e.get("id") == key), None)
+    except (OSError, ValueError, KeyError):
+        return None

@@ -19,6 +19,7 @@ import re
 import db
 import branches
 import intents
+import ask
 import forms
 import replybank
 import voice
@@ -300,6 +301,7 @@ def parse_amount(text: str, minimum: int = 1000):
 PURPOSE_PATTERNS = (
     ("medical", r"medical|ilaj|ilaaj|hospital|dawai|davai|\bdava\b|\bdawa\b|bimar|bimari|operation|treatment|doctor|dawakhana|aspatal|dava\s+mate"),
     ("wedding", r"shaadi|shadi|shaaadi|wedding|vivah|marriage|byah|byaav|bayaav|byav|biyav|byaao|lagn|lagan|sagai|nikah"),
+    ("home purchase", r"(?:ghar|makaan|makan|flat|plot|house)\b[^.?]{0,25}\b(?:khareed\w*|kharid\w*|lena|lene|buy\w*|purchase)|\b(?:buy|purchase|khareed\w*|kharid\w*)\b[^.?]{0,25}\b(?:ghar|makaan|makan|flat|plot|house)"),
     ("home repair", r"\bghar|makaan|makan|repair|renovation|marammat|construction|chhat|plaster|banavv?|house"),
     ("education", r"education|padhai|padai|bhanvv?a|bhanvu|bhanu|\bfees\b|school|college|course|study|admission|shikshan|tuition"),
     ("farming", r"kheti|\bkhet|fasal|beej|khad\b|tractor|trakter|pashu|gaay|bhains|bakri|dairy|\bbore\b|sinchai|krishi|\bfarm|\bcrop|seed|fertili"),
@@ -524,6 +526,7 @@ def static_sentences() -> list:
         out += qs
     out += list(ALT_REPLIES.values())
     out.append(OFF_LINE)
+    out += ask.all_lines()
     out += [NOT_UNDERSTOOD, HOLD_LINE, LISTENING_LINE] + NOT_UNDERSTOOD_AGAIN
     out += ["ठीक है, रकम पक्की कर दी।", "ठीक है जी, कोई बात नहीं। आप रकम एक बार फिर बोलिए, जैसे पाँच लाख।"]
     out += ["धन्यवाद, नंबर कन्फ़र्म हो गया।", "ठीक है जी, कोई बात नहीं। कृपया अपना मोबाइल नंबर एक बार फिर, धीरे-धीरे बोलिए।",
@@ -577,6 +580,7 @@ class Flow:
         self.branch_memory = {}            # which place she asked for / which branch she last described
         self.later = False                 # the customer is busy: take a time for a callback, then end
         self.open_talk = False             # no loan wanted, but something else to talk about: she answers and asks no form questions
+        self.paused = False                   # she answered a question and is waiting: the next form question has not been asked yet
         self.fails = {}
         self.phone_pending = None
         self.phone_buf = ""                # digits heard so far while the number is still being said
@@ -659,6 +663,11 @@ class Flow:
         low = text.lower()
         captured, ack = [], None
 
+        if self.paused:
+            self.paused = False
+            if ask.nothing_more(text) and not self.done:
+                return self._carry_on(ask.RESUME_LINE)
+
         if self.open_talk:
             if re.search(r"\bloan\s+(?:bhi\s+)?(?:chahiye|chaahiye|chahie|lena)|\b(?:chahiye|chaahiye|lena)\b[^.?]{0,15}\bloan\b", low) and not re.search(r"\b(?:nahi|nahin|nai|no)\b|नहीं", low):
                 self.open_talk, self.done, self.asked = False, False, "loan_type"       # now a loan is wanted: back to the form
@@ -680,6 +689,12 @@ class Flow:
         if is_filler(text) and not is_ack_only(text) and (len(_words(text)) >= 3 or not yes_no(text)):      # "kya hai na": that "na" is not a no
             return LISTENING_LINE
 
+        if ask.asks_if_listening(text):
+            return LISTENING_LINE
+        if ask.says_wrong_answer(text):                                    # "I asked something else": apologise and let them ask again
+            self.paused = True
+            return ask.SAY_AGAIN_LINE
+
         # --- a greeting ("hello", "namaste", "ram ram sa", "kem cho"): greet back; it is not a name and not a failure
         if GREETING_RE.fullmatch(re.sub(r"[^a-z ]", " ", low).strip()) or GREETING_RE.fullmatch(low.strip(" .!?,")):
             if self.asked == "full_name" and "full_name" not in self.v:
@@ -692,13 +707,18 @@ class Flow:
             return meant
 
         # --- "is there a branch in my city / state?": answered from the company's branch list
-        if self.asked not in ("phone", "phone_confirm", "amount_confirm"):
+        branch_at_phone = self.asked == "phone" and re.search(branches.BRANCH_WORDS, low) and len(digits_from_speech(text)) < 4       # a branch question, not the number
+        if self.asked not in ("phone", "phone_confirm", "amount_confirm") or branch_at_phone:
+            self.branch_memory["step"] = self.asked
             found = branches.answer(text, self.branch_memory)
             if found:
                 reply, ends_with_question = found
+                if branch_at_phone:
+                    self.phone_buf = ""
                 if ends_with_question or self.done or self.asked not in QUESTIONS and self.asked != "work_tenure":
                     return reply
-                return reply + " " + self._question(self.asked)       # then back to the form question
+                self.paused = True                                     # they are asking: no form question on top
+                return reply + " " + ask.INVITE_LINE
 
         # --- phone read-back answer
         if self.asked == "phone_confirm" and self.phone_pending:
@@ -708,6 +728,15 @@ class Flow:
                 self.v["phone"] = self.phone_pending
                 self.phone_pending, self.asked = None, None
                 ack = "धन्यवाद, नंबर कन्फ़र्म हो गया।"
+                if re.search(branches.BRANCH_WORDS, low):
+                    self.branch_memory["step"] = None
+                    found = branches.answer(text, self.branch_memory)
+                    if found:
+                        self.asked = self._next()
+                        if found[1] or self.asked is None:
+                            return ack + " " + found[0]
+                        self.paused = True
+                        return " ".join([ack, found[0], ask.INVITE_LINE])
             elif yn == "no":
                 c.form.pop("phone", None)
                 c.confirmed.discard("phone")
@@ -728,6 +757,15 @@ class Flow:
             self.asked = None
             if yn == "yes":
                 ack = "ठीक है, रकम पक्की कर दी।"
+                if re.search(branches.BRANCH_WORDS, low):
+                    self.branch_memory["step"] = None
+                    found = branches.answer(text, self.branch_memory)
+                    if found:
+                        self.asked = self._next()
+                        if found[1] or self.asked is None:
+                            return ack + " " + found[0]
+                        self.paused = True
+                        return " ".join([ack, found[0], ask.INVITE_LINE])
 
         # --- approved reply for a question or special request
         about_money = bool(re.search(r"\b(?:cibil|sibil|civil|score|loan|lone|interest|byaaj|byaj|emi|document|kagaz|fee|charge|branch)\b", low))      # "CIBIL 700 se kam hai, loan milega?" is a question
@@ -735,6 +773,8 @@ class Flow:
         raw_bank = (replybank.match_hybrid(text) if question_here and not (parse_amount(text) and "?" not in text) else replybank.match(text))
         self._off_hit = any(m["id"] == "off_topic" and m["score"] >= 0.7 for m in raw_bank)
         bank = [m for m in raw_bank if m["score"] >= (0.45 if m["id"] in ("more_to_discuss", "small_talk") else 0.5 if m["entry"].get("require") else 0.6) and m["id"] not in SKIP_IDS]
+        bank = [m for m in bank if m["score"] >= 0.75 or m["entry"].get("require") or m["id"] in ("more_to_discuss", "small_talk", "stop_calling", "not_interested", "not_understood")
+                or ask.shares_topic(text, m["entry"])]
         # real calls: a plain statement ("main sirvi se baat kar raha hoon", "thik hai sir") must not be taken as a question about Ria herself
         bank = [m for m in bank if question_here or m["id"] not in ("her_name", "what_is_ai", "what_doing", "her_experience", "small_talk", "are_you_robot", "who_are_you") or m["score"] >= 0.85]
         if is_ack_only(text):
@@ -762,6 +802,20 @@ class Flow:
             bank = []                                                   # in these steps the caller's words are the answer, unless they clearly ask something
         if self.open_talk:
             bank = [m for m in bank if m["id"] != "not_interested"]
+        forced = None
+        if ask.asks_emi_amount(text) and not (self.asked == "existing_emi" and parse_amount(text, minimum=100) and not asks_something(text)):
+            forced = ["emi_amount"]                                     # "meri EMI kya banegi" is not the due-date question
+        elif ask.asks_all_loans(text):
+            forced = ["products_offered"]
+        if forced:
+            extra = [m for m in bank if m["id"] not in forced + ["emi_due_date", "emi_amount", "company_about", "how_much_loan", "loan_amount_ask", "what_is_emi", "reduce_emi", "interest_rate"] and m["id"] not in _ident
+                     and m["id"] not in LEGACY_IDS and m["id"] not in ("stop_calling", "not_interested")]
+            entry = replybank.entry(forced[0])
+            if entry and forced == ["emi_amount"]:
+                entry = dict(entry, reply=ask.EMI_LINE)
+            if entry:
+                bank = [{"id": forced[0], "score": 1.0, "entry": entry}] + (extra[:1] if forced == ["emi_amount"] and re.search(r"\b(?:interest|byaaj|byaj|rate)\b", low) else [])
+                question_here = True
         ids = [m["id"] for m in bank]
         if "stop_calling" in ids or "not_interested" in ids:
             entry = next(m for m in bank if m["id"] in ("stop_calling", "not_interested"))["entry"]
@@ -830,7 +884,12 @@ class Flow:
         if emp and ("employment" not in self.v or asked == "employment"):
             details["employment_type"] = emp
             captured.append("employment")
-        city = parse_city(text, fuzzy=(asked == "city")) if not asks_something(text) else None
+        business_at = ask.business_place(text) if asked != "city" and not forced else ""
+        if business_at and self.v.get("business_city") != business_at:
+            details["business_city"] = business_at
+            captured.append("business_city")
+            self.branch_memory["home"] = business_at
+        city = parse_city(text, fuzzy=(asked == "city")) if not asks_something(text) and not (business_at and asked != "city") else None
         if city and ("city" not in self.v or asked == "city"):
             details["city"] = city
             captured.append("city")
@@ -852,7 +911,8 @@ class Flow:
                 elif not trivial and not asks_something(text) and re.fullmatch(r"[a-z ]{3,40}", re.sub(r"[^a-z ]", " ", low_p).strip() or "-") and len(words_p) <= 4 and not (set(words_p) & filler):
                     canon = re.sub(r"[^a-z ]", " ", low_p).strip()[:40]          # a short noun phrase such as "car repair"; never a whole sentence
                 elif not trivial and len(words_p) <= 6 and not looks_like_question(text):                  # "personal kaam se", "ghar ke liye": keep the meaningful words
-                    drop = filler | {"kaam", "liye", "lie", "hain", "kar", "karna", "chahiye", "chahie", "lena", "leni", "liya", "pata", "pta", "samajh", "bolna", "bata", "batao", "karta", "karti", "job", "business"}
+                    drop = filler | {"bol", "bolo", "rahi", "raha", "sun", "suno", "poocha", "pucha", "sawal", "sawaal", "jawab", "galat", "aapko", "aapke", "kuch", "aur", "matlab", "wala", "wali", "jaise",
+                                "kaam", "liye", "lie", "hain", "kar", "karna", "chahiye", "chahie", "lena", "leni", "liya", "pata", "pta", "samajh", "bolna", "bata", "batao", "karta", "karti", "job", "business"}
                     rem = [w for w in re.findall(r"[a-z]+", low_p) if w not in drop]
                     if 1 <= len(rem) <= 3 and not (set(rem) & {"loan", "lakh", "laakh", "hazaar", "rupe", "rupees"}):
                         canon = " ".join(rem)[:40]
@@ -883,7 +943,7 @@ class Flow:
                 captured.append("existing_emi")
         eligibility_question = (question_here and bool(re.search(r"mil(?:ega|egi|si)\b|mil\s+(?:sakta|jayega|jaega)|chahiye\b|chaahiye\b", low))
                                 and not re.match(r"\s*(?:ji\s+)?(?:haan|han|ha|nahi|nahin|no|yes)\b", low))      # "haan chal raha hai, naya milega?" still counts
-        if asked == "existing_loans" and not eligibility_question:
+        if asked == "existing_loans" and not eligibility_question and not (ask.wants_telling(text) and not re.search(r"\bchal\b|\bchalu\b", low)):
             yn = yes_no(text)
             w_ = set(_words(text))
             if yn is None and "koi" not in w_ and (w_ & {"ek", "do", "teen", "car", "bike", "home", "personal", "gold", "credit", "card", "dho", "dhoy", "tran", "traan", "one", "two", "three", "running", "ongoing", "chalu", "active"} or {"chal", "raha"} <= w_ or {"chal", "rahi"} <= w_):
@@ -921,12 +981,12 @@ class Flow:
             core["preferred_callback_time"] = " ".join(text.split())[:80]
             core["consent_to_contact"] = "yes"
             captured += ["callback_time", "consent"]
-        if asked == "consent" and "consent" not in captured and not (bank and question_here):
+        if asked == "consent" and "consent" not in captured and not (bank and question_here) and not ask.first_tell_me(text) and not ask.wants_telling(text):
             yn = yes_no(text)
             if yn:
                 core["consent_to_contact"] = yn
                 captured.append("consent")
-        if asked == "callback_time" and text and not bank and (speak_time(text) or not looks_like_question(text)):
+        if asked == "callback_time" and text and not bank and (speak_time(text) or not looks_like_question(text) and not ask.wants_telling(text) and not re.search(r"\b(?:address|pata|pin\s*code|pincode|branch\w*)\b", low)):
             core["preferred_callback_time"] = "any time" if trivial else re.sub(r"\s+", " ", text)[:80]      # "haan" / "nahi" / "hmm" to "when?" means any time
             captured.append("callback_time")
 
@@ -964,7 +1024,7 @@ class Flow:
                 bank = []
             ids = [m["id"] for m in bank]
         if asked in captured:                                            # the caller answered the question that was asked: only a strong, specific topic may still reply
-            bank = [m for m in bank if m["score"] >= 0.9] if looks_like_question(text) else []      # "main business karta hoon" is an answer, not a question
+            bank = [m for m in bank if m["score"] >= 0.9] if looks_like_question(text) or forced else []      # "main business karta hoon" is an answer, not a question
             ids = [m["id"] for m in bank]
 
         # --- the legacy assistant answers existing-customer / complaint / collections topics
@@ -987,6 +1047,8 @@ class Flow:
             return NOT_UNDERSTOOD_AGAIN[min(self.unclear_after_done, len(NOT_UNDERSTOOD_AGAIN)) - 1]
 
         parts = []
+        if "business_city" in captured and not ack:
+            ack = ask.BUSINESS_LINE.format(place=self.v["business_city"])
         if "callback_time" in captured and not ack:
             when = speak_time(self.v.get("callback_time", ""))
             if self.v.get("callback_time") == "any time":
@@ -1019,6 +1081,8 @@ class Flow:
             parts.append(reply)
             answered = True
             asked_question = asked_question or reply.rstrip().endswith("?")
+            if m["id"] == "products_offered" and ask.asks_range(text):
+                parts.append(ask.RANGE_LINE)
 
         if not captured and not parts:
             if is_ack_only(text):                                        # "ok", "chalo": agreement, not a failure; carry on with the same question
@@ -1031,7 +1095,12 @@ class Flow:
                 answer = self._free(text)                                # a question outside the form: answer it, then continue
                 if answer:
                     parts.append(answer)
+                    answered = True
                     self.fails[asked] = -1
+            if not parts and not bank and asked not in (None, "phone", "phone_confirm", "full_name") and ask.wants_telling(text):
+                parts.append(UNSURE if domain_like(text) else ask.SAY_AGAIN_LINE)      # no approved answer: say so; nothing recognisable asked: ask again
+                answered = True
+                self.fails[asked] = -1
 
         if c.more_coming:                                               # the caller is still speaking: brief acknowledgement only
             return " ".join(parts[:1]) or random.choice(ACKS)
@@ -1068,6 +1137,17 @@ class Flow:
                 return NOT_UNDERSTOOD_AGAIN[min(self.unclear_after_done, len(NOT_UNDERSTOOD_AGAIN)) - 1]
             self.asked = None
             return " ".join(parts)
+        if (not captured and not parts and not bank and not self.done and nxt == asked and looks_like_question(text)
+                and asked not in (None, "full_name", "phone", "phone_confirm", "amount_confirm", "consent", "callback_time") and self.fails.get(asked, 0) < 1):
+            self.fails[asked] = self.fails.get(asked, 0) + 1
+            self.paused = True
+            return ask.SAY_AGAIN_LINE
+        if answered and not self.done and (question_here or looks_like_question(text) or ask.wants_telling(text)) and "phone" not in captured and "callback_time" not in captured:
+            self.asked, self.paused = nxt, True                         # the customer asked: answer that, then wait. The form question comes later
+            parts = [_drop_trailing_questions(p) for p in parts]
+            if parts == [ask.SAY_AGAIN_LINE]:
+                return ask.SAY_AGAIN_LINE
+            return " ".join([p for p in parts if p] + [ask.INVITE_LINE])
         if asked_question and nxt == self.asked:
             return " ".join(parts)                                      # the approved answer already ends with a question
         self.fails[nxt] = self.fails.get(nxt, 0) + (1 if (nxt == self.asked and not captured and not answered and not parts) else 0)      # answering a question is not a failure

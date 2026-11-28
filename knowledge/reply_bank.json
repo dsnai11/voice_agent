@@ -3840,7 +3840,7 @@
    ],
    "reply": "जी, आप ब्रांच में जाकर जमा कर सकते हैं, और रसीद ज़रूर लीजिए। बिना रसीद के किसी को पैसे मत दीजिए।",
    "note": "Owner-approved wording (2026-11-27). Do not state any amount, do not promise a waiver or a time.",
-   "require": [
+   "require2": ["jama", "bhar", "bhara", "bharna", "bharu", "bharun", "pay", "payment", "paisa", "paise", "emi", "kist", "kisht", "cash", "naqad", "nakad", "जमा", "भर", "पैसे", "कैश", "किस्त"], "require": [
     "branch",
     "cash",
     "naqad",
