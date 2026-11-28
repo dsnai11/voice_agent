@@ -505,7 +505,7 @@ async function buildForm() {
       if (f.type === "phone") el.maxLength = 10;
     }
     el.id = "i_" + f.key;
-    el.addEventListener("input", () => { values[f.key] = el.value; verify(f.key); });
+    el.addEventListener("input", () => { values[f.key] = el.value; typed.add(f.key); verify(f.key); });
     wrap.append(lab, el); $("form").appendChild(wrap);
   }
   refresh();
@@ -545,6 +545,7 @@ function annotate() {
   const n = Object.keys(flags).filter((k) => !verified.has(k)).length;
   $("count").textContent = $("count").textContent.replace(/ · \d+ to check$/, "") + (n ? ` · ${n} to check` : "");
 }
+const typed = new Set();            // boxes the user has changed by hand
 function verify(key) {              // the user typed the value, or pressed "Looks right"
   verified.add(key); delete flags[key]; annotate(); refresh();
 }
@@ -557,7 +558,7 @@ function renderDetails(flash) {
     const inner = document.createElement("div");
     const lab = document.createElement("label"); lab.textContent = pretty(label);
     const inp = document.createElement("input"); inp.value = val;
-    inp.addEventListener("input", () => { values.details[label] = inp.value; verify("detail:" + label); });
+    inp.addEventListener("input", () => { values.details[label] = inp.value; typed.add("detail:" + label); verify("detail:" + label); });
     inner.append(lab, inp);
     const del = document.createElement("button"); del.type = "button"; del.textContent = "✕"; del.title = "Remove";
     del.onclick = () => { delete values.details[label]; renderDetails(); refresh(); };
@@ -568,12 +569,15 @@ function renderDetails(flash) {
 }
 function applyForm(vals, changed, fl, conf) {
   flags = { ...(fl || {}) }; confirmed = new Set(conf || []);
-  for (const k of changed || []) verified.delete(k);   // the agent just changed it: needs checking again
+  for (const k of changed || []) { verified.delete(k); typed.delete(k); }   // the agent just changed it: needs checking again
   for (const [k, v] of Object.entries(vals)) {
     if (k === "details") continue;
+    if (typed.has(k)) continue;                       // typed by hand: Ria's older value does not overwrite it
     values[k] = v; const el = $("i_" + k); if (el) el.value = v;
   }
+  const mine = values.details || {};
   values.details = { ...(vals.details || {}) };
+  for (const key of typed) if (key.startsWith("detail:") && key.slice(7) in mine) values.details[key.slice(7)] = mine[key.slice(7)];
   renderDetails(changed);
   for (const k of changed || []) {
     const w = $("f_" + k); if (!w) continue;

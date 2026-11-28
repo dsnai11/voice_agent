@@ -20,6 +20,7 @@ import db
 import branches
 import intents
 import ask
+import edits
 import forms
 import replybank
 import voice
@@ -75,7 +76,7 @@ QUESTIONS = {
     "city": ["आप किस शहर में रहते हैं?", "आप कौन से शहर से हैं?"],
     "existing_loans": ["कोई और लोन या ईएमआई अभी चल रही है क्या?", "अभी कोई और लोन चल रहा है आपका?"],
     "phone": ["आपका मोबाइल नंबर बता दीजिए।", "अब मोबाइल नंबर बोल दीजिए, धीरे-धीरे।"],
-    "consent": ["क्या हमारी टीम आपको इसी नंबर पर कॉल कर सकती है?", "हमारी टीम आपको कॉल करके आगे की जानकारी दे दे, चलेगा?"],
+    "consent": ["क्या हमारी टीम आपको इसी नंबर पर कॉल कर सकती है?"],
     "callback_time": ["कब कॉल करवाऊँ, कौन सा दिन और टाइम ठीक रहेगा?", "किस दिन और किस टाइम पर कॉल करें?"],
 }
 INCOME_Q = {
@@ -442,7 +443,7 @@ _V = {"aa": "ा", "ai": "ै", "au": "ौ", "ee": "ी", "oo": "ू", "a": "", 
 _VI = {"aa": "आ", "ai": "ऐ", "au": "औ", "ee": "ई", "oo": "ऊ", "a": "अ", "i": "इ", "u": "उ", "e": "ए", "o": "ओ"}
 
 
-_KNOWN = {"ram": "राम", "shyam": "श्याम", "mohan": "मोहन", "sohan": "सोहन", "krishna": "कृष्ण", "ganesh": "गणेश", "dinesh": "दिनेश", "naresh": "नरेश", "vikram": "विक्रम", "ashok": "अशोक", "vishal": "विशाल", "sachin": "सचिन", "verma": "वर्मा", "singh": "सिंह", "kumar": "कुमार", "patel": "पटेल", "yadav": "यादव", "sharma": "शर्मा", "gupta": "गुप्ता", "khan": "खान",
+_KNOWN = {"jaydip": "जयदीप", "jaideep": "जयदीप", "jaydeep": "जयदीप", "jaidip": "जयदीप", "jayesh": "जयेश", "aasha": "आशा", "asha": "आशा", "ram": "राम", "shyam": "श्याम", "mohan": "मोहन", "sohan": "सोहन", "krishna": "कृष्ण", "ganesh": "गणेश", "dinesh": "दिनेश", "naresh": "नरेश", "vikram": "विक्रम", "ashok": "अशोक", "vishal": "विशाल", "sachin": "सचिन", "verma": "वर्मा", "singh": "सिंह", "kumar": "कुमार", "patel": "पटेल", "yadav": "यादव", "sharma": "शर्मा", "gupta": "गुप्ता", "khan": "खान",
           "rahul": "राहुल", "priya": "प्रिया", "amit": "अमित", "ajay": "अजय", "vijay": "विजय", "sanjay": "संजय", "ramesh": "रमेश", "suresh": "सुरेश",
           "mahesh": "महेश", "rakesh": "राकेश", "mukesh": "मुकेश", "deepak": "दीपक", "anil": "अनिल", "sunil": "सुनील", "rajesh": "राजेश", "manoj": "मनोज",
           "pooja": "पूजा", "neha": "नेहा", "sunita": "सुनीता", "anita": "अनीता", "kavita": "कविता", "sita": "सीता", "ravi": "रवि", "rohan": "रोहन",
@@ -509,6 +510,10 @@ def speak_time(text: str) -> str:
     if m:
         n = m.group(1)
         out.append(f"{n if n.isdigit() else NUM.get(n, '')} बजे")
+    if out and re.search(r"\b(?:kal|kaal|parson?|aaj|shaam|sham|subah|dopahar|raat|baje)\s+(?:ke\s+)?baad\b", low):
+        out.append("के बाद")
+    if out and re.search(r"\bkabhi\s+bhi\b|\bany\s*time\b", low):
+        out.append("कभी भी")
     return " ".join(out)
 
 
@@ -526,7 +531,7 @@ def static_sentences() -> list:
         out += qs
     out += list(ALT_REPLIES.values())
     out.append(OFF_LINE)
-    out += ask.all_lines()
+    out += ask.all_lines() + edits.all_lines()
     out += [NOT_UNDERSTOOD, HOLD_LINE, LISTENING_LINE] + NOT_UNDERSTOOD_AGAIN
     out += ["ठीक है, रकम पक्की कर दी।", "ठीक है जी, कोई बात नहीं। आप रकम एक बार फिर बोलिए, जैसे पाँच लाख।"]
     out += ["धन्यवाद, नंबर कन्फ़र्म हो गया।", "ठीक है जी, कोई बात नहीं। कृपया अपना मोबाइल नंबर एक बार फिर, धीरे-धीरे बोलिए।",
@@ -652,7 +657,7 @@ class Flow:
         c = self.call
         if self.v.get("full_name") is None and c.form.get("full_name"):
             self.v["full_name"] = c.form["full_name"]
-        text = (text or "").strip()
+        text = edits.plain((text or "").strip())                              # "teen lakh kar do": that "do" is not a number
         try:
             import spelling
             text = spelling.normalize(text)                                    # everyday spelling first ("nahin" -> "nahi", "Jaypur" -> "Jaipur")
@@ -700,6 +705,19 @@ class Flow:
             if self.asked == "full_name" and "full_name" not in self.v:
                 return GREET_LINE + " " + self._question("full_name")
             return LISTENING_LINE
+
+        # --- "aap kaun ho, call kyun kiya, AI ho ya telecaller?": every one of these is answered, then she waits
+        who = edits.identity(text) if not ask.asks_emi_amount(text) and not re.search(r"\b(?:mera|my)\s+(?:poora\s+|pura\s+)?(?:naam|name)\s+[a-z]{3,}\s+(?:hai|singh|kumar)", low) else []
+        if who:
+            if intents.has(intents.WHY, " " + low + " ") and not self.done:
+                who.append(intents.WHY_LINE)                            # "main kyun bataun?"
+            self.paused = not self.done
+            return " ".join(who + [ask.INVITE_LINE])
+
+        # --- "paanch lakh nahi, teen lakh chahiye": anything already noted can be changed at any time
+        changed = edits.apply(self, text)
+        if changed is not None:
+            return changed
 
         # --- what the customer means when the answer is not the value asked for (refuses, does not know, not interested, busy ...)
         meant = self._meant(text)
@@ -816,6 +834,15 @@ class Flow:
             if entry:
                 bank = [{"id": forced[0], "score": 1.0, "entry": entry}] + (extra[:1] if forced == ["emi_amount"] and re.search(r"\b(?:interest|byaaj|byaj|rate)\b", low) else [])
                 question_here = True
+        hit, key = (False, None) if forced else ask.topic_of(text)
+        if hit:
+            entry = replybank.entry(key) if key else {"reply": UNSURE}
+            if key == "how_apply" and entry:                                  # mid-call she already has the name
+                entry = dict(entry, reply=voice.split_sentences(entry["reply"])[0])
+            if entry:
+                forced = [key or "no_approved_answer"]                       # "payment_info": not the id that hands over to the old assistant
+                bank = [{"id": "payment_info" if key == "payment_how" else forced[0], "score": 1.0, "entry": entry}]
+                question_here = True
         ids = [m["id"] for m in bank]
         if "stop_calling" in ids or "not_interested" in ids:
             entry = next(m for m in bank if m["id"] in ("stop_calling", "not_interested"))["entry"]
@@ -884,7 +911,7 @@ class Flow:
         if emp and ("employment" not in self.v or asked == "employment"):
             details["employment_type"] = emp
             captured.append("employment")
-        business_at = ask.business_place(text) if asked != "city" and not forced else ""
+        business_at = ask.business_place(text) if not forced else ""
         if business_at and self.v.get("business_city") != business_at:
             details["business_city"] = business_at
             captured.append("business_city")
@@ -911,7 +938,7 @@ class Flow:
                 elif not trivial and not asks_something(text) and re.fullmatch(r"[a-z ]{3,40}", re.sub(r"[^a-z ]", " ", low_p).strip() or "-") and len(words_p) <= 4 and not (set(words_p) & filler):
                     canon = re.sub(r"[^a-z ]", " ", low_p).strip()[:40]          # a short noun phrase such as "car repair"; never a whole sentence
                 elif not trivial and len(words_p) <= 6 and not looks_like_question(text):                  # "personal kaam se", "ghar ke liye": keep the meaningful words
-                    drop = filler | {"bol", "bolo", "rahi", "raha", "sun", "suno", "poocha", "pucha", "sawal", "sawaal", "jawab", "galat", "aapko", "aapke", "kuch", "aur", "matlab", "wala", "wali", "jaise",
+                    drop = filler | {"do", "dena", "kardo", "dijiye", "dekho", "bol", "bolo", "rahi", "raha", "sun", "suno", "poocha", "pucha", "sawal", "sawaal", "jawab", "galat", "aapko", "aapke", "kuch", "aur", "matlab", "wala", "wali", "jaise",
                                 "kaam", "liye", "lie", "hain", "kar", "karna", "chahiye", "chahie", "lena", "leni", "liya", "pata", "pta", "samajh", "bolna", "bata", "batao", "karta", "karti", "job", "business"}
                     rem = [w for w in re.findall(r"[a-z]+", low_p) if w not in drop]
                     if 1 <= len(rem) <= 3 and not (set(rem) & {"loan", "lakh", "laakh", "hazaar", "rupe", "rupees"}):

@@ -83,7 +83,36 @@ def business_place(text: str) -> str:
                         place = branches.find_place(chunk)
                         if place:
                             return place[0]
+                        state = branches.find_state(chunk)
+                        if state:
+                            return state
     return ""
+
+
+# question -> the approved answer that belongs to it (None = nothing approved: she says the team will confirm)
+_TOPICS = (
+    ("emi_bounce_effect", r"\b(?:emi|e\s*m\s*i|kist|kisht)\b.{0,30}\b(?:late|bounce\w*|miss\w*|chook\w*|na\s+bhar\w*|nahi\s+bhar\w*)\b|\b(?:late|bounce|miss)\b.{0,20}\b(?:emi|kist)\b"),
+    ("age_limit", r"\b(?:meri|mera|my)\s+(?:age|umar|umr)\b.{0,60}\b(?:loan|milega|milegi|chalega)\b|\bage\s+limit\b|\b(?:umar|umr|age)\s+kitni\s+(?:honi|chahiye)"),
+    ("office_info", r"\b(?:branch|office|ofis|shakha)\b.{0,25}\b(?:kab\s+(?:khul\w*|band)|khul(?:ti|ta|te)|timing\w*|kitne\s+baje|time\s+kya)\b|\b(?:timing\w*|kitne\s+baje)\b.{0,25}\b(?:branch|office)\b"),
+    ("payment_how", r"\b(?:emi|kist|kisht)\b.{0,25}\b(?:kaise|kahan|kaha|kidhar)\b.{0,15}\b(?:bhar\w*|jama|pay|de(?:ni|na|te|nge)?)\b|\b(?:emi|kist)\b.{0,15}\bpayment\s+kaise\b"),
+    ("language", r"\b(?:hindi\s+ke\s+(?:alawa|alava|siva)|kaun\s*s[ie]\s+(?:bhasha|language)|(?:bhasha|language)\w*\s+(?:aati|bol\s+sakt))"),
+    ("company_doing", r"\bcompany\b.{0,20}\b(?:kab\s+se|kitni\s+purani|kitne\s+saal)\b"),
+    ("how_apply", r"\b(?:online\s+)?apply\b.{0,20}\bkaise\b|\bkaise\b.{0,20}\bapply\b"),
+    (None, r"\b(?:kisan|kisaan|farmer|mahila|women|woman|ladies|student)\w*\b.{0,30}\b(?:loan|scheme|yojana)\b|\b(?:loan|scheme|yojana)\b.{0,20}\b(?:kisan|kisaan|farmer|mahila|women|ladies|student)\w*\b"),
+)
+
+
+def topic_of(text: str):
+    """(True, answer id or None) for a question of one of the kinds above, else (False, None). Only for questions."""
+    low = text.lower()
+    if not re.search(r"\?|\b(?:kya|kaise|kab|kitn\w*|kaun|kahan|kaha|milega|milegi|milta|milti|hai\s+kya|hoga|chalega)\b", low):
+        return False, None
+    if re.search(r"\b(?:cibil|sibil|civil|score)\b", low):        # a CIBIL question that also mentions a late EMI stays a CIBIL question
+        return False, None
+    for key, pattern in _TOPICS:
+        if re.search(pattern, low):
+            return True, key
+    return False, None
 
 
 def all_lines() -> list:

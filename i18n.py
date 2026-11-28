@@ -50,7 +50,15 @@ DAYS = {"en": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday
 HI_NUM = {"एक": 1, "दो": 2, "तीन": 3, "चार": 4, "पाँच": 5, "पांच": 5, "छह": 6, "सात": 7, "आठ": 8, "नौ": 9, "दस": 10, "ग्यारह": 11, "बारह": 12}
 
 
+_ENDINGS = {"के बाद": {"en": "or later", "gu": "પછી", "mwr": "रै बाद"}, "कभी भी": {"en": "at any time", "gu": "ગમે ત્યારે", "mwr": "कदैई भी"}}
+
+
 def _when(phrase: str, lang: str) -> str:
+    tail = [words[lang] for k, words in _ENDINGS.items() if k in phrase]
+    if tail:
+        for k in _ENDINGS:
+            phrase = phrase.replace(k, " ")
+        return " ".join([_when(phrase, lang)] + tail).strip()
     t = TIME_WORDS[lang]
     out = []
     rest = phrase
@@ -150,6 +158,14 @@ def _branch_sentence(s: str, lang: str):
         return " ".join(words.get(w, (w, w))[0 if lang == "en" else 1] for w in h.split())
 
     rules = [
+        (r"ठीक है जी, लोन की रकम बदलकर (\d+) रुपये कर दी है।", lambda m: {"en": f"Okay, I have changed the loan amount to {m[1]} rupees.", "gu": f"ઠીક છે જી, લોનની રકમ બદલીને {m[1]} રૂપિયા કરી દીધી છે.",
+            "mwr": f"ठीक है सा, लोन री रकम बदळ'र {m[1]} रुपया कर दी है।"}),
+        (r"ठीक है जी, महीने की इनकम बदलकर (\d+) रुपये कर दी है।", lambda m: {"en": f"Okay, I have changed the monthly income to {m[1]} rupees.", "gu": f"ઠીક છે જી, મહિનાની આવક બદલીને {m[1]} રૂપિયા કરી દીધી છે.",
+            "mwr": f"ठीक है सा, महीना री कमाई बदळ'र {m[1]} रुपया कर दी है।"}),
+        (r"ठीक है जी, आपका शहर बदलकर (.+) कर दिया है।", lambda m: {"en": f"Okay, I have changed your city to {m[1]}.", "gu": f"ઠીક છે જી, તમારું શહેર બદલીને {m[1]} કરી દીધું છે.",
+            "mwr": f"ठीक है सा, आपरो शहर बदळ'र {m[1]} कर दियो है।"}),
+        (r"जी, लोन की रकम (\d+) रुपये ही नोट है।", lambda m: {"en": f"Yes, the loan amount is noted as {m[1]} rupees.", "gu": f"જી, લોનની રકમ {m[1]} રૂપિયા જ નોંધાયેલી છે.",
+            "mwr": f"जी, लोन री रकम {m[1]} रुपया ईज नोट है।"}),
         (r"(.+) ब्रांच का पिनकोड है (.+)।", lambda m: {"en": f"The pincode of the {m[1]} branch is {digits(m[2])}.", "gu": f"{m[1]} બ્રાંચનો પિનકોડ છે {digits(m[2])}.",
             "mwr": f"{m[1]} ब्रांच रो पिनकोड है {m[2]}।"}),
         (r"ठीक है जी, आपका बिज़नेस (.+) में है, नोट कर लिया।", lambda m: {"en": f"Okay, your business is in {m[1]}, I have noted it.", "gu": f"ઠીક છે જી, તમારો બિઝનેસ {m[1]}માં છે, નોંધી લીધું.",
