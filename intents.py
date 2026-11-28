@@ -17,6 +17,7 @@ STOP_LINE = "ठीक है जी, मैंने नोट कर लिय
 BUSY_LINE = "कोई बात नहीं जी। आपको किस दिन और किस टाइम पर कॉल करूँ?"
 HELP_LINE = "जी, लोन के बारे में मैं आपकी पूरी मदद करूँगी।"
 AMOUNT_LINE = "जी, लोन की रकम आपकी एलिजिबिलिटी पर निर्भर करती है।"
+TELL_ME_LINE = "जी बिल्कुल, बताइए, आप क्या पूछना चाहते हैं?"
 
 _NO = r"(?:nahi|nahin|nai|nhi|नहीं)"
 
@@ -41,9 +42,31 @@ VARIES = rf"\bfix(?:ed)?\s+{_NO}|\bupar\s+(?:neeche|niche)\b|\bpakk?a\s+{_NO}|\b
 HOME = r"\bghar\s+(?:par|pe|per)\s+(?:rehti|rehta|rahti|rahta|hi)\b|\bhouse\s*wife\b|\bgrihini\b|\bkuch\s+nahi\s+(?:karta|karti)\b|\bberozgar\b|\bstudent\b|\bpadhai\s+kar"
 ANY_TIME = r"\bkabhi\b|\bjab\s+(?:aapka\s+man|chaho|chahe|aap\s+chah|marzi|bhi)|\bke\s+baad\b|\bany\s*time\b|\bkisi\s+bhi\s+(?:time|din)|\bfree\s+(?:hoon|hun|rahunga|rahungi)\b|कभी\s+भी"
 
+# "I do not want a loan, but I want to talk about / ask something else": the call must go on
+OTHER_TALK = (r"\b(?:kuch|kuchh|koi)\s+(?:aur|or)\b[^.?]{0,40}\b(?:baat|pooch\w*|puch\w*|jaan\w*|jankari|jaankari|chahiye|chaahiye|kaam|sawaal|saval|batao|bataiye)"
+              r"|\b(?:baat|pooch\w*|puch\w*|jaan\w*)\b[^.?]{0,30}\b(?:kuch|kuchh)\s+(?:aur|or)\b"
+              r"|\b(?:doosri|dusri|doosra|dusra|alag)\s+(?:baat|bat|sa[wv]aa?l|kaam|cheez)|\bek\s+(?:sa[wv]aa?l|baat|bat)\b[^.?]{0,20}\b(?:hai|he|pooch\w*|puch\w*|karni)"
+              r"|\bkuch\w*\s+(?:ja+n?ka+ri|maa?loomat|information|detail\w*)\b|\bsa[wv]aa?l\s+(?:hai|pooch\w*|puch\w*)"
+              r"|\b(?:baat|sawaal)\s+(?:karni|karna|poochni|puchni)\s+(?:hai|thi)\b|\b(?:poochhna|poochna|puchna|jaanna|janna)\s+(?:hai|tha|chahta|chahti)"
+              r"|\b(?:ke|ki)\s+(?:baare|bare)\s+(?:mein|me)\s+(?:batao|bataiye|bataye|jaanna|janna|poochna|puchna|jankari)"
+              r"|कुछ\s+और|और\s+बात|पूछना\s+है")
+NO_TALK = r"\b(?:koi\s+)?baat\s+(?:hi\s+)?(?:nahi|nahin|nai)\s+(?:karni|karna|karunga|karungi)|\b(?:nahi|nahin)\s+(?:karni|karna)\s+(?:koi\s+)?baat|\baur\s+kuch\s+(?:nahi|nahin)|\bkuch\s+(?:aur\s+)?(?:nahi|nahin)\b"
+
+
+def wants_other_talk(text: str) -> bool:
+    low = text.lower()
+    return has(OTHER_TALK, low) and not has(NO_TALK, low)
+
+
+def has_question(text: str) -> bool:
+    """A particular thing is asked in the same sentence, so it can be answered at once."""
+    low = text.lower()
+    return "?" in low or has(r"\b(?:kya|kaise|kab|kitna|kitni|kitne|kaun|kahan)\b|\b(?:ke|ki)\s+(?:baare|bare)\s+(?:mein|me)\b", low)
+
+
 # words that name an actual time for a callback ("abhi" and "baad mein" do not)
-REAL_TIME = (r"(?:kal|parson|parso|aaj|shaam|sham|subah|dopahar|dopeher|raat|baje|ghante|ghanta|minute\s+baad|din\s+baad|hafte|week|mahine|somvaar|somwar|mangalvaar|mangalwar|budhvaar|budhwar|"
-             r"guruvaar|guruwar|shukravaar|shukrawar|shanivaar|shaniwar|ravivaar|itvaar|itwar|monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|evening|morning)|कल|आज|परसों|शाम|सुबह|बजे")
+REAL_TIME = (r"\b(?:kal|parson|parso|aaj|shaam|sham|subah|dopahar|dopeher|raat|baje|ghante|ghanta|minute\s+baad|din\s+baad|hafte|week|mahine|somvaar|somwar|mangalvaar|mangalwar|budhvaar|budhwar|"
+             r"guruvaar|guruwar|shukravaar|shukrawar|shanivaar|shaniwar|ravivaar|itvaar|itwar|monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|evening|morning)\b|कल|आज|परसों|शाम|सुबह|बजे")
 # the value itself was said as well ("paanch lakh, baaki nahi bata sakta"): then it is an answer, and the usual reading takes it
 _NAMES_LOAN = r"\b(?:personal|payday|pay\s*day|salary|gold|home|business|vehicle|car|bike)\s+(?:loan|wala)\b"
 
@@ -77,6 +100,8 @@ def read(text: str, asked, has_value: bool) -> str:
         return "why"
     if asked is None or has_value:
         return ""
+    if has(r"\b(?:cibil|sibil|civil|score)\b", low) and has(r"\b(?:milega|milegi|milsi|mil sakta|mil jayega|mil jaega|chahiye|chaahiye)\b|\?", low):
+        return ""                                            # "CIBIL score nahi pata, loan milega?" asks something: answer it, do not just skip
     if asked == "loan_type":
         if has(_NAMES_LOAN, low) or has(r"\b(?:personal|payday|salary|salari|पर्सनल|सैलरी)\b", low) and not has(REFUSE.replace("personal", "persona_l"), low):
             return ""

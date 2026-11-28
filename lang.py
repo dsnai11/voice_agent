@@ -56,6 +56,28 @@ def _soft(words, rx):
     return sum(1 for x in words if rx.search(x))
 
 
+# The listener writes everything as Hindi-like Roman letters, so dialect words arrive bent: "maru naam" -> "maanu naam",
+# "joiye chhe" -> "jo age hai", "mharo naam" -> "mahaaraam" / "maan lo naam", "kitro lagsi" -> "trulaakshi", "thaaro" -> "thaaron".
+# These spellings come from test clips and from real attempts on this PC. Strong ones switch at once, weak ones only twice in a row.
+_HEARD = {
+    "gu": {"strong": r"\bmaa?n+[ou]+ naam\b|\bjo (?:yah chaa?h|yah hai|age hai|iye)|\bke ek loochen\b|\bnati+n pach+h?e\b|\btamn?e\b|\bkaroon chh?oo?\b",
+           "weak": r"\bloan jo$|\bchh?oo\b|\bbelaa?kh\b|\bhamaare be laa?kh\b|\bpatel (?:chh?e|se)\b"},
+    "mwr": {"strong": r"\bmahaa?raa?o?n? ?naam\b|\bmahaa?raa?m\b|\bmhaa?ro naam\b|\bthaa?ron\b|laa?kshi\b|\bkahin (?:kheri|bolun)\b|\bthee?k ?un bol|\bthikun bol",
+            "weak": r"^(?!.*\b(?:kya|kaun|batao|bataiye|bata)\b)(?:tumhaa?r|hamaa?r)[a-z]{0,2} ?naam [a-z]+|\bmahaa?n+[ou]+ naam\b|\bmaan lo naam\b|\bsaa?ddaa? naam\b|\bko nahin chaa?h|^(?:mainne|maine|mane) (?:ek )?(?:personal |salary |payday )?loan (?:chaa?h|chaiye)|\bkate hain\b"},
+}
+
+
+def heard_as(text: str) -> tuple:
+    """(language, True if the sign is unmistakable) from the listener's spelling of dialect speech, or (None, False)."""
+    low = re.sub(r"[^a-z ]", " ", text.lower())
+    low = re.sub(r"\s+", " ", low).strip()
+    for strength in ("strong", "weak"):
+        for code in ("gu", "mwr"):
+            if re.search(_HEARD[code][strength], low):
+                return code, strength == "strong"
+    return None, False
+
+
 def detect(text: str):
     """'hi' | 'en' | 'gu' | 'mwr', or None when the sentence is too short / ambiguous to change the call's language."""
     if not text:
@@ -65,6 +87,9 @@ def detect(text: str):
     w = _words(text)
     if not w:
         return None
+    bent, _sure = heard_as(text)
+    if bent:
+        return bent
     gu = sum(1 for x in w if x in GU_MARKERS)
     mw = sum(1 for x in w if x in MWR_MARKERS)
     hi = sum(1 for x in w if x in HI_MARKERS)
@@ -103,6 +128,9 @@ _SWITCH = [
 
 def is_strong(text: str, code: str) -> bool:
     """Enough evidence to change the call's language on the very first sentence (otherwise two sentences in a row are needed)."""
+    bent, sure = heard_as(text)
+    if bent == code and sure:
+        return True
     w = _words(text)
     amb = sum(1 for x in w if x in ("chhe", "chhu", "chho", "chhai") or (len(x) > 5 and re.search(r"chh?[eu]$", x)))      # shared by Gujarati and Marwari, also glued to a word
     gs = max(sum(1 for x in w if x in GU_STRONG and x not in ("chhe", "chhu")), _soft(w, _GU_SOFT_NOAMB))
@@ -173,7 +201,7 @@ MWR = {
     "mhare": "mere", "mhaare": "mere", "mharo": "mera", "mhaaro": "mera", "mhari": "meri", "mhaari": "meri", "mhara": "mere", "mhaara": "mere", "maaro": "mera", "maari": "meri", "mari": "meri", "maro": "mera", "maru": "mera", "doo": "do", "lon": "loan", "lone": "loan", "loon": "loan", "mhane": "mujhe", "mhanne": "mujhe",
     "mhaane": "mujhe", "manne": "mujhe", "mane": "mujhe", "thane": "aapko", "thanne": "aapko", "thaane": "aapko", "thare": "aapke", "thaare": "aapke", "tharo": "aapka", "thaaro": "aapka", "thari": "aapki", "thaari": "aapki",
     "thara": "aapke", "thaara": "aapke", "thaa": "aap", "thame": "aap", "kai": "kya", "kain": "kya", "kaain": "kya", "kaaiyan": "kya", "kayi": "kya", "kaayi": "kya", "kaaN": "kya", "kun": "kaun", "kuun": "kaun", "kunsi": "kaunsi",
-    "kunsa": "kaunsa", "kathe": "kahan", "kathai": "kahan", "kaathe": "kahan", "kiyan": "kaise", "kiyaan": "kaise", "kyaan": "kaise", "kito": "kitna", "kitto": "kitna", "kitti": "kitni", "kiti": "kitni", "kitta": "kitne",
+    "kunsa": "kaunsa", "kathe": "kahan", "kathai": "kahan", "kaathe": "kahan", "kiyan": "kaise", "kiyaan": "kaise", "kyaan": "kaise", "kito": "kitna", "kitro": "kitna", "kitri": "kitni", "kitra": "kitne", "kitto": "kitna", "kitti": "kitni", "kiti": "kitni", "kitta": "kitne",
     "kadi": "kab", "kadai": "kab", "ghano": "bahut", "ghani": "bahut", "ghana": "bahut", "ghanaa": "bahut", "lagsi": "lagega", "lagse": "lagega", "lagasi": "lagega", "hosi": "hoga", "hovsi": "hoga", "hovegi": "hoga",
     "hove": "hota hai", "milsi": "milega", "milse": "milega", "milegi": "milega", "chaije": "chahiye", "chaaije": "chahiye", "chaiji": "chahiye", "chaijo": "chahiye", "chaijyo": "chahiye", "chaizi": "chahiye", "chahije": "chahiye",
     "dijo": "dijiye", "deejo": "dijiye", "dyo": "dijiye", "dyoji": "dijiye", "hukam": "ji", "hukum": "ji", "sa": "", "saa": "", "ri": "ki", "ro": "ka", "ra": "ke", "re": "ke", "rai": "ki", "ae": "yeh", "ona": "uska", "oni": "uski",

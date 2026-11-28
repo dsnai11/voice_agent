@@ -81,6 +81,9 @@ def _when(phrase: str, lang: str) -> str:
 
 def _templates(s: str, lang: str, name: str):
     """Sentences that carry a name, an amount, a number or a time."""
+    branch = _branch_sentence(s, lang)
+    if branch:
+        return branch
     m = re.fullmatch(r"धन्यवाद (.+) जी।", s)
     if m:
         return {"en": f"Thank you, {name or m.group(1)}.", "gu": f"આભાર {gu_script(m.group(1))} જી.", "mwr": f"धन्यवाद {m.group(1)} सा।"}[lang]
@@ -92,6 +95,10 @@ def _templates(s: str, lang: str, name: str):
     if m:
         n = m.group(1)
         return {"en": f"{n} rupees. Is that correct?", "gu": f"જી, {n} રૂપિયા. શું આ બરાબર છે?", "mwr": f"जी, {n} रुपया। कांई ओ सही है?"}[lang]
+    m = re.fullmatch(r"जी, (\d+) रुपये।", s)
+    if m:
+        n = m.group(1)
+        return {"en": f"{n} rupees.", "gu": f"જી, {n} રૂપિયા.", "mwr": f"जी, {n} रुपया।"}[lang]
     m = re.fullmatch(r"आपका नंबर (\d+) है, क्या यह सही है\?", s)
     if m:
         n = m.group(1)
@@ -124,6 +131,49 @@ def _templates(s: str, lang: str, name: str):
         n = datetime.date.today()
         d = f"{DAYS[lang][n.weekday()]}, {n.day} {MONTHS[lang][n.month - 1]} {n.year}"
         return {"en": f"Today is {d}.", "gu": f"આજે {d} છે.", "mwr": f"आज {d} है।"}[lang]
+    return None
+
+
+def _branch_sentence(s: str, lang: str):
+    """The branch answers (branches.py). Place names and addresses are kept as written."""
+    states = {"राजस्थान": ("Rajasthan", "રાજસ્થાન"), "मध्य प्रदेश": ("Madhya Pradesh", "મધ્ય પ્રદેશ"), "गुजरात": ("Gujarat", "ગુજરાત"),
+              "उत्तर प्रदेश": ("Uttar Pradesh", "ઉત્તર પ્રદેશ"), "छत्तीसगढ़": ("Chhattisgarh", "છત્તીસગઢ"), "महाराष्ट्र": ("Maharashtra", "મહારાષ્ટ્ર")}
+
+    def st(h):
+        return h if lang == "mwr" else states.get(h, (h, h))[0 if lang == "en" else 1]
+
+    def digits(h):
+        if lang == "mwr":
+            return h
+        words = {"शून्य": ("zero", "શૂન્ય"), "एक": ("one", "એક"), "दो": ("two", "બે"), "तीन": ("three", "ત્રણ"), "चार": ("four", "ચાર"), "पाँच": ("five", "પાંચ"),
+                 "छह": ("six", "છ"), "सात": ("seven", "સાત"), "आठ": ("eight", "આઠ"), "नौ": ("nine", "નવ")}
+        return " ".join(words.get(w, (w, w))[0 if lang == "en" else 1] for w in h.split())
+
+    rules = [
+        (r"जी हाँ, (.+) में हमारी ब्रांच है, ज़िला (.+), (.+)।", lambda m: {"en": f"Yes, we have a branch in {m[1]}, district {m[2]}, {st(m[3])}.",
+            "gu": f"જી હા, {m[1]}માં અમારી બ્રાંચ છે, જિલ્લો {m[2]}, {st(m[3])}.", "mwr": f"जी हां सा, {m[1]} में म्हारी ब्रांच है, जिलो {m[2]}, {st(m[3])}।"}),
+        (r"पता है, (.+)।", lambda m: {"en": f"The address is {m[1]}.", "gu": f"સરનામું છે, {m[1]}.", "mwr": f"पतो है, {m[1]}।"}),
+        (r"पिनकोड है (.+)।", lambda m: {"en": f"The pincode is {digits(m[1])}.", "gu": f"પિનકોડ છે {digits(m[1])}.", "mwr": f"पिनकोड है {m[1]}।"}),
+        (r"जी हाँ, (.+) में हमारी (\d+) ब्रांच हैं: (.+)।", lambda m: {"en": f"Yes, we have {m[2]} branches in {m[1]}: {m[3].replace('और दूसरी जगहें', 'and other places')}.",
+            "gu": f"જી હા, {m[1]}માં અમારી {m[2]} બ્રાંચ છે: {m[3].replace('और दूसरी जगहें', 'અને બીજી જગ્યાઓ')}.",
+            "mwr": f"जी हां सा, {m[1]} में म्हारी {m[2]} ब्रांच है: {m[3].replace('और दूसरी जगहें', 'अर दूजी जगां')}।"}),
+        (r"जी हाँ, (.+) में हमारी (\d+) ब्रांच हैं।", lambda m: {"en": f"Yes, we have {m[2]} branches in {st(m[1])}.",
+            "gu": f"જી હા, {st(m[1])}માં અમારી {m[2]} બ્રાંચ છે.", "mwr": f"जी हां सा, {m[1]} में म्हारी {m[2]} ब्रांच है।"}),
+        (r"आप किस जगह की ब्रांच का पता चाहेंगे\?", lambda m: {"en": "Which branch's address would you like?", "gu": "તમને કઈ જગ્યાની બ્રાંચનું સરનામું જોઈએ છે?",
+            "mwr": "आपनै कुणसी जगां री ब्रांच रो पतो चाइजे?"}),
+        (r"आप किस शहर या गाँव में रहते हैं\?", lambda m: {"en": "Which town or village do you live in?", "gu": "તમે કયા શહેર કે ગામમાં રહો છો?",
+            "mwr": "आप कुणसै शहर या गांव में रैवो हो?"}),
+        (r"जी, आप किस शहर या गाँव की ब्रांच के बारे में पूछ रहे हैं\?", lambda m: {"en": "Which town or village branch are you asking about?",
+            "gu": "તમે કયા શહેર કે ગામની બ્રાંચ વિશે પૂછો છો?", "mwr": "जी, आप कुणसै शहर या गांव री ब्रांच रै बारै में पूछ रह्या हो?"}),
+        (r"माफ़ कीजिए, हमारी ब्रांच लिस्ट में अभी (.+) की ब्रांच नहीं दिख रही है।", lambda m: {"en": f"Sorry, I do not see a branch in {m[1]} in our branch list yet.",
+            "gu": f"માફ કરજો, અમારી બ્રાંચની યાદીમાં હાલ {m[1]}ની બ્રાંચ દેખાતી નથી.", "mwr": f"माफ करज्यो सा, म्हारी ब्रांच लिस्ट में अबार {m[1]} री ब्रांच कोनी दीसै।"}),
+        (r"टीम आपको सबसे पास की ब्रांच बता देगी।", lambda m: {"en": "Our team will tell you the nearest branch.", "gu": "ટીમ તમને સૌથી નજીકની બ્રાંચ જણાવશે.",
+            "mwr": "टीम आपनै सगळां सूं नेड़ी ब्रांच बता देसी।"}),
+    ]
+    for pattern, make in rules:
+        m = re.fullmatch(pattern, s)
+        if m:
+            return make(m)[lang]
     return None
 
 

@@ -11,7 +11,11 @@
     "aap kaun ho",
     "who is this",
     "kahan se bol rahe ho",
-    "ye kiska number hai"
+    "ye kiska number hai",
+    "aap kun bol riya ho sa",
+    "kon bol raho hai",
+    "haan ji hello kon bol raho hai",
+    "kun bol riya ho"
    ],
    "reply": "जी, मैं रिया बोल रही हूँ, लक्ष्मी इंडिया फाइनेंस लिमिटेड से। आपकी लोन पूछताछ के बारे में बात करनी थी, क्या अभी दो मिनट बात कर सकते हैं?"
   },
@@ -114,7 +118,32 @@
     "block kar dunga"
    ],
    "reply": "ठीक है जी, मैंने नोट कर लिया है, आपको दोबारा कॉल नहीं आएगा। परेशानी के लिए सॉरी।",
-   "note": "Agree at once, record the stop-calling request with request_callback note 'DO NOT CALL', then call finish_call."
+   "note": "Agree at once, record the stop-calling request with request_callback note 'DO NOT CALL', then call finish_call.",
+   "require": [
+    "mat",
+    "band",
+    "nahi",
+    "nahin",
+    "na",
+    "no",
+    "not",
+    "stop",
+    "dnd",
+    "hatao",
+    "hata",
+    "remove",
+    "disturb",
+    "pareshan",
+    "नहीं",
+    "मत",
+    "बंद",
+    "हटा",
+    "परेशान",
+    "ના",
+    "નહીં",
+    "બંધ",
+    "कोनी"
+   ]
   },
   {
    "id": "wrong_number",
@@ -200,7 +229,19 @@
     "pin bata dun"
    ],
    "reply": "नहीं नहीं जी, कृपया ओटीपी, पिन, सीवीवी या पासवर्ड किसी को भी मत बताइए, हम कभी नहीं माँगते। आप बस अपनी बेसिक डिटेल्स बताइए।",
-   "note": "Never ask for or accept these. Warn the caller kindly."
+   "note": "Never ask for or accept these. Warn the caller kindly.",
+   "require": [
+    "otp",
+    "o t p",
+    "pin",
+    "cvv",
+    "password",
+    "passward",
+    "ओटीपी",
+    "पिन",
+    "सीवीवी",
+    "पासवर्ड"
+   ]
   },
   {
    "id": "how_much_loan",
@@ -313,7 +354,16 @@
     "score kam hai to kya karun",
     "cibil kam hai to milega kya",
     "cibil kam hai to loan milega kya",
-    "सिबिल कम है तो मिलेगा क्या"
+    "सिबिल कम है तो मिलेगा क्या",
+    "mharo cibil thodo kamjor hai loan milsi kai",
+    "mera cibil thoda kamzor hai loan milega kya",
+    "cibil bhi thoda kam hai",
+    "cibil thoda kam hai kya ho jayega",
+    "mera cibil score thoda kam hai kya phir bhi loan mil jayega",
+    "pehle ek do emi late ho gayi thi loan milega kya",
+    "mera cibil 700 se kam hai loan milega kya",
+    "agar mera cibil 700 se down hai to mujhe loan mil jayega kya",
+    "mera cibil 600 ke aas paas hai"
    ],
    "reply": "जी, छह सौ पचास या उससे ऊपर का क्रेडिट स्कोर बेहतर माना जाता है, पर फ़ैसला टीम करती है। मैं पक्का नहीं बोल सकती, आप चाहें तो डिटेल्स लिखवा दीजिए।",
    "note": "Do not promise approval."
@@ -338,7 +388,10 @@
     "mera apna business hai",
     "mera apna dhandha hai kya mujhe loan mil sakta hai",
     "pashu palan karne wale ko loan milta hai kya",
-    "self employed ko loan milta hai kya"
+    "self employed ko loan milta hai kya",
+    "mera chhota sa kaam hai kirana ka",
+    "mera dhaba hai loan milega kya",
+    "chhota sa workshop hai mera"
    ],
    "reply": "जी, अपना काम करने वालों को भी मिल सकता है, उम्र इक्कीस से पैंसठ और कम से कम दो साल का बिज़नेस चाहिए। आपका बिज़नेस कितने साल से है?"
   },
@@ -394,7 +447,10 @@
     "sirf aadhar se ho jayega kya",
     "what documents",
     "which documents do i need",
-    "what documents are required"
+    "what documents are required",
+    "kai kai kagad lagsi",
+    "kagaj patar kya lagega ji",
+    "kagaz kya kya chahiye honge"
    ],
    "reply": "जी, आधार या पैन जैसा आईडी प्रूफ, एड्रेस प्रूफ, पिछले तीन महीने की सैलरी स्लिप, छह महीने का बैंक स्टेटमेंट और जॉब का प्रूफ लगता है। क्या ये आपके पास हैं?"
   },
@@ -406,7 +462,11 @@
     "salary cash mein aati hai",
     "bank mein salary nahi aati",
     "slip nahi milti",
-    "document kam hain mere paas"
+    "document kam hain mere paas",
+    "mere paas itr nahi hai",
+    "itr nahi hai zyada kagaz nahi hain",
+    "itr koni hai loan milsi kai",
+    "mere paas zyada kagaz nahi hain"
    ],
    "reply": "जी, इसके लिए टीम से पूछना पड़ेगा कि कौन सा दूसरा प्रूफ चल सकता है। मैं आपका कॉलबैक नोट कर लेती हूँ, किस टाइम पर कॉल करवाऊँ?",
    "note": "No approved alternative. Offer callback."
@@ -424,7 +484,9 @@
     "processing charge kitna hai",
     "processing fee kitni hai",
     "processing fees kitna katega",
-    "zero processing fee hai kya"
+    "zero processing fee hai kya",
+    "kharcho kitto aasi",
+    "kharcha kitna aayega"
    ],
    "reply": "जी, लॉगिन फ़ीस कुछ नहीं है, और प्रोसेसिंग फ़ीस चार परसेंट तक होती है, टैक्स अलग से। सही अमाउंट आपकी एप्लीकेशन के हिसाब से टीम बताएगी।"
   },
@@ -487,7 +549,11 @@
     "aapke loan ka byaj kya hai",
     "what is the interest rate",
     "what interest rate do you charge",
-    "how much is the interest"
+    "how much is the interest",
+    "byaaj kitro lagsi",
+    "byaaj kitna lagega sa",
+    "byaaj ro hisaab batao sa",
+    "seedha seedha byaaj batao"
    ],
    "reply": "जी, इंटरेस्ट आपकी प्रोफ़ाइल पर निर्भर करता है, इसलिए मैं अभी सही नंबर नहीं बता सकती। टीम आपको एग्ज़ैक्ट रेट बता देगी, क्या कॉलबैक लगा दूँ?",
    "note": "Never quote or guess a rate."
@@ -639,7 +705,10 @@
     "paise kab tak milenge",
     "paise ke liye kitna intezar karna padega",
     "paise kitne din mein milenge",
-    "paise kitne time mein account mein aate hain"
+    "paise kitne time mein account mein aate hain",
+    "paiso kad milsi",
+    "rupiya khate mein kitra din mein aasi",
+    "paisa account mein kitne din mein aa jayega"
    ],
    "reply": "जी, डॉक्यूमेंट पूरे होने के बाद आमतौर पर चौबीस से अड़तालीस घंटे लगते हैं, पर मैं पक्का वादा नहीं कर सकती। आप जल्दी के लिए डॉक्यूमेंट तैयार रखिए।",
    "note": "Never promise a time."
@@ -748,7 +817,12 @@
     "mujhe sochne ka time chahiye",
     "mujhe sochne ke liye time chahiye",
     "soch ke batata hoon",
-    "thoda time do sochne ka"
+    "thoda time do sochne ka",
+    "bade bhai se baat karke batata hoon",
+    "ghar walon se pooch ke bataunga",
+    "partner se salah karke batata hoon",
+    "ghar mein puch ne bataunla sa",
+    "ghar mein pooch kar shaam tak batata hoon"
    ],
    "reply": "बिल्कुल जी, आराम से सोचिए। मैं आपको बाद में कॉल कर लूँ? बताइए किस दिन और किस टाइम पर ठीक रहेगा?",
    "note": "Offer callback, request_callback with the slot.",
@@ -778,7 +852,10 @@
     "pehle loan reject hua tha",
     "ek loan chal raha hai",
     "kya doosra loan mil sakta hai",
-    "pichhli baar reject ho gaya tha"
+    "pichhli baar reject ho gaya tha",
+    "mera pehle se ek chhota loan chal raha hai toh kya yeh mil jayega",
+    "pehle se kist chal rahi hai to naya loan milega kya",
+    "pehle se loan chal raha hai naya milega kya"
    ],
    "reply": "जी, इसके लिए टीम आपकी प्रोफ़ाइल देखकर बता पाएगी, मैं पक्का नहीं बोल सकती। क्या मैं कॉलबैक नोट कर लूँ?"
   },
@@ -1185,7 +1262,11 @@
     "company ke bare me kuch batao",
     "kya aap nbfc ho",
     "laxmi india finance kya hai",
-    "tum log kaun si company ho"
+    "tum log kaun si company ho",
+    "ya company kathe ki hai sa",
+    "ye company kahan ki hai",
+    "yeh laxmi india finance kahan ki company hai",
+    "company kahan ki hai"
    ],
    "reply": "जी, लक्ष्मी इंडिया फाइनेंस लिमिटेड जयपुर की एक नॉन-बैंकिंग फाइनेंस कंपनी है। हम पर्सनल, बिज़नेस, व्हीकल और प्रॉपर्टी जैसे कई तरह के लोन देते हैं।",
    "note": "Only public company facts; never claim awards, ratings, sizes or years.",
@@ -1274,7 +1355,12 @@
     "vehicle loan milta hai kya",
     "property par loan milta hai",
     "aapke pas kaun kaun se loan hain",
-    "gold loan hai kya"
+    "gold loan hai kya",
+    "mujhe lakshmi india ke loan ke baare mein batao kis type ke loan provide karvaati hai",
+    "lakshmi india kis type ke loan provide karti hai",
+    "aap kaun kaun se loan dete ho",
+    "kis type ke loan milte hain aapke yahan",
+    "mujhe kuch loan ke baare mein batao kis type ke loan hain"
    ],
    "reply": "जी, हमारे पास पर्सनल, बिज़नेस, व्हीकल, कंस्ट्रक्शन और प्रॉपर्टी के बदले लोन जैसे कई विकल्प हैं। अभी मैं पर्सनल, पेडे और सैलरी लोन में आपकी मदद कर रही हूँ, बाकी के लिए टीम आपसे बात करेगी।"
   },
@@ -1310,7 +1396,10 @@
     "cibil 650 chalega kya",
     "kitne cibil par loan milta hai",
     "personal loan me kitna cibil score chahiye",
-    "cibil score kitna hona chahiye"
+    "cibil score kitna hona chahiye",
+    "aapki company mein loan lene ke liye kam se kam kitna cibil score chahiye",
+    "minimum kitna cibil chahiye",
+    "loan ke liye kitna cibil score hona chahiye"
    ],
    "reply": "जी, पर्सनल लोन के लिए आमतौर पर 650 या उससे ऊपर का सिबिल स्कोर अच्छा माना जाता है, पर फ़ैसला आपकी पूरी प्रोफ़ाइल देखकर टीम करती है।",
    "note": "Never promise approval.",
@@ -1319,7 +1408,10 @@
     "civil",
     "credit score",
     "score",
-    "सिबिल"
+    "सिबिल",
+    "credit",
+    "loan",
+    "emi"
    ]
   },
   {
@@ -1404,7 +1496,10 @@
     "mujhe kuch aur jaanna hai",
     "mujhe kuch aur puchna hai",
     "mujhe kuchh aur poochhana hai aapse",
-    "mujhse baat karo"
+    "mujhse baat karo",
+    "kya main yeh assistant se poori jankari le sakta hoon loan ke regarding",
+    "kya main aapse poori jankari le sakta hoon",
+    "mujhe loan ke baare mein poori jankari chahiye aapse"
    ],
    "reply": "जी बिल्कुल, बताइए, आप क्या पूछना चाहते हैं?"
   },
@@ -1782,7 +1877,10 @@
     "loan against property kya hota hai",
     "property par loan kaise milta hai",
     "lap loan kya hai",
-    "ghar par loan milta hai kya"
+    "ghar par loan milta hai kya",
+    "property par loan karte ho kya",
+    "property ke upar loan milta hai kya",
+    "makaan par loan karte ho"
    ],
    "require": [
     "property",
@@ -2061,7 +2159,13 @@
     "meri cibil report batao",
     "mera score check karo",
     "mera civil score kitna hai",
-    "to mera abhi credit score kya hai yah batao"
+    "to mera abhi credit score kya hai yah batao",
+    "mujhe apna cibil score nahi pata toh loan milega ya nahi",
+    "cibil score pata nahi loan milega kya",
+    "mujhe apna cibil nahi pata",
+    "cibil score pata nahi",
+    "mujhe apna cibil score nahi pata",
+    "cibil score maloom nahi"
    ],
    "require": [
     "score",
@@ -2076,7 +2180,10 @@
     "mere",
     "my",
     "apna",
-    "apni"
+    "apni",
+    "pata",
+    "maloom",
+    "malum"
    ]
   },
   {
@@ -2411,7 +2518,10 @@
     "pehle paise bhejne honge kya",
     "pehle security deposit dena hoga kya",
     "processing fee pehle jama karni padegi kya",
-    "tab tak paise nahi dunga jab tak loan na mile"
+    "tab tak paise nahi dunga jab tak loan na mile",
+    "pehle koi paiso jama karanu padsi kai",
+    "pehle koi file charge ya paisa to jama nahi karwana padega",
+    "pehle paisa jama karwana padega kya"
    ]
   },
   {
@@ -2634,7 +2744,11 @@
     "new to credit hoon",
     "no cibil score hai milega kya",
     "pehla pehla loan hai mera",
-    "pehli baar loan le raha hoon"
+    "pehli baar loan le raha hoon",
+    "maine aaj tak koi loan ya credit card nahi liya mera cibil zero hai to kya mujhe loan milega",
+    "mera cibil zero hai loan milega kya",
+    "pehle kabhi loan nahi liya loan milega kya",
+    "cibil score minus one hai"
    ]
   },
   {
@@ -2763,7 +2877,10 @@
     "tractor loan milta hai kya",
     "truck loan chahiye",
     "two wheeler loan hai kya",
-    "vehicle loan ke baare mein batao"
+    "vehicle loan ke baare mein batao",
+    "tractor par loan milta hai kya",
+    "commercial gaadi par loan kitna milega",
+    "gaadi par loan karte ho kya"
    ],
    "require": [
     "gaadi",

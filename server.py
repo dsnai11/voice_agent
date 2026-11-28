@@ -144,6 +144,32 @@ def _refusal_replies():
     return list(dict.fromkeys(pc for t in texts for pc in voice.split_sentences(t)))
 
 
+def _dialect_replies(lg: str):
+    """The usual loan-call sentences in Marwari or Gujarati, split exactly as they are spoken: they were made during the call (5-11 s)."""
+    import flow
+    import i18n
+    import intents
+    questions = [q for v in flow.QUESTIONS.values() for q in v] + [q for v in list(flow.INCOME_Q.values()) + list(flow.TENURE_Q.values()) for q in v]
+    texts = [f"{a} {q}" for q in questions for a in (flow.ACKS[0], flow.ACKS[1], flow.ACKS[2])] + [f"{intents.SKIP_LINE} {q}" for q in questions]
+    texts += [f"{a} {q}" for q in questions for a in flow.ACKS[3:]]
+    return list(dict.fromkeys(pc for t in texts for pc in voice.split_sentences(i18n.localize(t, lg))))
+
+
+def _prewarm_branches(todo: list):
+    """The branch answers, one at a time alongside the other preparation; a call always comes first."""
+    time.sleep(5)
+    print(f"branch answers: {len(todo)} sentences to prepare in the background", flush=True)
+    for x in todo:
+        while CALLS_ON[0] > 0:
+            time.sleep(2)
+        try:
+            voice.audio_for(voice.speakable(x), voice.LIVE_FORMAT, patient=True)
+        except Exception as e:
+            print(f"branch answers: skipped one sentence ({type(e).__name__})", flush=True)
+        time.sleep(1)
+    print("branch answers ready", flush=True)
+
+
 def _prewarm_voice():
     """Generate Ria's common sentences once, in the background, so they play with no wait during calls (new ones are cached as they are spoken)."""
     try:
@@ -177,6 +203,14 @@ def _prewarm_voice():
             if done % 10 == 0:
                 print(f"voice cache: {done} prepared, {len(todo)} to go", flush=True)
         print("voice cache ready", flush=True)
+        try:
+            import branches
+            todo_b = [p for t in branches.all_answers() for p in voice.split_sentences(t) if not os.path.exists(voice.cache_path(voice.speakable(p), voice.LIVE_FORMAT))]
+            todo_b = list(dict.fromkeys(todo_b))
+        except Exception:
+            todo_b = []
+        if todo_b:
+            threading.Thread(target=_prewarm_branches, args=(todo_b,), daemon=True).start()
         import i18n
         import re as _re
         for lg in [x for x in _setting("PREWARM_LANGS", "en,gu,mwr").split(",") if x.strip() in ("en", "gu", "mwr")]:      # the other languages: the fixed call lines, recorded in the background
@@ -190,12 +224,17 @@ def _prewarm_voice():
                     tr = i18n.table(lg).get(part.strip())
                     if tr and part.strip() not in answers:
                         lines.append(tr)
+            if lg in ("gu", "mwr"):
+                lines += _dialect_replies(lg)
             todo2 = [x for x in dict.fromkeys(lines) if not os.path.exists(voice.cache_path(voice.speakable(x, lg), voice.LIVE_FORMAT, code))]
             print(f"voice cache {lg}: {len(todo2)} call lines to prepare in the background", flush=True)
             for x in todo2:
                 while CALLS_ON[0] > 0:
                     time.sleep(1)
-                voice.audio_for(voice.speakable(x, lg), voice.LIVE_FORMAT, code)
+                try:
+                    voice.audio_for(voice.speakable(x, lg), voice.LIVE_FORMAT, code, patient=True)
+                except Exception as e:                   # one line failing (or a call coming in) must not stop the rest
+                    print(f"voice cache {lg}: skipped one line ({type(e).__name__})", flush=True)
             print(f"voice cache {lg} ready", flush=True)
         try:
             if voice.ENGINE != "voicestudio":
@@ -585,12 +624,6 @@ class CallSession:
         await self.send(type="status", state="speaking")
         if getattr(self.call, "collection", False):          # a collection call opens by asking for the customer by name
             await self.speak(self.call.opening())
-            return
-        if self.call_lang() != "hi":                          # a language was chosen before the call: greet in it
-            import i18n
-            hindi = clips.GROUPS["greeting"][0]
-            self.call.start_with(hindi)
-            await self.speak(i18n.localize(hindi, self.call_lang()))
             return
         recorded = await self.play_clip("greeting")
         if recorded:
@@ -1175,9 +1208,6 @@ async def ws_call(ws: WebSocket):
                         if data.get("customer") and not sess.use_collection(str(data["customer"])):
                             await sess.send(type="error", message="This customer is not in the demo CRM.")
                             break
-                        flow_ = getattr(sess.call, "flow", None)
-                        if flow_ is not None and data.get("lang") in ("hi", "en", "gu", "mwr"):
-                            flow_.lang, flow_.fixed_lang = data["lang"], True
                         sess.start()
                     elif kind == "stopped_at":                       # where the page was in the reply when it stopped
                         if sess.resume is not None:

@@ -26,6 +26,9 @@ asr_models/
 calls/
 
 testdata/
+
+# the company's branch list stays on this PC
+knowledge/branches.json
 logs/
 
 # the owner's voice: reference audio, its text and the approved recordings stay on this PC

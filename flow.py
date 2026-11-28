@@ -17,6 +17,7 @@ import random
 import re
 
 import db
+import branches
 import intents
 import forms
 import replybank
@@ -103,7 +104,7 @@ ACKS = ["जी।", "ठीक है।", "अच्छा।", "जी, स�
 END_NOW = r"call\s*(kaat|kat\b|cut|band|disconnect|end)|kaat\s*do|cut\s*(the\s*)?call|phone\s*rakh|\bbye\b|alvida|rakh(ta|ti)\s*hoo?n|hang\s*up|disconnect"
 END_DONE = r"dhanyavaad|dhanyawad|dhanyabad|shukriya|thank\s*you|thanks|bas\s*itn|ho\s*gaya|nothing\s*else|aur\s*kuch\s*nahi|that'?s\s*all|koi\s*sawal\s*nahi"
 # bank topics that belong to existing customers, complaints or collections: the full assistant handles them
-LEGACY_IDS = {"status_check", "payment_how", "existing_loan", "closure_papers", "app_issue", "complaint", "harassment", "dispute_loan",
+LEGACY_IDS = {"status_check", "payment_how", "closure_papers", "app_issue", "complaint", "harassment", "dispute_loan",
               "late_fee", "overdue_collections", "hardship", "abusive"}
 SKIP_IDS = {"how_apply", "wrong_number", "new_job", "not_heard", "not_understood", "off_topic"}      # these misfire on plain answers
 
@@ -114,6 +115,10 @@ NUM = {"ek": 1, "do": 2, "teen": 3, "char": 4, "chaar": 4, "paanch": 5, "panch":
        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10, "twenty": 20,
        "thirty": 30, "forty": 40, "fifty": 50, "dedh": 1.5, "dhai": 2.5, "adhai": 2.5, "sava": 1.25, "aadha": 0.5, "half": 0.5}
 NUM.update({"ikkis": 21, "ikis": 21, "bais": 22, "baais": 22, "baees": 22, "baaees": 22, "teis": 23, "teees": 23, "teyis": 23, "chaubis": 24, "chaubees": 24, "chobis": 24, "chhabbis": 26, "chhabbees": 26, "chabbis": 26, "sattais": 27, "sataais": 27, "sattaees": 27, "satais": 27, "atthais": 28, "athaais": 28, "athais": 28, "atthaees": 28, "unatis": 29, "unnatees": 29, "untees": 29, "unattis": 29, "ikatis": 31, "ikattis": 31, "battis": 32, "batis": 32, "battees": 32, "taintis": 33, "tentis": 33, "taintees": 33, "chauntis": 34, "chautis": 34, "chauntees": 34, "paintis": 35, "paitis": 35, "paintees": 35, "chhattis": 36, "chhatis": 36, "chhattees": 36, "saintis": 37, "saitis": 37, "saintees": 37, "adtis": 38, "adtees": 38, "atrtis": 38, "untalis": 39, "unchalis": 39, "untalees": 39, "iktalis": 41, "iktaalis": 41, "bayalis": 42, "byalis": 42, "bayaalis": 42, "taintalis": 43, "tentalis": 43, "taitalis": 43, "chauvalis": 44, "chavalis": 44, "chaualis": 44, "chhiyalis": 46, "chhyalis": 46, "chhiyaalis": 46, "saintalis": 47, "saitalis": 47, "adtalis": 48, "adtalees": 48, "unchas": 49, "unanchas": 49, "unaas": 49, "ikyavan": 51, "ikyaavan": 51, "baavan": 52, "bawan": 52, "bavan": 52, "tirpan": 53, "tirpun": 53, "tirpan": 53, "chauvan": 54, "chavan": 54, "chauwan": 54, "pachpan": 55, "pachpun": 55, "pachapan": 55, "chhappan": 56, "chhapan": 56, "sattavan": 57, "satavan": 57, "sattaawan": 57, "atthavan": 58, "athavan": 58, "atthaawan": 58, "unsath": 59, "unsaath": 59, "iksath": 61, "iksaath": 61, "baasath": 62, "basath": 62, "bausath": 62, "tirsath": 63, "tirsaath": 63, "chausath": 64, "chaunsath": 64, "painsath": 65, "painsat": 65, "paisath": 65, "chhiyasath": 66, "chhiyaasath": 66, "sadsath": 67, "sadsaath": 67, "adsath": 68, "adsaath": 68, "unhattar": 69, "unahattar": 69, "ikhattar": 71, "ikahattar": 71, "bahattar": 72, "bahatar": 72, "tihattar": 73, "tihatar": 73, "chauhattar": 74, "chauhatar": 74, "chhihattar": 76, "chhihatar": 76, "satahattar": 77, "satahtar": 77, "athahattar": 78, "athahtar": 78, "unnasi": 79, "unasi": 79, "unyasi": 79, "ikyasi": 81, "ikyaasi": 81, "bayasi": 82, "byaasi": 82, "tirasi": 83, "tiraasi": 83, "chaurasi": 84, "chauraasi": 84, "pachasi": 85, "pachaasi": 85, "chhiyasi": 86, "chhiyaasi": 86, "sattasi": 87, "sataasi": 87, "atthasi": 88, "athaasi": 88, "navasi": 89, "nawasi": 89, "ikyanve": 91, "ikyaanve": 91, "bayanve": 92, "byaanve": 92, "tiranve": 93, "tiraanve": 93, "chauranve": 94, "chauraanve": 94, "pachanve": 95, "pachaanve": 95, "chhiyanve": 96, "chhiyaanve": 96, "sattanve": 97, "sataanve": 97, "atthanve": 98, "athaanve": 98, "ninyanve": 99, "ninanve": 99, "ninyaanve": 99, "be": 2, "bey": 2, "dho": 2, "dhoy": 2, "tran": 3, "traan": 3, "pach": 5, "pandar": 15, "vees": 20, "pachis": 25, "pachees": 25, "pachchis": 25, "tris": 30, "doda": 1.5, "dhedh": 1.5})
+# as the listening model writes them (found by speaking every number 11-99 to it)
+NUM.update({"bis": 20, "ties": 23, "untis": 29, "tis": 30, "untaalis": 39, "taintaalis": 43, "chhavaalis": 44, "paintaalis": 45, "saintaalis": 47, "adtaalis": 48,
+            "unachaas": 49, "unachas": 49, "chaubin": 54, "sattaavan": 57, "atthaavan": 58, "sirsath": 67, "behtar": 72, "pachahattar": 75, "sathattar": 77, "unaasi": 79,
+            "bayaasi": 82, "sattaasi": 87, "atthaasi": 88, "navaasi": 89, "nambe": 90, "panchaanve": 95, "panchanve": 95, "sattaanve": 97, "chhahattar": 76, "chhahatar": 76})
 MULT = {"sau": 100, "hundred": 100, "hazaar": 1000, "hazar": 1000, "hajar": 1000, "thousand": 1000, "k": 1000, "lakh": 100000, "laakh": 100000,
         "lac": 100000, "lacs": 100000, "lakhs": 100000, "laakhon": 100000, "crore": 10_000_000, "karod": 10_000_000, "cr": 10_000_000}
 YES = {"haan", "han", "ha", "haa", "hanji", "haanji", "haji", "ji", "yes", "yeah", "yep", "theek", "thik", "sahi", "bilkul", "correct", "right", "ok", "okay", "okey",
@@ -199,7 +204,34 @@ def digits_from_speech(text: str) -> str:
         return (" " + m.group(2) + " ") * n
 
     t = re.sub(r"\b(double|dabal|dubal|triple|treble)\s+(\w+)", rep, text, flags=re.I)
-    return re.sub(r"\D", "", db.spoken_digits(t))
+    return re.sub(r"\D", "", db.spoken_digits(number_pairs(t)))
+
+
+# spellings the listener writes for two-digit numbers, besides those the amount reader knows
+_PAIR_ALSO = {"chhahattar": 76, "chhahatar": 76, "chauntar": 74, "chautar": 74, "chauhatar": 74, "chohattar": 74, "chouhattar": 74, "ninyanbe": 99, "ninnyanve": 99, "niyanve": 99, "ninnanve": 99,
+              "chautis": 34, "chontis": 34, "atthaais": 28, "attais": 28, "chaalis": 40, "chhatis": 36, "batees": 32, "pachees": 25, "unhatar": 69, "ikhatar": 71}
+
+
+def number_pairs(text: str) -> str:
+    """"ninyaanve, atthais, chalis" -> "99 28 40": mobile numbers are usually said two digits at a time. A word such as "saath"
+    (with / sixty) counts only next to another number, or when nearly the whole sentence is numbers."""
+    tokens = re.findall(r"[A-Za-z]+|\d+|[^A-Za-z\d]+", text)
+    words = [i for i, x in enumerate(tokens) if x[0].isalnum()]
+
+    def pair(w):
+        v = _PAIR_ALSO.get(w, NUM.get(w))
+        return int(v) if v is not None and 10 <= v <= 99 and v == int(v) else None
+
+    def numeric(w):
+        return w.isdigit() or pair(w) is not None or bool(re.fullmatch(r"\d", db.spoken_digits(w).strip()))
+
+    flags = [numeric(tokens[i].lower()) for i in words]
+    mostly = bool(words) and sum(flags) >= 0.6 * len(words)
+    for k, i in enumerate(words):
+        v = pair(tokens[i].lower())
+        if v is not None and (mostly or (k > 0 and flags[k - 1]) or (k + 1 < len(words) and flags[k + 1])):
+            tokens[i] = str(v)
+    return "".join(tokens)
 
 
 def hindi_fraction_numbers(text: str) -> str:
@@ -536,14 +568,15 @@ class Flow:
     def __init__(self, call):
         self._off_hit = False
         self.lang = "hi"                      # the language the caller speaks: hi / en / gu / mwr
-        self.fixed_lang = False             # chosen before the call (page or customer record): guessing from the words does not change it
         self._pending_lang = None
         self.call = call
         self.asked = "full_name"          # the slot the last question was about
         self.v = {}                       # captured values
         self.skipped = set()
         self.not_shared = []               # what the customer would not or could not say (noted for the team)
+        self.branch_memory = {}            # which place she asked for / which branch she last described
         self.later = False                 # the customer is busy: take a time for a callback, then end
+        self.open_talk = False             # no loan wanted, but something else to talk about: she answers and asks no form questions
         self.fails = {}
         self.phone_pending = None
         self.phone_buf = ""                # digits heard so far while the number is still being said
@@ -588,7 +621,9 @@ class Flow:
             self.lang = wanted
             q = self._question(self.asked) if self.asked in QUESTIONS else ""
             return (self.SWITCH_CONFIRM[wanted] + " " + i18n.localize(q, self.lang, self._roman_name())).strip()
-        seen = None if self.fixed_lang else _lang.detect(raw)
+        seen = _lang.detect(raw)
+        if seen == "hi" and self.lang in ("gu", "mwr") and not (len(raw.split()) >= 7 and _lang.is_strong(raw, "hi")):
+            seen = None          # the listener writes dialect speech Hindi-like: only a long, plainly Hindi sentence (or asking for Hindi) changes back
         if seen and seen != self.lang:
             if _lang.is_strong(raw, seen) or self._pending_lang == seen:    # clear evidence, or the second sentence in a row: the caller changed language, follow
                 self.lang, self._pending_lang = seen, None
@@ -624,6 +659,14 @@ class Flow:
         low = text.lower()
         captured, ack = [], None
 
+        if self.open_talk:
+            if re.search(r"\bloan\s+(?:bhi\s+)?(?:chahiye|chaahiye|chahie|lena)|\b(?:chahiye|chaahiye|lena)\b[^.?]{0,15}\bloan\b", low) and not re.search(r"\b(?:nahi|nahin|nai|no)\b|नहीं", low):
+                self.open_talk, self.done, self.asked = False, False, "loan_type"       # now a loan is wanted: back to the form
+            elif not intents.has_question(low) and (re.search(END_DONE, low) or re.search(END_NOW, low) or intents.has(intents.NO_TALK, low)
+                                                    or re.fullmatch(r"\W*(?:(?:ji|nahi|nahin|nai|bas|no|ab|theek|thik|ok|okay|hai|dhanya\w*|shukriya|thank|thanks|you)\W+)*(?:nahi|nahin|bas|no|dhanya\w*|shukriya|thanks|you)\W*", low)):
+                c.finished = True
+                return intents.NO_THANKS_LINE
+
         # --- the caller wants to end the call: say one closing line; the server then plays the thank-you and the call ends
         if re.search(END_NOW, low) or (self.done and re.search(END_DONE, low) and not looks_like_question(text)):
             c.finished = True
@@ -647,6 +690,15 @@ class Flow:
         meant = self._meant(text)
         if meant is not None:
             return meant
+
+        # --- "is there a branch in my city / state?": answered from the company's branch list
+        if self.asked not in ("phone", "phone_confirm", "amount_confirm"):
+            found = branches.answer(text, self.branch_memory)
+            if found:
+                reply, ends_with_question = found
+                if ends_with_question or self.done or self.asked not in QUESTIONS and self.asked != "work_tenure":
+                    return reply
+                return reply + " " + self._question(self.asked)       # then back to the form question
 
         # --- phone read-back answer
         if self.asked == "phone_confirm" and self.phone_pending:
@@ -678,7 +730,8 @@ class Flow:
                 ack = "ठीक है, रकम पक्की कर दी।"
 
         # --- approved reply for a question or special request
-        question_here = looks_like_question(text) and not (self.asked in ("callback_time", "phone", "phone_confirm", "consent", "existing_loans") and answerish(text))      # a real question, not the answer to the form question
+        about_money = bool(re.search(r"\b(?:cibil|sibil|civil|score|loan|lone|interest|byaaj|byaj|emi|document|kagaz|fee|charge|branch)\b", low))      # "CIBIL 700 se kam hai, loan milega?" is a question
+        question_here = looks_like_question(text) and not (self.asked in ("callback_time", "phone", "phone_confirm", "consent", "existing_loans") and answerish(text) and not (asks_something(text) and about_money))      # a real question, not the answer to the form question
         raw_bank = (replybank.match_hybrid(text) if question_here and not (parse_amount(text) and "?" not in text) else replybank.match(text))
         self._off_hit = any(m["id"] == "off_topic" and m["score"] >= 0.7 for m in raw_bank)
         bank = [m for m in raw_bank if m["score"] >= (0.45 if m["id"] in ("more_to_discuss", "small_talk") else 0.5 if m["entry"].get("require") else 0.6) and m["id"] not in SKIP_IDS]
@@ -707,6 +760,8 @@ class Flow:
             bank = []                                                   # at the city step the caller names a place
         if self.asked in ("callback_time", "phone", "phone_confirm", "consent", "existing_loans") and not strong and not question_here:
             bank = []                                                   # in these steps the caller's words are the answer, unless they clearly ask something
+        if self.open_talk:
+            bank = [m for m in bank if m["id"] != "not_interested"]
         ids = [m["id"] for m in bank]
         if "stop_calling" in ids or "not_interested" in ids:
             entry = next(m for m in bank if m["id"] in ("stop_calling", "not_interested"))["entry"]
@@ -826,7 +881,9 @@ class Flow:
             elif yes_no(text) == "no" and len(_words(text)) <= 2:
                 details["existing_emi"] = 0
                 captured.append("existing_emi")
-        if asked == "existing_loans":
+        eligibility_question = (question_here and bool(re.search(r"mil(?:ega|egi|si)\b|mil\s+(?:sakta|jayega|jaega)|chahiye\b|chaahiye\b", low))
+                                and not re.match(r"\s*(?:ji\s+)?(?:haan|han|ha|nahi|nahin|no|yes)\b", low))      # "haan chal raha hai, naya milega?" still counts
+        if asked == "existing_loans" and not eligibility_question:
             yn = yes_no(text)
             w_ = set(_words(text))
             if yn is None and "koi" not in w_ and (w_ & {"ek", "do", "teen", "car", "bike", "home", "personal", "gold", "credit", "card", "dho", "dhoy", "tran", "traan", "one", "two", "three", "running", "ongoing", "chalu", "active"} or {"chal", "raha"} <= w_ or {"chal", "rahi"} <= w_):
@@ -840,9 +897,13 @@ class Flow:
             if forms.clean("phone", self.phone_pending)[0]:
                 core["phone"] = self.phone_pending
                 captured.append("phone")
-        elif asked == "phone" or (len(digits) >= 10 and digits[-10] in "6789" and digits[-10:-5] != digits[-5:]):
+        elif (asked == "phone" and not (len(digits) < 8 and re.search(r"\b(?:cibil|sibil|civil|score|loan|lone|lakh|laakh|hazaar|rupe|rupaye|saal|year|interest|byaaj|emi|percent)\b", low))) or (len(digits) >= 10 and digits[-10] in "6789" and digits[-10:-5] != digits[-5:]):
             buf = (self.phone_buf if asked == "phone" else "") + digits
-            if asked == "phone" and digits and re.search(r"\b(galat|wrong|dobara|again|restart|phir\s*se|naya|naye|shuru)\b", low):
+            restart = bool(re.search(r"\b(galat|wrong|dobara|again|restart|phir\s*se|naya|naye|shuru|(?:starting|start|suru|shuru)\s+se)\b", low))
+            if asked == "phone" and restart and not digits:                # "main starting se bata raha hoon": begin again
+                self.phone_buf = ""
+                return "ठीक है जी, कोई बात नहीं। कृपया अपना मोबाइल नंबर एक बार फिर, धीरे-धीरे बोलिए।"
+            if asked == "phone" and digits and restart:
                 buf = digits                                              # the caller starts the number again
             if len(buf) >= 10:
                 self.phone_buf = ""
@@ -856,7 +917,7 @@ class Flow:
                 self.phone_buf = buf                                      # keep what was said: the caller may be mid-number
                 return f"अभी तक {len(buf)} अंक मिले हैं, बाकी के अंक भी बता दीजिए।"
         when_said = speak_time(text)
-        if asked not in ("callback_time", "phone", "phone_confirm") and when_said and re.search(r"call|phone|baat", low) and ("callback_time" not in self.v or self.done) and not looks_like_question(text):
+        if asked not in ("callback_time", "phone", "phone_confirm") and when_said and re.search(r"call|phone|baat|karwa\s*(?:lena|dena|dijiye)|karva\s*(?:lena|dena)|kara\s*(?:lena|dena)", low) and ("callback_time" not in self.v or self.done) and not looks_like_question(text):
             core["preferred_callback_time"] = " ".join(text.split())[:80]
             core["consent_to_contact"] = "yes"
             captured += ["callback_time", "consent"]
@@ -892,6 +953,10 @@ class Flow:
                 else:
                     self.v[k] = details[k]
             self._sync_reason()
+
+        if "loan_amount" in captured and not asks_something(text):          # "5 lakh tak ka loan chahiye tha" says the amount, it does not ask for one
+            bank = [m for m in bank if m["id"] not in ("how_much_loan", "loan_amount_ask", "instant_loan")]
+            ids = [m["id"] for m in bank]
 
         if "callback_time" in captured:                                  # the time has been taken: no extra "busy, call later" answer on top
             bank = [m for m in bank if m["id"] != "busy_callback"]
@@ -1061,6 +1126,16 @@ class Flow:
         """The reply when the customer refuses, does not know, does not want it, is busy, did not understand, or asks in their own words.
         None = an ordinary answer or question, handled as before."""
         c, asked = self.call, self.asked
+        low_all = text.lower().strip()
+        if not self.done and intents.has(intents.LEAVE, low_all) and not intents.has(intents.STOP, low_all) and not intents.has(intents.NO_TALK, low_all):
+            rest = re.sub(intents.LEAVE, " ", low_all)                    # what is left besides the "no loan" words
+            if intents.wants_other_talk(text) or intents.has_question(rest):
+                # "loan nahi chahiye, mujhe kuch aur baat karni hai" / "loan nahi chahiye, aapka office kahan hai?": the call goes on
+                self._save(details={"outcome": "no loan wanted, wants to ask something else"})
+                self.done, self.open_talk, self.asked = True, True, None
+                if intents.has_question(rest):
+                    return None                                         # what they want to know is already said: answer it
+                return intents.TELL_ME_LINE
         if self.done or asked in ("amount_confirm", "phone_confirm"):
             kind = intents.read(text, None, bool(parse_amount(text)))
             if kind not in ("stop", "leave"):

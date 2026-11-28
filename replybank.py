@@ -27,7 +27,7 @@ _NUKTA_R = ("ड़", "ढ़")                                   # ड़ and �
 _NEGATIONS = {"nh", "nhi", "nhin", "mt", "n", "nt"}          # skeletons of nahi, nahin, mat, na, not: they flip a meaning, so they weigh more
 _AI_WORDS = {"ai", "एआई", "एआइ", "आई"}                      # "AI" is all vowels, so its skeleton is empty and it used to vanish: "ai kya hai" became "kya hai" and matched everything
 _FILLER_WORDS = "thik theek sir sahab saheb saahab madam hello hanji"       # only words whose skeleton is not shared with a real topic word (ji = mujhe, achha = chahiye)
-_SPLIT = re.compile(r"[?।!.;\n]+|,| (?:aur|lekin|par|magar|and|but|और|लेकिन|पर|मगर) ")
+_SPLIT = re.compile(r"[?।!.;\n]+|,| (?:aur|lekin|magar|and|but|और|लेकिन|मगर) | (?:par|पर) (?!(?:loan|lone|lon|finance|लोन)\b)")      # "tractor par loan" is "on", not "but"
 
 
 def _skeleton(word: str) -> str:
